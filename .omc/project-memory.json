@@ -1,0 +1,493 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775023491905,
+  "projectRoot": "f:\\web_source\\pageBuilder",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "16.2.1",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "vitest",
+        "version": "4.1.2",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "next dev",
+      "build": "npx prisma generate --config prisma/prisma.config.ts && next build",
+      "start": "next start",
+      "lint": "eslint",
+      "db:push": "npx prisma db push --config prisma/prisma.config.ts",
+      "db:generate": "npx prisma generate --config prisma/prisma.config.ts",
+      "db:studio": "npx prisma studio --config prisma/prisma.config.ts",
+      "db:seed": "DATABASE_URL=\"file:./dev.db\" npx tsx prisma/seed.ts",
+      "postinstall": "npx prisma generate --config prisma/prisma.config.ts"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "feature-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "prisma": {
+      "path": "prisma",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1775023491880,
+      "keyFiles": [
+        "AGENTS.md",
+        "dev.db",
+        "prisma.config.ts",
+        "schema.prisma",
+        "seed.ts"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 5,
+      "lastAccessed": 1775023491881,
+      "keyFiles": [
+        "file.svg",
+        "globe.svg",
+        "next.svg",
+        "vercel.svg",
+        "window.svg"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1775023491887,
+      "keyFiles": [
+        "AGENTS.md"
+      ]
+    },
+    "USER_CONTEXT": {
+      "path": "USER_CONTEXT",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1775023491887,
+      "keyFiles": [
+        "agents_req.md",
+        "block-expansion-guide.md",
+        "main_prompt.md"
+      ]
+    },
+    "public\\assets": {
+      "path": "public\\assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1775023491888,
+      "keyFiles": []
+    },
+    "src\\app": {
+      "path": "src\\app",
+      "purpose": "Application code",
+      "fileCount": 5,
+      "lastAccessed": 1775023491888,
+      "keyFiles": [
+        "AGENTS.md",
+        "favicon.ico",
+        "globals.css"
+      ]
+    },
+    "src\\components": {
+      "path": "src\\components",
+      "purpose": "UI components",
+      "fileCount": 1,
+      "lastAccessed": 1775023491888,
+      "keyFiles": [
+        "AGENTS.md"
+      ]
+    },
+    "src\\lib": {
+      "path": "src\\lib",
+      "purpose": "Library code",
+      "fileCount": 8,
+      "lastAccessed": 1775023491888,
+      "keyFiles": [
+        "AGENTS.md",
+        "api-client.ts",
+        "id.ts"
+      ]
+    },
+    "src\\schemas": {
+      "path": "src\\schemas",
+      "purpose": "Schema definitions",
+      "fileCount": 5,
+      "lastAccessed": 1775023491889,
+      "keyFiles": [
+        "AGENTS.md",
+        "ai-diff.schema.ts",
+        "dom-node.schema.ts"
+      ]
+    },
+    "src\\types": {
+      "path": "src\\types",
+      "purpose": "Type definitions",
+      "fileCount": 11,
+      "lastAccessed": 1775023491889,
+      "keyFiles": [
+        "AGENTS.md",
+        "ai.ts",
+        "api.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "",
+      "accessCount": 163,
+      "lastAccessed": 1775044603489,
+      "type": "directory"
+    },
+    {
+      "path": "src",
+      "accessCount": 94,
+      "lastAccessed": 1775044571993,
+      "type": "directory"
+    },
+    {
+      "path": "src\\app\\api\\ai\\generate\\route.ts",
+      "accessCount": 44,
+      "lastAccessed": 1775043369378,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\enums.ts",
+      "accessCount": 44,
+      "lastAccessed": 1775045495749,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\api-client.ts",
+      "accessCount": 40,
+      "lastAccessed": 1775043931697,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\page.tsx",
+      "accessCount": 33,
+      "lastAccessed": 1775043336667,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\dom-tree.ts",
+      "accessCount": 32,
+      "lastAccessed": 1775045495777,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\ai.ts",
+      "accessCount": 27,
+      "lastAccessed": 1775043350353,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\tree-utils.ts",
+      "accessCount": 27,
+      "lastAccessed": 1775045503227,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\index.ts",
+      "accessCount": 26,
+      "lastAccessed": 1775043369448,
+      "type": "file"
+    },
+    {
+      "path": "prisma\\schema.prisma",
+      "accessCount": 21,
+      "lastAccessed": 1775042877688,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\index.ts",
+      "accessCount": 21,
+      "lastAccessed": 1775042922644,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\dnd\\DndProvider.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1775044810955,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\renderer\\components\\PageRenderer.tsx",
+      "accessCount": 20,
+      "lastAccessed": 1775043885341,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\layout.tsx",
+      "accessCount": 18,
+      "lastAccessed": 1775042924829,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 18,
+      "lastAccessed": 1775045412385,
+      "type": "file"
+    },
+    {
+      "path": "src\\schemas\\dom-node.schema.ts",
+      "accessCount": 16,
+      "lastAccessed": 1775045495796,
+      "type": "file"
+    },
+    {
+      "path": "src\\features\\seo\\seo-audit.ts",
+      "accessCount": 15,
+      "lastAccessed": 1775042890937,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\prisma.ts",
+      "accessCount": 15,
+      "lastAccessed": 1775042891809,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\project.ts",
+      "accessCount": 14,
+      "lastAccessed": 1775042864057,
+      "type": "file"
+    },
+    {
+      "path": "src\\schemas\\ai-diff.schema.ts",
+      "accessCount": 13,
+      "lastAccessed": 1775043416042,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 11,
+      "lastAccessed": 1774930013656,
+      "type": "file"
+    },
+    {
+      "path": "USER_CONTEXT\\agents_req.md",
+      "accessCount": 11,
+      "lastAccessed": 1775035838858,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\json-patch.ts",
+      "accessCount": 10,
+      "lastAccessed": 1775042891694,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\id.ts",
+      "accessCount": 10,
+      "lastAccessed": 1775042934446,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\styleguide.ts",
+      "accessCount": 7,
+      "lastAccessed": 1775042882588,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\api",
+      "accessCount": 7,
+      "lastAccessed": 1775043341326,
+      "type": "directory"
+    },
+    {
+      "path": "src\\types\\api.ts",
+      "accessCount": 7,
+      "lastAccessed": 1775043350294,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\slices\\tree-slice.ts",
+      "accessCount": 6,
+      "lastAccessed": 1774842629071,
+      "type": "file"
+    },
+    {
+      "path": ".env.local",
+      "accessCount": 6,
+      "lastAccessed": 1774922038732,
+      "type": "file"
+    },
+    {
+      "path": "USER_CONTEXT\\main_prompt.md",
+      "accessCount": 6,
+      "lastAccessed": 1775035838775,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\library.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775042864448,
+      "type": "file"
+    },
+    {
+      "path": "prisma\\seed.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775042877797,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 6,
+      "lastAccessed": 1775042877886,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\revision.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775042864466,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib",
+      "accessCount": 5,
+      "lastAccessed": 1775042962250,
+      "type": "directory"
+    },
+    {
+      "path": "next.config.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775042878012,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\MR THIEN\\.claude\\settings.json",
+      "accessCount": 3,
+      "lastAccessed": 1774838361248,
+      "type": "file"
+    },
+    {
+      "path": "src\\features",
+      "accessCount": 2,
+      "lastAccessed": 1775042858325,
+      "type": "directory"
+    },
+    {
+      "path": "C:\\Users\\MR THIEN\\.claude\\plugins\\marketplaces\\omc\\skills\\omc-setup\\phases\\01-install-claude-md.md",
+      "accessCount": 1,
+      "lastAccessed": 1774837927599,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\MR THIEN\\.claude\\plugins\\marketplaces\\omc\\skills\\omc-setup\\phases\\02-configure.md",
+      "accessCount": 1,
+      "lastAccessed": 1774837996039,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\MR THIEN\\.claude\\hud\\omc-hud.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1774838115942,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\MR THIEN\\.claude\\plugins\\marketplaces\\omc\\skills\\omc-setup\\phases\\03-integrations.md",
+      "accessCount": 1,
+      "lastAccessed": 1774838318046,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\MR THIEN\\.claude\\plugins\\marketplaces\\omc\\skills\\omc-setup\\phases\\04-welcome.md",
+      "accessCount": 1,
+      "lastAccessed": 1774838745119,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\slices\\selection-slice.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774839447144,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\slices\\styleguide-slice.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774839452053,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\slices\\ui-slice.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774839454774,
+      "type": "file"
+    },
+    {
+      "path": "src\\store\\slices\\drag-slice.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774839457262,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\AGENTS\\AGENTS.md",
+      "accessCount": 1,
+      "lastAccessed": 1774839496785,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\settings.json",
+      "accessCount": 1,
+      "lastAccessed": 1774839499310,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

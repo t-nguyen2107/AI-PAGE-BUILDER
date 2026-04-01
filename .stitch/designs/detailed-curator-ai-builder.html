@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Curator AI | Editorial Canvas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .canvas-dot-grid {
+            background-image: radial-gradient(#c2c6d6 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-secondary": "#ffffff",
+                "inverse-on-surface": "#f0f1f2",
+                "background": "#f8f9fa",
+                "secondary": "#545f73",
+                "on-secondary-fixed": "#111c2d",
+                "outline": "#727785",
+                "on-secondary-container": "#586377",
+                "inverse-primary": "#adc6ff",
+                "surface-container-high": "#e7e8e9",
+                "secondary-container": "#d5e0f8",
+                "surface-container": "#edeeef",
+                "on-primary": "#ffffff",
+                "error-container": "#ffdad6",
+                "tertiary-container": "#b75b00",
+                "on-error": "#ffffff",
+                "tertiary-fixed-dim": "#ffb786",
+                "surface": "#f8f9fa",
+                "surface-bright": "#f8f9fa",
+                "surface-variant": "#e1e3e4",
+                "inverse-surface": "#2e3132",
+                "on-tertiary": "#ffffff",
+                "on-surface-variant": "#424754",
+                "on-error-container": "#93000a",
+                "surface-container-low": "#f3f4f5",
+                "on-primary-fixed": "#001a42",
+                "primary": "#0058be",
+                "outline-variant": "#c2c6d6",
+                "secondary-fixed": "#d8e3fb",
+                "primary-fixed-dim": "#adc6ff",
+                "primary-fixed": "#d8e2ff",
+                "on-tertiary-fixed": "#311400",
+                "on-primary-fixed-variant": "#004395",
+                "error": "#ba1a1a",
+                "on-tertiary-fixed-variant": "#723600",
+                "surface-dim": "#d9dadb",
+                "on-tertiary-container": "#fffbff",
+                "on-background": "#191c1d",
+                "surface-container-highest": "#e1e3e4",
+                "surface-tint": "#005ac2",
+                "surface-container-lowest": "#ffffff",
+                "on-surface": "#191c1d",
+                "on-primary-container": "#fefcff",
+                "tertiary-fixed": "#ffdcc6",
+                "on-secondary-fixed-variant": "#3c475a",
+                "secondary-fixed-dim": "#bcc7de",
+                "tertiary": "#924700",
+                "primary-container": "#2170e4"
+              },
+              fontFamily: {
+                "headline": ["Plus Jakarta Sans"],
+                "body": ["Plus Jakarta Sans"],
+                "label": ["Plus Jakarta Sans"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#f8f9fa]/80 dark:bg-[#191c1d]/80 backdrop-blur-xl flex justify-between items-center px-6 h-16 w-full font-['Plus_Jakarta_Sans'] tracking-tight">
+<div class="flex items-center gap-8">
+<span class="text-lg font-bold tracking-tighter text-[#191c1d] dark:text-[#f8f9fa]">Curator AI</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#0058be] dark:text-[#2170e4] border-b-2 border-[#0058be] py-5" href="#">Projects</a>
+<a class="text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] py-5" href="#">Assets</a>
+<a class="text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] py-5" href="#">Team</a>
+<a class="text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] py-5" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg text-on-surface hover:bg-[#f3f4f5] transition-colors duration-200">Preview</button>
+<button class="px-5 py-2 rounded-lg bg-primary text-on-primary font-semibold shadow-sm hover:opacity-90 transition-all active:scale-95 duration-200">Publish</button>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer ml-2" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<main class="flex h-screen pt-16">
+<!-- SideNavBar (Layers Tree) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r border-transparent bg-[#f3f4f5] dark:bg-[#191c1d] flex flex-col p-4 gap-2 overflow-y-auto">
+<div class="mb-6 px-2">
+<div class="flex items-center gap-3 mb-1">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="folder">folder</span>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface">Structure</h3>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant">Editorial Canvas</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<!-- Project Level -->
+<div class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-[#ffffff0a] text-[#0058be] dark:text-[#2170e4]">
+<span class="material-symbols-outlined text-sm" data-icon="folder">folder</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Project</span>
+</div>
+<!-- Page Level -->
+<div class="ml-4 flex items-center gap-2 p-2 rounded-lg text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="description">description</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Page</span>
+</div>
+<!-- Section Level -->
+<div class="ml-8 flex items-center gap-2 p-2 rounded-lg text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="layers">layers</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Section</span>
+</div>
+<!-- Container Level -->
+<div class="ml-12 flex items-center gap-2 p-2 rounded-lg text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="view_quilt">view_quilt</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Container</span>
+</div>
+<!-- Component Level (Active/Selected) -->
+<div class="ml-16 flex items-center gap-2 p-2 rounded-lg bg-primary/10 text-primary border-l-2 border-primary">
+<span class="material-symbols-outlined text-sm" data-icon="widgets">widgets</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Component</span>
+</div>
+<!-- Element Level -->
+<div class="ml-20 flex items-center gap-2 p-2 rounded-lg text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="category">category</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Element</span>
+</div>
+<!-- Item Level -->
+<div class="ml-24 flex items-center gap-2 p-2 rounded-lg text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1d] cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="list">list</span>
+<span class="font-['Plus_Jakarta_Sans'] text-sm font-medium uppercase tracking-widest">Item</span>
+</div>
+</div>
+<div class="mt-auto pt-6 border-t border-outline-variant/20">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-4 bg-surface-container-highest rounded-lg text-sm font-bold text-on-surface hover:bg-surface-variant transition-colors mb-4">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                    Add Section
+                </button>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 p-2 text-on-surface-variant hover:text-on-surface cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="bolt">bolt</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Logic</span>
+</div>
+<div class="flex items-center gap-2 p-2 text-on-surface-variant hover:text-on-surface cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="article">article</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Content</span>
+</div>
+<div class="flex items-center gap-2 p-2 text-on-surface-variant hover:text-on-surface cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="palette">palette</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Design</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<section class="flex-1 ml-64 mr-80 bg-surface-container-low canvas-dot-grid relative overflow-y-auto no-scrollbar p-12">
+<!-- Canvas Rulers (Top & Left) -->
+<div class="absolute top-0 left-0 w-full h-6 bg-white border-b border-outline-variant/30 flex items-end px-2 gap-10 text-[8px] text-outline opacity-50 select-none">
+<span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span><span>600</span><span>700</span><span>800</span><span>900</span><span>1000</span>
+</div>
+<div class="absolute top-0 left-0 h-full w-6 bg-white border-r border-outline-variant/30 flex flex-col pt-10 gap-16 items-center text-[8px] text-outline opacity-50 select-none">
+<span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span><span>600</span>
+</div>
+<!-- Preview Content -->
+<div class="mx-auto max-w-4xl bg-surface rounded-xl shadow-2xl overflow-hidden min-h-[1200px] border border-outline-variant/10 relative">
+<!-- Hero Section Component (SELECTED STATE) -->
+<div class="relative group outline outline-2 outline-primary outline-offset-[-2px]">
+<!-- Selected Label & Dimension Tag -->
+<div class="absolute -top-7 left-0 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-t-md flex items-center gap-2">
+<span>Component: Hero Section</span>
+<span class="opacity-70">800 × 540 px</span>
+</div>
+<!-- Margin Indicators (Visual Guides) -->
+<div class="absolute top-0 left-0 w-full h-12 bg-primary/5 border-b border-dashed border-primary/20 pointer-events-none flex items-center justify-center">
+<span class="text-[8px] text-primary/40 font-bold">PADDING-TOP: 48px</span>
+</div>
+<div class="flex flex-col md:flex-row items-center min-h-[540px]">
+<div class="flex-1 p-16">
+<span class="text-tertiary font-bold tracking-[0.2em] text-xs uppercase mb-4 block">Est. 1984</span>
+<h1 class="text-6xl font-extrabold text-on-surface leading-tight tracking-tighter mb-6">
+                                The Art of the <br/>
+<span class="text-primary italic font-serif">Slow Brew</span>
+</h1>
+<p class="text-lg text-on-surface-variant leading-relaxed max-w-md mb-8">
+                                Experience coffee as it was meant to be—patiently roasted, meticulously ground, and shared in silence.
+                            </p>
+<div class="flex gap-4">
+<button class="px-8 py-3 bg-primary text-on-primary rounded-lg font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">Reserve a Table</button>
+<button class="px-8 py-3 bg-surface-container-highest text-on-surface rounded-lg font-bold">View Menu</button>
+</div>
+</div>
+<div class="flex-1 h-full min-h-[540px] bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="moody high-end coffee shop interior with dark wood textures and sunlight streaming through a large window onto a marble counter" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5jnCAMS2S6mD3tNRSsM0huNK2d9TMmg9heapfqx1a2LIbpbmWvce3w1mJaMtJhkbKorof8tlvY11tXcRdSJ4b2bjT83sSfKNEuMk_GFirFUb4KFF4ZdD1o6DFSw9tDQMFTsaxkWeA8I0fsNF6cqxPD1DXGoIBYFluXeMYlnaCwQ8lhRaLcvN8KMaJrdbPoVpzqtGfhsbzOLLA8_FJZNfmIBJtMVEWkAmMtfcps3i3GvehT7uUq-BflzL_o8jEUZWHgsTE2XNYCp_Y"/>
+</div>
+</div>
+</div>
+<!-- Next Section: Grid (Bento Style) -->
+<div class="p-16 grid grid-cols-3 gap-6">
+<div class="col-span-2 bg-surface-container-low rounded-3xl p-8 flex flex-col justify-end min-h-[300px] group transition-all">
+<h3 class="text-2xl font-bold mb-2">Our Origins</h3>
+<p class="text-on-surface-variant text-sm">Directly sourced from high-altitude farms in Ethiopia and Colombia.</p>
+</div>
+<div class="bg-primary-fixed text-on-primary-fixed rounded-3xl p-8 flex flex-col justify-between min-h-[300px]">
+<span class="material-symbols-outlined text-4xl" data-icon="temp_preferences_custom">temp_preferences_custom</span>
+<div>
+<h3 class="text-xl font-bold mb-1">94°C</h3>
+<p class="text-xs opacity-80 uppercase tracking-widest">Precision Extraction</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating AI Command Bar -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 z-50">
+<div class="bg-surface-container-lowest/80 backdrop-blur-2xl border border-outline-variant/30 rounded-2xl shadow-2xl p-2 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div class="flex-1 relative">
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder-on-surface-variant/50 font-medium" placeholder="Type a slash command or prompt AI..." type="text"/>
+<!-- AI Suggestions Tooltip -->
+<div class="absolute bottom-full left-0 mb-4 w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-xl overflow-hidden pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
+<div class="p-2 border-b border-outline-variant/10 bg-surface-container-low text-[10px] font-bold text-on-surface-variant uppercase tracking-widest px-4">AI Commands</div>
+<div class="p-1">
+<div class="flex items-center gap-3 p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer">
+<span class="text-primary font-bold">/layout</span>
+<span class="text-xs text-on-surface-variant">Generate a new section layout</span>
+</div>
+<div class="flex items-center gap-3 p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer">
+<span class="text-primary font-bold">/copy</span>
+<span class="text-xs text-on-surface-variant">Rewrite text in editorial tone</span>
+</div>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                        Generate
+                    </button>
+</div>
+</div>
+</section>
+<!-- Right Inspector Panel -->
+<aside class="fixed right-0 top-16 h-[calc(100vh-64px)] w-80 bg-surface border-l border-outline-variant/20 flex flex-col">
+<!-- Tabs -->
+<div class="flex border-b border-outline-variant/20">
+<button class="flex-1 py-4 text-[10px] font-bold uppercase tracking-widest text-primary border-b-2 border-primary">Design</button>
+<button class="flex-1 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface">Content</button>
+<button class="flex-1 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface">Logic</button>
+</div>
+<div class="p-6 overflow-y-auto flex-1 flex flex-col gap-8 no-scrollbar">
+<!-- Typography Section -->
+<div>
+<h4 class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-4">Typography</h4>
+<div class="space-y-4">
+<div>
+<label class="text-[11px] text-outline font-medium block mb-1">Font Family</label>
+<div class="flex items-center justify-between p-2 bg-surface-container-low rounded-lg border border-outline-variant/20">
+<span class="text-sm font-medium">Plus Jakarta Sans</span>
+<span class="material-symbols-outlined text-sm" data-icon="unfold_more">unfold_more</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-[11px] text-outline font-medium block mb-1">Weight</label>
+<div class="p-2 bg-surface-container-low rounded-lg border border-outline-variant/20 text-sm font-medium">800 (ExtraBold)</div>
+</div>
+<div>
+<label class="text-[11px] text-outline font-medium block mb-1">Size</label>
+<div class="p-2 bg-surface-container-low rounded-lg border border-outline-variant/20 text-sm font-medium">60px</div>
+</div>
+</div>
+<div>
+<label class="text-[11px] text-outline font-medium block mb-1">Line Height</label>
+<div class="flex items-center gap-3">
+<input class="flex-1 h-1 bg-outline-variant/40 rounded-full appearance-none accent-primary" type="range"/>
+<span class="text-xs font-bold w-8 text-right">1.2</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Spacing Visualizer -->
+<div>
+<h4 class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-4">Spacing</h4>
+<div class="aspect-square bg-surface-container rounded-xl p-4 relative flex items-center justify-center border border-outline-variant/10">
+<!-- Margin Box -->
+<div class="w-full h-full border border-dashed border-outline/30 rounded-lg flex items-center justify-center p-8 bg-surface-container-high relative">
+<span class="absolute top-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-outline">MARGIN</span>
+<!-- Padding Box -->
+<div class="w-full h-full border border-primary/40 bg-primary/5 rounded-md flex items-center justify-center relative">
+<span class="absolute top-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary">PADDING</span>
+<div class="w-1/2 h-4 bg-primary/20 rounded-sm"></div>
+</div>
+</div>
+<!-- Values -->
+<input class="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-4 bg-white border border-outline-variant/30 rounded text-[9px] text-center font-bold focus:ring-0 focus:border-primary" type="text" value="64"/>
+<input class="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-4 bg-white border border-outline-variant/30 rounded text-[9px] text-center font-bold focus:ring-0 focus:border-primary" type="text" value="0"/>
+<input class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-4 bg-white border border-outline-variant/30 rounded text-[9px] text-center font-bold focus:ring-0 focus:border-primary" type="text" value="64"/>
+<input class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-4 bg-white border border-outline-variant/30 rounded text-[9px] text-center font-bold focus:ring-0 focus:border-primary" type="text" value="64"/>
+</div>
+</div>
+<!-- Color Presets -->
+<div>
+<h4 class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-4">Color Palette</h4>
+<div class="grid grid-cols-6 gap-2">
+<div class="aspect-square rounded-full bg-on-surface border border-outline-variant shadow-sm cursor-pointer"></div>
+<div class="aspect-square rounded-full bg-primary border border-outline-variant shadow-sm cursor-pointer ring-2 ring-primary ring-offset-2"></div>
+<div class="aspect-square rounded-full bg-secondary border border-outline-variant shadow-sm cursor-pointer"></div>
+<div class="aspect-square rounded-full bg-tertiary border border-outline-variant shadow-sm cursor-pointer"></div>
+<div class="aspect-square rounded-full bg-surface-container-high border border-outline-variant shadow-sm cursor-pointer"></div>
+<div class="aspect-square rounded-full bg-error border border-outline-variant shadow-sm cursor-pointer"></div>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="p-4 bg-surface-container-low flex justify-between items-center text-[10px] font-bold text-on-surface-variant border-t border-outline-variant/20">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span>Live Auto-Save</span>
+</div>
+<span>v1.2.4</span>
+</div>
+</aside>
+</main>
+</body></html>

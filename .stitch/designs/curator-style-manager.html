@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CuratorAI | Global Style Guide Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "secondary": "#545f73",
+                        "on-secondary-fixed": "#111c2d",
+                        "outline": "#727785",
+                        "inverse-primary": "#adc6ff",
+                        "on-secondary-container": "#586377",
+                        "secondary-container": "#d5e0f8",
+                        "surface-container-high": "#e7e8e9",
+                        "surface-container": "#edeeef",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#b75b00",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "surface": "#f8f9fa",
+                        "surface-bright": "#f8f9fa",
+                        "surface-variant": "#e1e3e4",
+                        "inverse-surface": "#2e3132",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#424754",
+                        "surface-container-low": "#f3f4f5",
+                        "on-primary-fixed": "#001a42",
+                        "primary": "#0058be",
+                        "outline-variant": "#c2c6d6",
+                        "secondary-fixed": "#d8e3fb",
+                        "primary-fixed": "#d8e2ff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-tertiary-fixed": "#311400",
+                        "on-primary-fixed-variant": "#004395",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "surface-dim": "#d9dadb",
+                        "on-tertiary-container": "#fffbff",
+                        "on-background": "#191c1d",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-tint": "#005ac2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1d",
+                        "on-primary-container": "#fefcff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "tertiary": "#924700",
+                        "primary-container": "#2170e4"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-nav { backdrop-filter: blur(24px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .shadow-ambient { box-shadow: 0px 24px 48px -12px rgba(25, 28, 29, 0.06); }
+        .primary-gradient { background: linear-gradient(15deg, #0058be, #2170e4); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl flex justify-between items-center h-16 px-8 w-full">
+<div class="flex items-center gap-8">
+<span class="text-lg font-bold tracking-tighter text-slate-900">CuratorAI</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-slate-500 hover:text-slate-900 transition-colors duration-200 text-sm tracking-tight" href="#">Pages</a>
+<a class="text-slate-500 hover:text-slate-900 transition-colors duration-200 text-sm tracking-tight" href="#">History</a>
+<a class="text-blue-700 font-semibold border-b-2 border-blue-700 pb-1 text-sm tracking-tight" href="#">Components</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-colors duration-200 rounded-lg">Save</button>
+<button class="px-5 py-2 text-sm font-semibold text-white primary-gradient rounded-lg shadow-sm active:scale-95 duration-150">Publish</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
+<img alt="User Profile" data-alt="professional portrait of a creative director in a minimalist studio setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6ByvkctwvZyH7gKDkIHupRVHhZfY-dLXeulfje76DzhLXF0xRM71LCHCo34SfuhXKeRyftj7Zw1eLD5kRUwYqvG6ce_ICyCpkT3pHjlvRT-qE4B1Wl4lQtptQ-_J4nXcHzrBjVnYSRVxOTGpfi5RF-MioZe0RparBLPqA0VMl75HsNc_pDm5JiiwgRoe4B9eHft6UstpGvgOt_J4cx2QpNIUYma8KKaqXDxv-j7f7ofi4C4-6yk6qvAekptymrmMKoJ5NaMYAJdLG"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-slate-50/50 backdrop-blur-lg border-r border-slate-200/20 flex flex-col p-4 space-y-6">
+<div class="flex items-center gap-3 px-2 py-4">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-900">Project Alpha</p>
+<p class="uppercase text-[10px] tracking-widest font-bold text-slate-500">Main Canvas</p>
+</div>
+</div>
+<div class="space-y-1">
+<button class="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-900 transition-all rounded-lg group">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Layers</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-900 transition-all rounded-lg group">
+<span class="material-symbols-outlined text-[20px]">category</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Assets</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 bg-white text-blue-700 shadow-sm rounded-lg translate-x-1 duration-200">
+<span class="material-symbols-outlined text-[20px]">palette</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Styles</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-900 transition-all rounded-lg">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Settings</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-900 transition-all rounded-lg">
+<span class="material-symbols-outlined text-[20px]">extension</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Plugins</span>
+</button>
+</div>
+<div class="pt-4 mt-auto">
+<button class="w-full primary-gradient text-white rounded-lg py-2.5 text-xs font-bold uppercase tracking-widest mb-6">New Page</button>
+<div class="space-y-1 border-t border-slate-200/20 pt-4">
+<button class="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-900 transition-all">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Support</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-900 transition-all">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="uppercase text-[10px] tracking-widest font-bold">Docs</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-12 min-h-screen bg-surface">
+<div class="max-w-6xl mx-auto">
+<!-- Hero Header -->
+<header class="mb-16">
+<p class="uppercase text-[10px] tracking-[0.2em] font-bold text-primary mb-4">Design System</p>
+<h1 class="text-5xl font-extrabold tracking-tight text-on-surface mb-6">Global Style Guide</h1>
+<div class="w-24 h-1 primary-gradient rounded-full"></div>
+</header>
+<!-- Color Architecture Section -->
+<section class="mb-24">
+<div class="flex items-baseline justify-between mb-8">
+<h2 class="text-2xl font-bold tracking-tight text-on-surface">Color Architecture</h2>
+<span class="uppercase text-[10px] tracking-widest font-bold text-on-surface-variant">01 / Foundation</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+<!-- Sapphire Tonal Scale -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant/10">
+<div class="flex justify-between items-start mb-10">
+<div>
+<h3 class="text-lg font-bold mb-1">Primary Sapphire</h3>
+<p class="text-sm text-on-surface-variant">The brand's editorial authority.</p>
+</div>
+<span class="text-xs font-mono bg-white px-2 py-1 rounded">#0058be</span>
+</div>
+<div class="grid grid-cols-5 gap-3">
+<div class="space-y-2">
+<div class="h-24 rounded-lg bg-on-primary-fixed"></div>
+<span class="text-[10px] font-bold uppercase block">Fixed</span>
+</div>
+<div class="space-y-2">
+<div class="h-24 rounded-lg bg-primary"></div>
+<span class="text-[10px] font-bold uppercase block">Base</span>
+</div>
+<div class="space-y-2">
+<div class="h-24 rounded-lg bg-primary-container"></div>
+<span class="text-[10px] font-bold uppercase block">Cont</span>
+</div>
+<div class="space-y-2">
+<div class="h-24 rounded-lg bg-primary-fixed-dim"></div>
+<span class="text-[10px] font-bold uppercase block">Dim</span>
+</div>
+<div class="space-y-2">
+<div class="h-24 rounded-lg bg-primary-fixed"></div>
+<span class="text-[10px] font-bold uppercase block">Light</span>
+</div>
+</div>
+</div>
+<!-- Neutral & Surface Tones -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant/10">
+<div class="flex justify-between items-start mb-10">
+<div>
+<h3 class="text-lg font-bold mb-1">Surface Geometry</h3>
+<p class="text-sm text-on-surface-variant">Tonal transitions over lines.</p>
+</div>
+<span class="text-xs font-mono bg-white px-2 py-1 rounded">#f8f9fa</span>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/5">
+<span class="text-xs font-bold uppercase tracking-wider">Lowest (White)</span>
+<span class="text-[10px] font-mono text-on-surface-variant">#FFFFFF</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+<span class="text-xs font-bold uppercase tracking-wider">Low</span>
+<span class="text-[10px] font-mono text-on-surface-variant">#F3F4F5</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container rounded-lg">
+<span class="text-xs font-bold uppercase tracking-wider">Default</span>
+<span class="text-[10px] font-mono text-on-surface-variant">#EDEEEF</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-high rounded-lg">
+<span class="text-xs font-bold uppercase tracking-wider">High</span>
+<span class="text-[10px] font-mono text-on-surface-variant">#E7E8E9</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Accent Color -->
+<div class="mt-12 flex flex-wrap gap-12">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-tertiary"></div>
+<div>
+<p class="text-sm font-bold uppercase tracking-widest">Tertiary Ochre</p>
+<p class="text-xs text-on-surface-variant">Visual focus &amp; hints</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-error"></div>
+<div>
+<p class="text-sm font-bold uppercase tracking-widest">Alert Crimson</p>
+<p class="text-xs text-on-surface-variant">Critical feedback</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Typography System -->
+<section class="mb-24">
+<div class="flex items-baseline justify-between mb-12">
+<h2 class="text-2xl font-bold tracking-tight text-on-surface">Typography System</h2>
+<span class="uppercase text-[10px] tracking-widest font-bold text-on-surface-variant">02 / Editorial Scale</span>
+</div>
+<div class="space-y-16">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+<div class="md:col-span-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Display Large</span>
+<p class="text-xs text-on-surface-variant mt-1">Bold / -0.02em tracking</p>
+</div>
+<div class="md:col-span-3">
+<h2 class="text-6xl font-extrabold tracking-tighter text-on-surface">Digital Curator.</h2>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+<div class="md:col-span-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Headline Medium</span>
+<p class="text-xs text-on-surface-variant mt-1">Semibold / Authority</p>
+</div>
+<div class="md:col-span-3">
+<h3 class="text-3xl font-semibold text-on-surface">The philosophy of silence and spacing in UI.</h3>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start border-t border-surface-container pt-8">
+<div class="md:col-span-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Body Medium</span>
+<p class="text-xs text-on-surface-variant mt-1">Regular / 1.6 Line height</p>
+</div>
+<div class="md:col-span-3">
+<p class="text-base text-on-surface-variant leading-relaxed max-w-2xl">
+                                Our design system employs intentional asymmetry, breaking the rigid 12-column grid to favor a typographic scale that values dramatic contrast and ample whitespace.
+                            </p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start border-t border-surface-container pt-8">
+<div class="md:col-span-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Metadata Label</span>
+<p class="text-xs text-on-surface-variant mt-1">Bold / +0.05em tracking</p>
+</div>
+<div class="md:col-span-3 flex gap-8">
+<span class="uppercase text-[11px] tracking-widest font-bold text-on-surface">Architecture</span>
+<span class="uppercase text-[11px] tracking-widest font-bold text-on-surface">Navigation</span>
+<span class="uppercase text-[11px] tracking-widest font-bold text-on-surface">Curated Content</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Component Globals & Controls -->
+<section class="mb-24">
+<div class="flex items-baseline justify-between mb-8">
+<h2 class="text-2xl font-bold tracking-tight text-on-surface">Component Globals</h2>
+<span class="uppercase text-[10px] tracking-widest font-bold text-on-surface-variant">03 / Parameters</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Corner Radius Control -->
+<div class="p-8 bg-surface-container-low rounded-xl flex flex-col justify-between h-full">
+<div>
+<h4 class="text-sm font-bold uppercase tracking-widest mb-6">Corner Radius</h4>
+<div class="w-full h-32 bg-surface-container-lowest rounded-xl border border-outline-variant/10 flex items-center justify-center mb-6">
+<div class="w-20 h-20 bg-primary-container rounded-xl shadow-sm"></div>
+</div>
+</div>
+<div class="space-y-4">
+<input class="w-full h-1 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-primary" max="24" min="0" type="range" value="12"/>
+<div class="flex justify-between text-[10px] font-bold uppercase text-on-surface-variant">
+<span>Sharp (0px)</span>
+<span>Default (12px)</span>
+<span>Soft (24px)</span>
+</div>
+</div>
+</div>
+<!-- Depth & Shadows -->
+<div class="p-8 bg-surface-container-low rounded-xl flex flex-col justify-between h-full">
+<div>
+<h4 class="text-sm font-bold uppercase tracking-widest mb-6">Atmospheric Depth</h4>
+<div class="w-full h-32 bg-surface-container-lowest rounded-xl border border-outline-variant/10 flex items-center justify-center mb-6 overflow-hidden">
+<div class="w-40 h-24 bg-white rounded-lg shadow-ambient"></div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex flex-col gap-3">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant">Shadow Diffusion</label>
+<input class="w-full h-1 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="48"/>
+</div>
+<div class="flex flex-col gap-3">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant">Surface Elevation</label>
+<div class="flex gap-2">
+<button class="flex-1 py-1 rounded bg-white text-[10px] font-bold border border-outline-variant/20 shadow-sm">Low</button>
+<button class="flex-1 py-1 rounded bg-surface-container text-[10px] font-bold border border-outline-variant/10">High</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Button Variants -->
+<div class="p-8 bg-surface-container-low rounded-xl flex flex-col justify-between h-full">
+<div>
+<h4 class="text-sm font-bold uppercase tracking-widest mb-6">Button Hierarchy</h4>
+<div class="space-y-4">
+<button class="w-full primary-gradient text-white py-3 rounded-lg text-xs font-bold uppercase tracking-widest shadow-sm">Primary Action</button>
+<button class="w-full bg-surface-container-highest text-on-surface py-3 rounded-lg text-xs font-bold uppercase tracking-widest">Secondary Style</button>
+<button class="w-full py-3 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors">Tertiary / Ghost</button>
+</div>
+</div>
+<div class="mt-8">
+<p class="text-[10px] leading-relaxed text-on-surface-variant italic">
+                                "Buttons follow the Jewel System: sapphire gradients for primary importance, neutral fills for secondary."
+                            </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Asymmetric Bento Display -->
+<section class="mb-24">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest p-10 rounded-xl shadow-ambient border border-outline-variant/10">
+<div class="flex justify-between items-start mb-12">
+<h3 class="text-3xl font-extrabold tracking-tight">Editorial Layout Sample</h3>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">grid_view</span>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-12">
+<div class="flex-1 space-y-6">
+<img alt="Sample Visual" class="w-full h-64 object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-700" data-alt="minimalist abstract 3D render with floating organic shapes in soft blue and white tones and clean studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCY6D-O4Pd4ajPIP3zzQrWHG3IJ6t9utb_cvtkxZEfs7MSZxyFu-LCLhbwqerBRh7cClNIatdzTcCOt6M7ebP71AAOpzRSEZ1P1ubZgvS_O85f1CYGiBGJE6lPoTA8vyJkwTfRgng8j1rQz0L6kIvOP4Uk7K3JqaKsWoQcYGilqJRbMK_R49HyBjTMWlQ_VEmOHjLDr295Xqrt48TbZGwZvxhWvAhM-tUciMetJ1_WNmdH-khqhh67xO-Aj7dBvdyPcqNnAifjsLRx"/>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                                    The "Digital Curator" philosophy places imagery and negative space at the forefront, ensuring the AI tool feels like an editorial canvas.
+                                </p>
+</div>
+<div class="w-full md:w-1/3 space-y-8">
+<div class="space-y-2">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Metadata</span>
+<h4 class="text-xl font-bold">The Intentional Asymmetry Rule</h4>
+</div>
+<div class="space-y-4">
+<div class="h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="w-3/4 h-full primary-gradient"></div>
+</div>
+<div class="flex justify-between text-[10px] font-bold uppercase">
+<span>Alignment</span>
+<span>75% Optimal</span>
+</div>
+</div>
+<button class="w-full border border-outline-variant/20 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-surface-container-low transition-all">Download Assets</button>
+</div>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-4 bg-primary p-10 rounded-xl text-white flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-4xl mb-6">diamond</span>
+<h3 class="text-2xl font-bold mb-4 tracking-tight">AI Interaction Pulse</h3>
+<p class="text-white/80 text-sm leading-relaxed">
+                                Avoid spinners. Use a slow-pulse opacity shift on sapphire containers to indicate active AI curation.
+                            </p>
+</div>
+<div class="w-full aspect-video bg-white/10 rounded-lg animate-pulse flex items-center justify-center mt-12">
+<span class="text-[10px] font-bold uppercase tracking-[0.3em]">Curation Active</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<div class="md:hidden fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl h-16 flex items-center justify-around border-t border-slate-200/20 z-50">
+<button class="flex flex-col items-center gap-1 text-blue-700">
+<span class="material-symbols-outlined">layers</span>
+<span class="text-[9px] font-bold uppercase">Layers</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">palette</span>
+<span class="text-[9px] font-bold uppercase">Styles</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[9px] font-bold uppercase">Settings</span>
+</button>
+</div>
+</body></html>

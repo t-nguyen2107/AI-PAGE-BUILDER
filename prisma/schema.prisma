@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ===========================================
+// CORE ENTITIES
+// ===========================================
+
+model Project {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  thumbnailUrl String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pages          Page[]
+  styleguide     Styleguide?
+  globalSections GlobalSection[]
+
+  @@map("projects")
+}
+
+model Page {
+  id             String   @id @default(cuid())
+  projectId      String
+  title          String
+  slug           String
+  order          Int      @default(0)
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?
+  isHomePage     Boolean  @default(false)
+  treeData       String   // JSON string — serialized PageNode tree
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisions Revision[]
+
+  @@unique([projectId, slug])
+  @@map("pages")
+}
+
+model Styleguide {
+  id        String @id @default(cuid())
+  projectId String @unique
+  name      String @default("Default Styleguide")
+
+  colors             String @default("{}") // JSON — ColorPalette
+  typography         String @default("{}") // JSON — TypographySystem
+  spacing            String @default("{}") // JSON — SpacingScale
+  componentVariants  String @default("[]") // JSON — ComponentVariant[]
+  cssVariables       String @default("{}") // JSON — Record<string, string>
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("styleguides")
+}
+
+model GlobalSection {
+  id          String @id @default(cuid())
+  projectId   String
+  sectionType String // "header", "footer", "nav", "custom"
+  sectionName String
+  treeData    String // JSON — SectionNode
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sectionType])
+  @@map("global_sections")
+}
+
+model Revision {
+  id       String @id @default(cuid())
+  pageId   String
+  snapshot String  // JSON — PageNode tree snapshot
+  label    String?
+  diff     String? // JSON — optional JsonPatch[]
+
+  createdAt DateTime @default(now())
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, createdAt])
+  @@map("revisions")
+}
+
+model UserLibrary {
+  id           String  @id @default(cuid())
+  name         String
+  description  String?
+  category     String
+  thumbnailUrl String?
+  nodeData     String  // JSON — DOMNode subtree
+  tags         String  // Comma-separated tags
+  embedding    Bytes?
+  isPublic     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublic])
+  @@map("user_library")
+}
+
+// ===========================================
+// AI INTERACTION LOG
+// ===========================================
+
+model AIPromptLog {
+  id           String  @id @default(cuid())
+  projectId    String?
+  pageId       String?
+  prompt       String
+  action       String
+  response     String  // JSON — generated nodes
+  success      Boolean
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@map("ai_prompt_logs")
+}
+
+// ===========================================
+// AI SESSION MEMORY
+// ===========================================
+
+model AISession {
+  id         String   @id @default(cuid())
+  projectId  String
+  pageId     String
+  miniContext String  @default("") // Running summary of user actions
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages AISessionMessage[]
+
+  @@unique([projectId, pageId])
+  @@map("ai_sessions")
+}
+
+model AISessionMessage {
+  id         String   @id @default(cuid())
+  sessionId  String
+  role       String   // 'user' | 'assistant'
+  content    String
+  action     String?  // AIAction performed (e.g. "insert_section")
+  createdAt  DateTime @default(now())
+
+  session AISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_session_messages")
+}
