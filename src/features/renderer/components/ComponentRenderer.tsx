@@ -32,7 +32,7 @@ const ComponentRendererInner: React.FC<ComponentRendererProps> = ({ node }) => {
   const style = mergeStyles(layoutStyle, inlineStyle);
 
   return (
-    <NodeWrapper nodeId={node.id} nodeType={NodeType.COMPONENT}>
+    <NodeWrapper nodeId={node.id} nodeType={NodeType.COMPONENT} node={node}>
       {renderElement(
         tag,
         {

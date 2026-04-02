@@ -7,6 +7,7 @@ export interface AIConfig {
   apiKey?: string;
   temperature: number;
   maxRetries: number;
+  maxTokens: number;
 }
 
 export function resolveConfig(): AIConfig {
@@ -29,5 +30,6 @@ export function resolveConfig(): AIConfig {
     apiKey: process.env.AI_API_KEY,
     temperature: parseFloat(process.env.AI_TEMPERATURE ?? '0.7'),
     maxRetries: parseInt(process.env.AI_MAX_RETRIES ?? '2', 10),
+    maxTokens: parseInt(process.env.AI_MAX_TOKENS ?? '16384', 10),
   };
 }

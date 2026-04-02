@@ -72,9 +72,9 @@ function TreeNode({
       <div
         className={`
           flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all
-          ${isSelected ? 'bg-white text-blue-700 shadow-sm border-l-2 border-blue-700' : ''}
-          ${isHovered && !isSelected ? 'bg-white/60 text-slate-900' : ''}
-          ${!isSelected && !isHovered ? 'text-slate-500 hover:text-slate-900' : ''}
+          ${isSelected ? 'bg-surface-lowest text-primary-container shadow-sm border-l-2 border-primary-container' : ''}
+          ${isHovered && !isSelected ? 'bg-surface-lowest/60 text-on-surface' : ''}
+          ${!isSelected && !isHovered ? 'text-on-surface-variant hover:text-on-surface' : ''}
         `}
         style={{ marginLeft: `${depth * 16}px` }}
         onClick={handleClick}
@@ -200,8 +200,8 @@ function PagesTab({ projectId }: { projectId: string }) {
           className={`
             w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-left
             ${page.id === currentPageId
-              ? 'bg-white text-blue-700 shadow-sm translate-x-1'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+              ? 'bg-surface-lowest text-primary-container shadow-sm translate-x-1'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-lowest/60'
             }
           `}
         >
@@ -278,7 +278,7 @@ function LibraryTab() {
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-white/60 rounded-lg transition-all cursor-pointer"
+          className="flex items-center gap-2 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-lowest/60 rounded-lg transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-sm">extension</span>
           <div className="flex-1 min-w-0">
@@ -290,7 +290,7 @@ function LibraryTab() {
           <button
             onClick={() => handleInsert(item.id)}
             disabled={!tree}
-            className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-30"
+            className="p-1 rounded-lg text-on-surface-outline hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-30"
             title="Insert into page"
           >
             <span className="material-symbols-outlined text-sm">add</span>
@@ -394,10 +394,10 @@ export function Sidebar({ projectId }: { projectId: string }) {
 
   if (!leftPanelOpen) {
     return (
-      <aside className="fixed left-0 top-16 h-[calc(100vh-64px)] w-16 border-r border-slate-200/20 bg-slate-50/50 backdrop-blur-lg flex flex-col items-center pt-4 gap-2">
+      <aside className="fixed left-0 top-16 h-[calc(100vh-64px)] w-16 border-r border-outline-variant/20 bg-surface-low/50 backdrop-blur-lg flex flex-col items-center pt-4 gap-2">
         <button
           onClick={toggleLeftPanel}
-          className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-white transition-colors"
+          className="p-2 rounded-lg text-on-surface-outline hover:text-on-surface hover:bg-surface-lowest transition-colors"
           title="Open Sidebar"
         >
           <span className="material-symbols-outlined">menu</span>
@@ -407,21 +407,21 @@ export function Sidebar({ projectId }: { projectId: string }) {
   }
 
   return (
-    <aside className="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-slate-50/50 backdrop-blur-lg border-r border-slate-200/20 flex flex-col p-4 space-y-6 z-40">
+    <aside className="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-surface-low/50 backdrop-blur-lg border-r border-outline-variant/20 flex flex-col p-4 space-y-6 z-40">
       {/* Project info header */}
       <div className="flex items-center gap-3 px-2">
         <div className="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-900">{projectName || 'Untitled'}</p>
-          <p className="uppercase text-[10px] tracking-widest font-bold text-slate-500">Main Canvas</p>
+          <p className="text-sm font-bold text-on-surface">{projectName || 'Untitled'}</p>
+          <p className="uppercase text-[10px] tracking-widest font-bold text-on-surface-variant">Main Canvas</p>
         </div>
       </div>
 
       {/* Navigation */}
       <div className="space-y-1">
-        <p className="uppercase text-[10px] tracking-widest font-bold text-slate-400 mb-2 px-2">Navigator</p>
+        <p className="uppercase text-[10px] tracking-widest font-bold text-on-surface-outline mb-2 px-2">Navigator</p>
         {[
           { id: 'layers', icon: 'layers', label: 'Layers' },
           { id: 'pages', icon: 'description', label: 'Pages' },
@@ -434,8 +434,8 @@ export function Sidebar({ projectId }: { projectId: string }) {
             className={`
               w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
               ${activeTab === item.id
-                ? 'bg-white text-blue-700 shadow-sm translate-x-1'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                ? 'bg-surface-lowest text-primary-container shadow-sm translate-x-1'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-lowest/60'
               }
             `}
           >
@@ -454,7 +454,7 @@ export function Sidebar({ projectId }: { projectId: string }) {
       </div>
 
       {/* Bottom actions */}
-      <div className="pt-4 mt-auto space-y-3 border-t border-slate-200/20">
+      <div className="pt-4 mt-auto space-y-3 border-t border-outline-variant/20">
         <button
           onClick={handleAddSection}
           className="w-full btn-primary-gradient text-white rounded-lg py-2.5 text-[10px] font-bold uppercase tracking-widest"
@@ -464,14 +464,14 @@ export function Sidebar({ projectId }: { projectId: string }) {
         <div className="flex justify-between px-2">
           <button
             onClick={() => useToastStore.getState().addToast('Shortcuts: Ctrl+Z Undo, Ctrl+Y Redo, Ctrl+S Save. Use the AI bar to generate sections!', 'info')}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-on-surface-outline hover:text-on-surface transition-colors"
           >
             <span className="material-symbols-outlined text-sm">help</span>
             <span className="text-[10px] uppercase tracking-widest font-bold">Help</span>
           </button>
           <button
             onClick={toggleLeftPanel}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-on-surface-outline hover:text-on-surface transition-colors"
           >
             <span className="material-symbols-outlined text-sm">sidebar</span>
             <span className="text-[10px] uppercase tracking-widest font-bold">Close</span>

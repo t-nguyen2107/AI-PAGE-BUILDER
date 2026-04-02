@@ -3,6 +3,8 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { DisplayType, FlexDirection, TextAlign, NodeType } from '@/types';
+import { getNodeTypeLabel } from '@/lib/node-utils';
+export { getNodeTypeLabel };
 
 // ============================================================
 // Debounce hook
@@ -109,18 +111,6 @@ export const FONT_FAMILY_OPTIONS = [
 // ============================================================
 // Helper functions
 // ============================================================
-
-export function getNodeTypeLabel(type: NodeType): string {
-  switch (type) {
-    case NodeType.PAGE: return 'Page';
-    case NodeType.SECTION: return 'Section';
-    case NodeType.CONTAINER: return 'Container';
-    case NodeType.COMPONENT: return 'Component';
-    case NodeType.ELEMENT: return 'Element';
-    case NodeType.ITEM: return 'Item';
-    default: return 'Node';
-  }
-}
 
 // ============================================================
 // Layout field helper component

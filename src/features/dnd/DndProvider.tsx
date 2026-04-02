@@ -11,7 +11,6 @@ import {
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
-  type UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -19,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useBuilderStore } from '@/store';
 import type { PageNode, DOMNode } from '@/types';
+
 import { NodeType } from '@/types';
 import { flattenTreeForDnD, getDescendantIds } from './dnd-utils';
 
@@ -88,13 +88,13 @@ function DragPreview({ node }: { node: DOMNode }) {
     <div
       style={{
         padding: '6px 10px',
-        backgroundColor: 'rgba(255,255,255,0.95)',
-        border: '1.5px solid #3b82f6',
+        backgroundColor: 'color-mix(in srgb, var(--surface-lowest) 95%, transparent)',
+        border: '1.5px solid var(--primary-container)',
         borderRadius: '8px',
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
         fontSize: '11px',
         fontFamily: 'ui-monospace, monospace',
-        color: '#1e3a5f',
+        color: 'var(--on-surface)',
         maxWidth: '240px',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
@@ -252,7 +252,10 @@ const DndProviderInner: React.FC<DndProviderProps> = ({ children, tree }) => {
         {children}
       </SortableContext>
 
-      <DragOverlay adjustScale={false} dropAnimation={null}>
+      <DragOverlay adjustScale={false} dropAnimation={{
+        duration: 200,
+        easing: 'ease',
+      }}>
         {activeNode ? <DragPreview node={activeNode} /> : null}
       </DragOverlay>
     </DndContext>

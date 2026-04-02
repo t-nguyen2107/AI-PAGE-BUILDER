@@ -113,7 +113,7 @@ export const aiResponseJsonSchema = {
         href: { type: 'string', description: 'Link URL' },
         category: {
           type: 'string',
-          enum: ['hero', 'pricing', 'features', 'testimonial', 'cta', 'faq', 'gallery', 'contact', 'header-nav', 'footer', 'custom'],
+          enum: ['hero', 'pricing', 'features', 'testimonial', 'cta', 'faq', 'gallery', 'contact', 'header-nav', 'footer', 'stats', 'team', 'logo-grid', 'blog', 'custom'],
         },
         children: {
           type: 'array',

@@ -30,8 +30,11 @@ const ContainerRendererInner: React.FC<ContainerRendererProps> = ({ node }) => {
   const inlineStyle = inlineStylesToCSS(node.inlineStyles);
   const style = mergeStyles(layoutStyle, inlineStyle);
 
+  const children = (node.children ?? []) as ComponentNode[];
+  const hasChildren = children.length > 0;
+
   return (
-    <NodeWrapper nodeId={node.id} nodeType={NodeType.CONTAINER}>
+    <NodeWrapper nodeId={node.id} nodeType={NodeType.CONTAINER} node={node}>
       {renderElement(
         tag,
         {
@@ -39,9 +42,14 @@ const ContainerRendererInner: React.FC<ContainerRendererProps> = ({ node }) => {
           style: Object.keys(style).length > 0 ? style : undefined,
           ...node.attributes,
         },
-        (node.children ?? []).map((child: ComponentNode) => (
-          <ComponentRenderer key={child.id} node={child} />
-        ))
+        hasChildren
+          ? children.map((child: ComponentNode) => (
+              <ComponentRenderer key={child.id} node={child} />
+            ))
+          : [<span key="empty" className="empty-node-placeholder">
+              <span className="material-symbols-outlined text-on-surface-outline mr-1" style={{ fontSize: 14 }}>dashboards</span>
+              Empty Container
+            </span>]
       )}
     </NodeWrapper>
   );

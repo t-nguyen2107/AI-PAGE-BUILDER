@@ -23,12 +23,14 @@ export interface NodeMeta {
 
 export interface BaseNode {
   id: string;
+  name?: string;
   type: NodeType;
   tag: SemanticTag;
   className?: string;
   inlineStyles?: Record<string, string>;
   attributes?: Record<string, string>;
   meta?: NodeMeta;
+  effects?: EffectsProperties;
 }
 
 // ===========================================
@@ -83,6 +85,19 @@ export interface BackgroundProperties {
   size?: 'cover' | 'contain' | 'auto';
   position?: string;
   repeat?: 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y';
+}
+
+export interface EffectsProperties {
+  borderWidth?: string;
+  borderColor?: string;
+  borderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+  borderRadius?: string;
+  boxShadow?: string;
+  opacity?: string;
+  transform?: string;
+  transformOrigin?: string;
+  transition?: string;
+  filter?: string;
 }
 
 // ===========================================

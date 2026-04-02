@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 
 interface Project {
@@ -18,10 +18,32 @@ export default function Home() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const createInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (creating && createInputRef.current) {
+      createInputRef.current.focus();
+    }
+  }, [creating]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuProjectId(null);
+      }
+    }
+    if (menuProjectId) {
+      document.addEventListener('mousedown', handleClick);
+      return () => document.removeEventListener('mousedown', handleClick);
+    }
+  }, [menuProjectId]);
 
   async function fetchProjects() {
     try {
@@ -49,16 +71,16 @@ export default function Home() {
       const data = await res.json();
       if (data.success && data.data) {
         setNewName('');
+        setCreating(false);
         setProjects((prev) => [data.data, ...prev]);
       }
     } catch {
       console.error('Failed to create project');
-    } finally {
-      setCreating(false);
     }
   }
 
   async function handleDeleteProject(projectId: string) {
+    setDeletingId(projectId);
     try {
       const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
       const data = await res.json();
@@ -68,246 +90,255 @@ export default function Home() {
     } catch {
       console.error('Failed to delete project');
     } finally {
+      setDeletingId(null);
       setMenuProjectId(null);
     }
   }
 
+  function openCreateModal() {
+    setNewName('');
+    setCreating(true);
+  }
+
+  const gradientPatterns = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+    'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+    'linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)',
+  ];
+
   return (
-    <div
-      className="min-h-screen bg-surface text-on-surface"
-      onClick={() => setMenuProjectId(null)}
-    >
-      {/* TopNavBar — glass effect */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl flex justify-between items-center h-16 px-8 border-b border-slate-100/50">
-        <div className="flex items-center gap-8">
-          <span className="text-lg font-bold tracking-tighter text-slate-900">CuratorAI</span>
-          <div className="hidden md:flex gap-6 items-center">
-            <a className="text-blue-700 font-semibold border-b-2 border-blue-700 pb-1 text-sm tracking-tight cursor-pointer">Pages</a>
-            <a className="text-slate-500 hover:text-slate-900 transition-colors duration-200 text-sm tracking-tight cursor-pointer">History</a>
-            <a className="text-slate-500 hover:text-slate-900 transition-colors duration-200 text-sm tracking-tight cursor-pointer">Components</a>
+    <div className="min-h-screen bg-surface text-on-surface">
+      {/* Top Nav */}
+      <nav className="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50">
+        <div className="max-w-7xl mx-auto flex justify-between items-center h-16 px-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary to-primary/70 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span className="text-lg font-bold tracking-tight text-on-surface">PageBuilder</span>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
-            <input
-              className="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-1.5 text-sm focus:ring-1 focus:ring-primary w-64 transition-all"
-              placeholder="Search projects..."
-              type="text"
-            />
-          </div>
-          <div className="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden flex items-center justify-center border border-outline-variant/20">
-            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">account_circle</span>
-          </div>
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New Project
+          </button>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="pt-16 min-h-screen">
-        {/* Hero Section */}
-        <section className="relative h-[400px] overflow-hidden m-6 rounded-3xl">
-          <div className="absolute inset-0 bg-slate-900/40 z-10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10" />
-          <div
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              background: 'linear-gradient(135deg, #0058be 0%, #2170e4 30%, #5b93e0 60%, #f8f9fa 100%)',
-            }}
-          />
-          <div className="relative z-20 h-full flex flex-col justify-end p-12 max-w-4xl">
-            <span className="uppercase text-[10px] tracking-[0.2em] text-white/70 font-bold mb-4">Workspace Overview</span>
-            <h1 className="text-6xl font-extrabold text-white tracking-tighter mb-6 leading-tight">Your Digital Workshop</h1>
-            <p className="text-lg text-white/80 max-w-xl leading-relaxed mb-8">
-              An editorial canvas where your vision meets artificial intelligence. Curate, build, and publish with sophisticated precision.
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-on-surface tracking-tight">Your Projects</h1>
+          <p className="text-on-surface-variant text-sm mt-1">
+            {loading ? 'Loading...' : `${projects.length} project${projects.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-16/10 rounded-xl bg-surface-container-low mb-3" />
+                <div className="h-4 w-2/3 rounded bg-surface-container-low mb-2" />
+                <div className="h-3 w-1/3 rounded bg-surface-container-low" />
+              </div>
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-surface-container-low flex items-center justify-center mb-6">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-on-surface-variant">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-on-surface mb-2">No projects yet</h2>
+            <p className="text-on-surface-variant text-sm mb-8 max-w-sm">
+              Create your first project and let AI help you build a stunning website.
             </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => newName.trim() && handleCreateProject()}
-                className="btn-primary-gradient text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
-              >
-                <span className="material-symbols-outlined">auto_awesome</span>
-                New AI Project
-              </button>
-              <button
-                onClick={() => setCreating(true)}
-                className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-all"
-              >
-                View Templates
-              </button>
-            </div>
+            <button
+              onClick={openCreateModal}
+              className="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Create First Project
+            </button>
           </div>
-        </section>
-
-        {/* Content Grid */}
-        <section className="px-10 pb-20">
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <h2 className="text-3xl font-bold text-on-surface tracking-tight mb-2">Recent Projects</h2>
-              <p className="text-on-surface-variant font-medium">Continue where you left off in your creative journey.</p>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center gap-2 text-on-surface-variant">
-              <div className="h-5 w-5 animate-ai-pulse rounded-full bg-primary/20" />
-              Loading...
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/builder/${project.id}`}
-                  className="group cursor-pointer"
-                >
-                  <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-surface-container-low mb-4 relative">
-                    {/* Placeholder thumbnail */}
-                    <div className="w-full h-full bg-gradient-to-br from-surface-container to-surface-container-high flex items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl text-on-surface-outline/30">dashboard</span>
-                    </div>
-                    <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-primary">
-                      Active
-                    </div>
-                  </div>
-                  <div className="px-2 relative">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-bold text-lg text-on-surface">{project.name}</h3>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setMenuProjectId(menuProjectId === project.id ? null : project.id);
-                        }}
-                        className="text-on-surface-variant hover:text-primary transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                      </button>
-                      {menuProjectId === project.id && (
-                        <div className="absolute right-2 top-10 bg-white rounded-lg shadow-xl border border-slate-100 py-1 z-20 min-w-32">
-                          <Link
-                            href={`/builder/${project.id}`}
-                            className="flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-sm">edit</span>
-                            Edit
-                          </Link>
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProject(project.id); }}
-                            className="flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors w-full"
-                          >
-                            <span className="material-symbols-outlined text-sm">delete</span>
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 text-xs font-medium text-on-surface-variant">
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">calendar_today</span>
-                        Edited {new Date(project.updatedAt).toLocaleDateString()}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">layers</span>
-                        {project.pages?.length ?? 0} page{(project.pages?.length ?? 0) !== 1 ? 's' : ''}
+        ) : (
+          /* Project Grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {projects.map((project, index) => (
+              <Link
+                key={project.id}
+                href={`/builder/${project.id}`}
+                className="group block"
+              >
+                {/* Thumbnail */}
+                <div className="aspect-16/10 rounded-xl overflow-hidden mb-3 relative">
+                  {project.thumbnailUrl ? (
+                    <img
+                      src={project.thumbnailUrl}
+                      alt={project.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
+                      style={{ background: gradientPatterns[index % gradientPatterns.length] }}
+                    >
+                      <span className="text-white/90 text-3xl font-bold tracking-tight">
+                        {project.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
+                  )}
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+                </div>
+
+                {/* Info */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm text-on-surface truncate group-hover:text-primary transition-colors">
+                      {project.name}
+                    </h3>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-on-surface-variant">
+                      <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+                      <span className="w-1 h-1 rounded-full bg-on-surface-outline/40" />
+                      <span>{project.pages?.length ?? 0} page{(project.pages?.length ?? 0) !== 1 ? 's' : ''}</span>
+                    </div>
                   </div>
-                </Link>
-              ))}
 
-              {/* Empty State / New Project Card */}
-              <button
-                onClick={() => {
-                  const input = document.getElementById('new-project-input');
-                  input?.focus();
-                }}
-                className="group cursor-pointer border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center aspect-[16/10] hover:border-primary transition-all bg-surface-container-lowest/50 hover:bg-white"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-3xl">add_circle</span>
+                  {/* Menu Button */}
+                  <div ref={menuProjectId === project.id ? menuRef : null} className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuProjectId(menuProjectId === project.id ? null : project.id);
+                      }}
+                      className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2" />
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="12" cy="19" r="2" />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {menuProjectId === project.id && (
+                      <div className="absolute right-0 top-9 bg-surface-lowest rounded-xl shadow-xl border border-outline-variant/60 py-1.5 z-50 min-w-40">
+                        <Link
+                          href={`/builder/${project.id}`}
+                          className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                          Edit in Builder
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (confirm(`Delete "${project.name}"? This cannot be undone.`)) {
+                              handleDeleteProject(project.id);
+                            }
+                          }}
+                          disabled={deletingId === project.id}
+                          className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-error hover:bg-error/10 transition-colors w-full disabled:opacity-50"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3,6 5,6 21,6" />
+                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                          </svg>
+                          {deletingId === project.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant group-hover:text-primary">Start New Project</p>
-                <p className="text-xs text-on-surface-variant mt-2">Begin with AI assistance</p>
-              </button>
-            </div>
-          )}
+              </Link>
+            ))}
 
-          {/* Stats Section */}
-          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between h-64">
-              <span className="material-symbols-outlined text-primary text-4xl">analytics</span>
-              <div>
-                <h4 className="text-4xl font-bold tracking-tighter text-on-surface">{projects.length}</h4>
-                <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mt-2">Total Projects</p>
+            {/* Add New Card */}
+            <button
+              onClick={openCreateModal}
+              className="group block"
+            >
+              <div className="aspect-16/10 rounded-xl border-2 border-dashed border-outline-variant/60 flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all">
+                <div className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-on-surface-variant group-hover:text-primary transition-colors">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </div>
+                <span className="text-xs font-medium text-on-surface-variant group-hover:text-primary transition-colors">New Project</span>
               </div>
-            </div>
-            <div className="bg-surface-container-low p-8 rounded-3xl flex flex-col justify-between h-64">
-              <span className="material-symbols-outlined text-tertiary text-4xl">bolt</span>
-              <div>
-                <h4 className="text-4xl font-bold tracking-tighter text-on-surface">AI</h4>
-                <p className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mt-2">Powered Generation</p>
-              </div>
-            </div>
-            <div className="relative rounded-3xl overflow-hidden h-64 btn-primary-gradient">
-              <div className="p-8 flex flex-col justify-end h-full text-white">
-                <span className="material-symbols-outlined text-4xl mb-4">smart_toy</span>
-                <p className="text-lg font-bold leading-tight">Let AI build your website from a simple prompt.</p>
-                <button
-                  onClick={() => setCreating(true)}
-                  className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-white underline underline-offset-4 hover:opacity-80 transition-opacity"
-                >
-                  Try AI Builder
-                </button>
-              </div>
-            </div>
+            </button>
           </div>
-
-          {/* Inline Create — hidden input for "Start New Project" focus target */}
-          {creating && (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
-                <h3 className="text-xl font-bold text-on-surface mb-4">Create New Project</h3>
-                <input
-                  id="new-project-input"
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
-                  placeholder="Project name..."
-                  className="w-full h-12 rounded-xl bg-surface-low px-4 text-sm text-on-surface placeholder:text-on-surface-outline focus:outline-none focus:ring-2 focus:ring-primary/20 border border-outline-variant transition-all"
-                  autoFocus
-                />
-                <div className="flex gap-3 mt-4 justify-end">
-                  <button
-                    onClick={() => setCreating(false)}
-                    className="px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateProject}
-                    disabled={!newName.trim()}
-                    className="btn-primary-gradient text-white px-6 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 transition-all"
-                  >
-                    Create
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
+        )}
       </main>
 
-      {/* FAB — AI Assistant */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <button
-          onClick={() => setCreating(true)}
-          className="btn-primary-gradient text-white w-16 h-16 rounded-2xl shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+      {/* Create Project Modal */}
+      {creating && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setCreating(false)}
         >
-          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
-        </button>
-      </div>
+          <div
+            className="bg-surface-lowest rounded-2xl shadow-2xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-on-surface mb-1">New Project</h3>
+              <p className="text-sm text-on-surface-variant mb-5">Give your project a name to get started.</p>
+              <input
+                ref={createInputRef}
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+                placeholder="e.g. My Portfolio, Landing Page..."
+                className="w-full h-11 rounded-lg bg-surface px-4 text-sm text-on-surface placeholder:text-on-surface-outline focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant transition-all"
+              />
+            </div>
+            <div className="flex gap-3 px-6 pb-6 justify-end">
+              <button
+                onClick={() => setCreating(false)}
+                className="px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateProject}
+                disabled={!newName.trim()}
+                className="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

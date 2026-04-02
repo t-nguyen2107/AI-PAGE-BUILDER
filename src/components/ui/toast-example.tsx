@@ -17,7 +17,7 @@ export function ToastExample() {
 
       <Button
         size="sm"
-        variant="primary"
+        variant="default"
         onClick={() => addToast('Project saved successfully!', 'success')}
       >
         Success Toast
@@ -25,7 +25,7 @@ export function ToastExample() {
 
       <Button
         size="sm"
-        variant="danger"
+        variant="destructive"
         onClick={() => addToast('Failed to save project. Please try again.', 'error')}
       >
         Error Toast

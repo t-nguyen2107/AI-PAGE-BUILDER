@@ -6,15 +6,15 @@ import { useToastStore } from '@/store/toast-store';
 const typeConfig = {
   success: {
     icon: 'check_circle',
-    color: '#4ade80',
+    color: 'var(--success)',
   },
   error: {
     icon: 'error',
-    color: '#f87171',
+    color: 'var(--error)',
   },
   info: {
     icon: 'info',
-    color: '#89acff',
+    color: 'var(--primary-container)',
   },
 };
 

@@ -32,8 +32,11 @@ const SectionRendererInner: React.FC<SectionRendererProps> = ({ node }) => {
   const inlineStyle = inlineStylesToCSS(node.inlineStyles);
   const style = mergeStyles(layoutStyle, bgStyle, inlineStyle);
 
+  const children = (node.children ?? []) as ContainerNode[];
+  const hasChildren = children.length > 0;
+
   return (
-    <NodeWrapper nodeId={node.id} nodeType={NodeType.SECTION}>
+    <NodeWrapper nodeId={node.id} nodeType={NodeType.SECTION} node={node}>
       {renderElement(
         tag,
         {
@@ -42,9 +45,14 @@ const SectionRendererInner: React.FC<SectionRendererProps> = ({ node }) => {
           'data-section-name': node.meta?.sectionName,
           ...node.attributes,
         },
-        (node.children ?? []).map((child: ContainerNode) => (
-          <ContainerRenderer key={child.id} node={child} />
-        ))
+        hasChildren
+          ? children.map((child: ContainerNode) => (
+              <ContainerRenderer key={child.id} node={child} />
+            ))
+          : [<div key="empty" className="empty-node-placeholder section-empty">
+              <span className="material-symbols-outlined text-on-surface-outline mr-1" style={{ fontSize: 14 }}>add_box</span>
+              Empty Section — drop or add components
+            </div>]
       )}
     </NodeWrapper>
   );

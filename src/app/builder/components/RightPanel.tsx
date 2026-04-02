@@ -13,13 +13,14 @@ export function RightPanel({ projectId }: { projectId: string }) {
   const rightPanelTab = useBuilderStore((s) => s.rightPanelTab);
   const setRightPanelTab = useBuilderStore((s) => s.setRightPanelTab);
   const toggleRightPanel = useBuilderStore((s) => s.toggleRightPanel);
+  const isDirty = useBuilderStore((s) => s.isDirty);
 
   if (!rightPanelOpen) {
     return (
-      <aside className="w-12 bg-white border-l border-outline-variant/20 flex flex-col items-center pt-4 gap-2 shrink-0">
+      <aside className="w-12 bg-surface-lowest border-l border-outline-variant/20 flex flex-col items-center pt-4 gap-2 shrink-0">
         <button
           onClick={toggleRightPanel}
-          className="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+          className="p-2 rounded-lg text-on-surface-outline hover:text-on-surface hover:bg-surface-container transition-colors"
           title="Open inspector"
         >
           <span className="material-symbols-outlined text-[18px]">tune</span>
@@ -29,7 +30,7 @@ export function RightPanel({ projectId }: { projectId: string }) {
   }
 
   return (
-    <aside className="fixed right-0 top-16 h-[calc(100vh-64px)] w-80 bg-white border-l border-outline-variant/20 flex flex-col z-40">
+    <aside className="fixed right-0 top-16 h-[calc(100vh-64px)] w-80 bg-surface-lowest border-l border-outline-variant/20 flex flex-col z-40">
       {/* Tabs */}
       <div className="flex border-b border-outline-variant/20 shrink-0">
         {[
@@ -52,7 +53,7 @@ export function RightPanel({ projectId }: { projectId: string }) {
         ))}
         <button
           onClick={toggleRightPanel}
-          className="px-3 text-slate-400 hover:text-slate-900 transition-colors"
+          className="px-3 text-on-surface-outline hover:text-on-surface transition-colors"
           title="Close panel"
         >
           <span className="material-symbols-outlined text-[16px]">close</span>
@@ -71,8 +72,8 @@ export function RightPanel({ projectId }: { projectId: string }) {
       {/* Footer meta */}
       <div className="p-4 bg-surface-container-low flex justify-between items-center text-[10px] font-bold text-on-surface-variant border-t border-outline-variant/20 shrink-0">
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>Auto-Save</span>
+          <span className={`w-2 h-2 rounded-full ${isDirty ? 'bg-warning' : 'bg-success'}`} />
+          <span>{isDirty ? 'Unsaved changes' : 'Saved'}</span>
         </div>
         <span>v0.1.0</span>
       </div>

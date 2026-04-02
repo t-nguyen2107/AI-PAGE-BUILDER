@@ -119,23 +119,20 @@ export function InspectorPanel() {
 
   if (!rightPanelOpen) {
     return (
-      <div className="w-10 bg-surface-lowest flex flex-col items-center pt-2">
+      <div className="w-10 bg-surface-lowest flex flex-col items-center pt-2 panel-transition">
         <button
           onClick={toggleRightPanel}
           className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
           title="Open Inspector"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M2 2h12v12H2z" />
-            <path d="M10 2v12" />
-          </svg>
+          <span className="material-symbols-outlined text-[16px]">right_panel_open</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="w-72 bg-surface-lowest flex flex-col h-full overflow-hidden">
+    <div className="w-72 bg-surface-lowest flex flex-col h-full overflow-hidden panel-transition">
       {/* Header */}
       <div className="flex items-center justify-between px-3 h-10 shrink-0">
         <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
@@ -146,9 +143,7 @@ export function InspectorPanel() {
           className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
           title="Close Inspector"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M1 1l12 12M13 1L1 13" />
-          </svg>
+          <span className="material-symbols-outlined text-[14px]">close</span>
         </button>
       </div>
 
@@ -157,9 +152,7 @@ export function InspectorPanel() {
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
             <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center mx-auto mb-3">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-outline">
-                <path d="M3 3h6v6H3zM11 3h6v6h-6zM3 11h6v6H3zM11 11h6v6h-6z" />
-              </svg>
+              <span className="material-symbols-outlined text-on-surface-outline text-[20px]">grid_view</span>
             </div>
             <p className="text-xs text-on-surface-variant">
               Select an element to inspect its properties

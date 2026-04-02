@@ -24,7 +24,7 @@ export function Tabs({ tabs, activeTab, onTabChange, className = '' }: TabsProps
             px-3 py-1.5 text-xs font-medium transition-colors rounded-lg
             ${
               activeTab === tab.id
-                ? 'text-primary bg-primary/8'
+                ? 'text-primary-container bg-primary-container/10 border-b-2 border-primary-container'
                 : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
             }
           `}

@@ -1,11 +1,33 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useBuilderStore } from '@/store';
 import type { ChatMessage } from '@/store/builder-store';
 import { apiClient } from '@/lib/api-client';
-import type { AIGenerationResponse, DOMNode } from '@/types';
+import type { AIGenerationResponse, AIDiff, DOMNode } from '@/types';
 import { NodeType, SemanticTag } from '@/types/enums';
+
+// ============================================================
+// Collect named nodes from tree for @ autocomplete
+// ============================================================
+interface NamedNodeRef {
+  name: string;
+  tag: string;
+}
+
+function collectNamedNodes(node: unknown, results: NamedNodeRef[] = []): NamedNodeRef[] {
+  if (!node || typeof node !== 'object') return results;
+  const n = node as Record<string, unknown>;
+  if (typeof n.name === 'string' && n.name && typeof n.id === 'string') {
+    results.push({ name: n.name, tag: String(n.tag ?? '') });
+  }
+  if (Array.isArray(n.children)) {
+    for (const child of n.children) {
+      collectNamedNodes(child, results);
+    }
+  }
+  return results;
+}
 
 // ============================================================
 // Quick action slash commands — Stitch style
@@ -17,19 +39,20 @@ const SLASH_COMMANDS = [
 ];
 
 // ============================================================
-// ThinkingStep — animated step indicator for AI processing
+// ThinkingDots — animated bouncing dots for AI processing
 // ============================================================
-function ThinkingStep({ label, delay }: { label: string; delay: number }) {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), delay);
-    return () => clearTimeout(t);
-  }, [delay]);
-  if (!visible) return null;
+function ThinkingDots() {
   return (
-    <div className="flex items-center gap-2 animate-[fadeIn_0.3s_ease-in]">
-      <span className="w-1 h-1 rounded-full bg-on-surface-variant/40" />
-      <span className="text-[11px] text-on-surface-outline">{label}</span>
+    <div className="flex items-center gap-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-primary"
+          style={{
+            animation: `thinkingBounce 1.4s ease-in-out ${i * 0.16}s infinite`,
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -44,15 +67,89 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
   const currentPageId = useBuilderStore((s) => s.currentPageId);
   const tree = useBuilderStore((s) => s.tree);
   const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
-  const applyAIDiff = useBuilderStore((s) => s.applyAIDiff);
+  const previewAIDiff = useBuilderStore((s) => s.previewAIDiff);
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [pipelineSteps, setPipelineSteps] = useState<Array<{ step: string; label: string; status: 'active' | 'done' | 'error' }>>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const accumulatedRef = useRef('');
+
+  // @ autocomplete state
+  const [acVisible, setAcVisible] = useState(false);
+  const [acQuery, setAcQuery] = useState('');
+  const [acIndex, setAcIndex] = useState(0);
+  const acStartRef = useRef(-1); // cursor position where @ was typed
+
+  // Collect named nodes from current tree
+  const namedNodes = useMemo(() => collectNamedNodes(tree), [tree]);
+
+  const acResults = useMemo(() => {
+    if (!acVisible || !acQuery) return namedNodes.slice(0, 8);
+    const q = acQuery.toLowerCase();
+    return namedNodes.filter((n) => n.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [acVisible, acQuery, namedNodes]);
+
+  // Insert selected @name into input
+  const handleAcSelect = useCallback(
+    (name: string) => {
+      const before = input.slice(0, acStartRef.current);
+      const after = input.slice(textareaRef.current?.selectionStart ?? input.length);
+      const newText = `${before}@${name} ${after}`;
+      setInput(newText);
+      setAcVisible(false);
+      setAcQuery('');
+      acStartRef.current = -1;
+      // Move cursor after inserted name
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          const pos = before.length + name.length + 2; // +2 for @ and space
+          textareaRef.current.selectionStart = pos;
+          textareaRef.current.selectionEnd = pos;
+          textareaRef.current.focus();
+        }
+      });
+    },
+    [input],
+  );
+
+  // Detect @ trigger in input change
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const val = e.target.value;
+      setInput(val);
+
+      const cursorPos = e.target.selectionStart ?? val.length;
+      // Look backwards from cursor for an unbroken @ prefix
+      let atPos = -1;
+      for (let i = cursorPos - 1; i >= 0; i--) {
+        const ch = val[i];
+        if (ch === '@') {
+          atPos = i;
+          break;
+        }
+        if (ch === ' ' || ch === '\n') break; // stop at whitespace
+      }
+
+      if (atPos >= 0 && namedNodes.length > 0) {
+        const query = val.slice(atPos + 1, cursorPos);
+        // Only show if query has no spaces (still typing the name)
+        if (!query.includes(' ') && query.length < 30) {
+          acStartRef.current = atPos;
+          setAcQuery(query);
+          setAcVisible(true);
+          setAcIndex(0);
+          return;
+        }
+      }
+
+      setAcVisible(false);
+    },
+    [namedNodes],
+  );
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -89,8 +186,8 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
     }
   }, [input]);
 
-  const applyResponse = useCallback(
-    (res: AIGenerationResponse) => {
+  const buildDiff = useCallback(
+    (res: AIGenerationResponse): AIDiff => {
       if (res.action === 'full_page' && res.nodes.length > 0 && res.nodes[0].type !== NodeType.PAGE) {
         const pageNode = {
           id: tree?.id ?? `page_${Date.now()}`,
@@ -107,22 +204,29 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
           styleguideId: tree?.styleguideId ?? '',
           globalSectionIds: tree?.globalSectionIds ?? [],
         };
-        applyAIDiff({
+        return {
           action: res.action,
           targetNodeId: tree?.id ?? '',
-          payload: pageNode as DOMNode,
+          payload: pageNode as AIDiff['payload'],
           position: res.position,
-        });
-      } else {
-        applyAIDiff({
-          action: res.action,
-          targetNodeId: res.targetNodeId ?? (selectedNodeId ?? tree?.id ?? ''),
-          payload: res.nodes.length === 1 ? res.nodes[0] : res.nodes,
-          position: res.position,
-        });
+        };
       }
+      return {
+        action: res.action,
+        targetNodeId: res.targetNodeId ?? (selectedNodeId ?? tree?.id ?? ''),
+        payload: res.nodes.length === 1 ? res.nodes[0] : res.nodes,
+        position: res.position,
+      };
     },
-    [selectedNodeId, tree, applyAIDiff],
+    [selectedNodeId, tree],
+  );
+
+  const previewResponse = useCallback(
+    (res: AIGenerationResponse) => {
+      const diff = buildDiff(res);
+      previewAIDiff(diff);
+    },
+    [buildDiff, previewAIDiff],
   );
 
   const handleCancel = useCallback(() => {
@@ -151,14 +255,12 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
       setInput('');
       setLoading(true);
       setStreamingText('');
+      setPipelineSteps([]);
       accumulatedRef.current = '';
 
       addChatMessage({ role: 'assistant', content: '', status: 'pending' });
       const messages = useBuilderStore.getState().chatMessages;
       const assistantMsgId = messages[messages.length - 1].id;
-
-      // Capture temporal state length before AI action for undo tracking
-      const pastLenBefore = useBuilderStore.temporal.getState().pastStates.length;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -180,7 +282,9 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
         (result) => {
           setLoading(false);
           setStreamingText('');
+          setPipelineSteps((prev) => prev.map((s) => ({ ...s, status: 'done' as const })));
           abortRef.current = null;
+          accumulatedRef.current = '';
 
           if (result.action === 'clarify') {
             updateChatMessage(assistantMsgId, {
@@ -189,15 +293,11 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
               action: 'clarify',
             });
           } else {
-            applyResponse(result);
-            // Calculate how many temporal steps the AI action created
-            const pastLenAfter = useBuilderStore.temporal.getState().pastStates.length;
-            const undoSteps = pastLenAfter - pastLenBefore;
+            previewResponse(result);
             updateChatMessage(assistantMsgId, {
-              content: result.message ?? `Applied: ${formatAction(result.action)}`,
+              content: result.message ?? `Preview ready: ${formatAction(result.action)}`,
               status: 'success',
               action: result.action,
-              undoSteps: undoSteps > 0 ? undoSteps : undefined,
             });
           }
         },
@@ -205,25 +305,60 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
         (error) => {
           setLoading(false);
           setStreamingText('');
+          setPipelineSteps((prev) => prev.map((s) => s.status === 'active' ? { ...s, status: 'error' as const } : s));
           abortRef.current = null;
           updateChatMessage(assistantMsgId, {
             content: `Error: ${error}`,
             status: 'error',
           });
         },
+        // onStatus — real pipeline step tracking
+        (step, label) => {
+          setPipelineSteps((prev) => {
+            // Mark previous active step as done
+            const updated = prev.map((s) =>
+              s.status === 'active' ? { ...s, status: 'done' as const } : s,
+            );
+            return [...updated, { step, label, status: 'active' as const }];
+          });
+        },
       );
     },
-    [input, projectId, currentPageId, selectedNodeId, tree, loading, addChatMessage, updateChatMessage, applyResponse],
+    [input, projectId, currentPageId, selectedNodeId, tree, loading, addChatMessage, updateChatMessage, previewResponse],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Autocomplete navigation
+      if (acVisible && acResults.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setAcIndex((i) => (i + 1) % acResults.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setAcIndex((i) => (i - 1 + acResults.length) % acResults.length);
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          handleAcSelect(acResults[acIndex].name);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setAcVisible(false);
+          return;
+        }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
     },
-    [handleSend],
+    [handleSend, acVisible, acResults, acIndex, handleAcSelect],
   );
 
   return (
@@ -231,12 +366,35 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {chatMessages.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-primary text-xl">auto_awesome</span>
+          <div className="flex flex-col items-center justify-center h-full text-center py-8 px-4">
+            {/* Animated gradient orb */}
+            <div className="relative mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-container to-primary flex items-center justify-center shadow-lg" style={{ animation: 'float 3s ease-in-out infinite' }}>
+                <span className="material-symbols-outlined text-on-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+              </div>
+              <div className="absolute -inset-2 rounded-3xl bg-primary-container/20 blur-xl -z-10" style={{ animation: 'pulse-glow 2s ease-in-out infinite' }} />
             </div>
-            <p className="text-sm font-semibold text-on-surface mb-1">AI Editorial Assistant</p>
-            <p className="text-xs text-on-surface-outline">Describe what you want to build</p>
+            <p className="text-sm font-semibold text-on-surface mb-1">AI Design Assistant</p>
+            <p className="text-xs text-on-surface-outline mb-6 max-w-50 leading-relaxed">
+              Describe what you want to build and I&apos;ll create it for you
+            </p>
+            {/* Suggestion chips */}
+            <div className="flex flex-col gap-2 w-full max-w-60">
+              {[
+                { icon: 'web', text: 'Create a hero section' },
+                { icon: 'palette', text: 'Design a pricing table' },
+                { icon: 'view_quilt', text: 'Build a feature grid' },
+              ].map((suggestion) => (
+                <button
+                  key={suggestion.text}
+                  onClick={() => handleSend(suggestion.text)}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/15 hover:border-primary-container/40 hover:bg-surface-container text-left group transition-all duration-200"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-on-surface-outline group-hover:text-primary transition-colors">{suggestion.icon}</span>
+                  <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors">{suggestion.text}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -244,21 +402,39 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
           <MessageBubble key={msg.id} message={msg} />
         ))}
 
-        {/* Streaming / Thinking indicator */}
+        {/* Streaming / Pipeline indicator */}
         {loading && (
           <div className="flex gap-3 mr-8">
-            <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-primary text-sm animate-ai-pulse">auto_awesome</span>
+            <div className="w-8 h-8 rounded-xl bg-primary-fixed flex items-center justify-center shrink-0 relative">
+              <span className="material-symbols-outlined text-primary text-sm" style={{ animation: 'aiSpin 2s linear infinite' }}>auto_awesome</span>
             </div>
-            <div className="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-none border border-outline-variant/10 shadow-sm max-w-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 rounded-full bg-primary animate-ai-pulse" />
-                <span className="text-xs font-semibold text-primary">AI is thinking...</span>
+            <div className="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-sm border border-outline-variant/10 shadow-sm max-w-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <ThinkingDots />
+                <span className="text-xs font-semibold text-primary">Processing</span>
               </div>
               <div className="space-y-1.5">
-                <ThinkingStep label="Analyzing your request" delay={0} />
-                <ThinkingStep label="Designing layout structure" delay={800} />
-                <ThinkingStep label="Generating components" delay={1600} />
+                {pipelineSteps.length === 0 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                    <span className="text-[11px] text-on-surface-outline">Connecting...</span>
+                  </div>
+                ) : (
+                  pipelineSteps.map((s) => (
+                    <div key={s.step} className="flex items-center gap-2">
+                      {s.status === 'done' ? (
+                        <span className="material-symbols-outlined text-[14px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      ) : s.status === 'error' ? (
+                        <span className="material-symbols-outlined text-[14px] text-error">error</span>
+                      ) : (
+                        <span className="w-3.5 h-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                      )}
+                      <span className={`text-[11px] ${s.status === 'active' ? 'text-primary font-medium' : s.status === 'done' ? 'text-on-surface-outline' : 'text-error'}`}>
+                        {s.label}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -266,16 +442,16 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
       </div>
 
       {/* Slash commands — pill chips */}
-      <div className="px-4 py-2 border-t border-outline-variant/10">
-        <div className="flex items-center gap-2 mb-2 overflow-x-auto">
+      <div className="px-4 py-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto">
           {SLASH_COMMANDS.map((cmd) => (
             <button
               key={cmd.label}
               onClick={() => handleSend(cmd.prompt)}
               disabled={loading}
-              className="bg-secondary-fixed-dim text-on-secondary-fixed text-[10px] font-bold px-3 py-1.5 rounded-full hover:bg-secondary-container transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-40"
+              className="bg-surface-container/80 text-on-surface-variant text-[10px] font-semibold px-3 py-1.5 rounded-full hover:bg-primary-container/20 hover:text-on-primary-container transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-40 border border-outline-variant/15"
             >
-              <span className="material-symbols-outlined text-sm">{cmd.icon}</span>
+              <span className="material-symbols-outlined text-[14px]">{cmd.icon}</span>
               {cmd.label}
             </button>
           ))}
@@ -283,18 +459,45 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
       </div>
 
       {/* Input area */}
-      <div className="p-3 border-t border-outline-variant/10">
-        <div className="flex items-end gap-2 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-2">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Describe the component or update..."
-            rows={1}
-            className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 px-2 resize-none max-h-30 min-h-9 leading-relaxed placeholder:text-slate-400"
-            disabled={loading}
-          />
+      <div className="px-3 pb-3">
+        <div className="relative flex items-end gap-2 bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-2 focus-within:border-primary-container/60 focus-within:shadow-[0_0_0_3px_var(--primary-container)/15] transition-all duration-200">
+          <div className="relative flex-1">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Describe what you want to build..."
+              rows={1}
+              className="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-2 resize-none max-h-30 min-h-9 leading-relaxed placeholder:text-on-surface-outline"
+              disabled={loading}
+            />
+            {/* @ autocomplete dropdown */}
+            {acVisible && acResults.length > 0 && (
+              <div className="absolute bottom-full left-0 mb-1 w-64 bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-lg overflow-hidden z-50">
+                <div className="px-2.5 py-1.5 text-[10px] font-semibold text-on-surface-outline border-b border-outline-variant/10">
+                  Reference node
+                </div>
+                {acResults.map((node, i) => (
+                  <button
+                    key={node.name}
+                    onClick={() => handleAcSelect(node.name)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
+                      i === acIndex ? 'bg-primary-container/20 text-on-primary-container' : 'text-on-surface hover:bg-surface-container'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[14px] text-on-surface-outline">
+                      {node.tag === 'section' || node.tag === 'header' || node.tag === 'footer' || node.tag === 'nav'
+                        ? 'crop_landscape'
+                        : node.tag?.startsWith('h') ? 'title' : 'code'}
+                    </span>
+                    <span className="font-medium">@{node.name}</span>
+                    <span className="ml-auto text-[10px] text-on-surface-outline">&lt;{node.tag}&gt;</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {loading ? (
             <button
               onClick={handleCancel}
@@ -312,7 +515,7 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
             </button>
           )}
         </div>
-        <p className="text-[9px] text-center text-slate-400 mt-2 tracking-wider uppercase font-bold">
+        <p className="text-[9px] text-center text-on-surface-outline/60 mt-1.5 tracking-wide">
           Shift + Enter for new line
         </p>
       </div>
@@ -324,10 +527,13 @@ export function AIChatPanel({ projectId }: { projectId: string }) {
 // Message Bubble — Stitch-style
 // ============================================================
 function MessageBubble({ message }: { message: ChatMessage }) {
+  // Skip rendering pending assistant messages — pipeline UI handles loading state
+  if (message.role === 'assistant' && message.status === 'pending') return null;
+
   if (message.role === 'user') {
     return (
       <div className="flex justify-end ml-8">
-        <div className="bg-primary text-on-primary px-5 py-3 rounded-2xl rounded-tr-none shadow-sm max-w-sm">
+        <div className="bg-primary text-on-primary px-4 py-2.5 rounded-2xl rounded-tr-sm shadow-sm max-w-sm relative">
           <p className="text-sm leading-relaxed">{message.content}</p>
         </div>
       </div>
@@ -338,10 +544,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     if (message.status === 'error') {
       return (
         <div className="flex gap-3 mr-8">
-          <div className="w-8 h-8 rounded-full bg-error-container/40 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-error-container/40 flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-error text-sm">error</span>
           </div>
-          <div className="bg-error-container/20 text-error px-4 py-3 rounded-2xl rounded-tl-none text-sm">
+          <div className="bg-error-container/20 text-error px-4 py-3 rounded-2xl rounded-tl-sm text-sm border border-error/10">
             {message.content}
           </div>
         </div>
@@ -350,27 +556,32 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
     return (
       <div className="flex gap-3 mr-8">
-        <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+        <div className="w-8 h-8 rounded-xl bg-primary-fixed flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
         </div>
         <div className="flex-1 space-y-2">
-          <div className="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-none border border-outline-variant/10 shadow-sm">
+          <div className="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-sm border border-outline-variant/10 shadow-sm">
             <p className="text-sm leading-relaxed text-on-surface">{message.content}</p>
-            {message.action && message.status === 'success' && (
-              <div className="flex items-center gap-2 mt-3">
-                <button className="bg-primary text-on-primary text-[10px] font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:opacity-90 transition-all">
-                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                  Applied
+            {message.action && message.status === 'success' && message.action !== 'clarify' && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-outline-variant/10">
+                <button
+                  onClick={() => {
+                    const el = document.querySelector('[data-canvas-root]');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-[10px] font-semibold px-2.5 py-1 rounded-lg hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[14px]">preview</span>
+                  Pending Review — Click to view
                 </button>
-                {message.undoSteps && message.undoSteps > 0 && (
-                  <button
-                    onClick={() => useBuilderStore.temporal.getState().undo(message.undoSteps!)}
-                    className="bg-surface-container text-on-surface-variant text-[10px] font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-surface-container-high hover:text-on-surface transition-all"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">undo</span>
-                    Undo
-                  </button>
-                )}
+              </div>
+            )}
+            {message.action === 'clarify' && message.status === 'success' && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-outline-variant/10">
+                <span className="inline-flex items-center gap-1.5 bg-surface-container text-on-surface-variant text-[10px] font-semibold px-2.5 py-1 rounded-lg">
+                  <span className="material-symbols-outlined text-[14px]">help</span>
+                  Clarification
+                </span>
               </div>
             )}
           </div>
@@ -382,7 +593,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   // System messages
   return (
     <div className="flex justify-center">
-      <span className="text-[10px] text-on-surface-outline">{message.content}</span>
+      <span className="text-[10px] text-on-surface-outline/60">{message.content}</span>
     </div>
   );
 }

@@ -28,6 +28,8 @@ export interface TreeSlice {
   tree: PageNode | null;
   isDirty: boolean;
   lastSavedAt: string | null;
+  pendingAIDiff: AIDiff | null;
+  previewOriginalTree: PageNode | null;
 }
 
 export interface TreeActions {
@@ -41,6 +43,9 @@ export interface TreeActions {
   duplicateNode: (nodeId: string) => void;
   replaceNode: (nodeId: string, newNode: DOMNode) => void;
   applyAIDiff: (diff: AIDiff) => void;
+  previewAIDiff: (diff: AIDiff) => void;
+  confirmAIDiff: () => void;
+  rejectAIDiff: () => void;
   markSaved: () => void;
 }
 
@@ -75,6 +80,8 @@ export interface GlobalSectionsActions {
   setGlobalSections: (sections: GlobalSection[]) => void;
 }
 
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
+
 export interface UISlice {
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
@@ -82,6 +89,7 @@ export interface UISlice {
   isDragging: boolean;
   showAI: boolean;
   zoom: number;
+  activeBreakpoint: Breakpoint;
 }
 
 export interface UIActions {
@@ -91,6 +99,7 @@ export interface UIActions {
   setDragging: (dragging: boolean) => void;
   toggleAI: () => void;
   setZoom: (zoom: number) => void;
+  setBreakpoint: (breakpoint: Breakpoint) => void;
 }
 
 export interface DragSlice {
@@ -166,6 +175,8 @@ export const useBuilderStore = create<BuilderState>()(
         tree: null,
         isDirty: false,
         lastSavedAt: null,
+        pendingAIDiff: null,
+        previewOriginalTree: null,
 
         loadTree: (pageId, tree) =>
           set({ currentPageId: pageId, tree, isDirty: false, lastSavedAt: new Date().toISOString() }),
@@ -254,6 +265,30 @@ export const useBuilderStore = create<BuilderState>()(
           set({ tree: newTree, isDirty: true });
         },
 
+        previewAIDiff: (diff) => {
+          const { tree } = get();
+          if (!tree) return;
+          // Save original tree so we can revert on reject
+          const originalTree = JSON.parse(JSON.stringify(tree)) as PageNode;
+          // Apply diff immediately so canvas shows preview
+          get().applyAIDiff(diff);
+          set({ pendingAIDiff: diff, previewOriginalTree: originalTree });
+        },
+
+        confirmAIDiff: () => {
+          // Already applied during preview — just clear state
+          set({ pendingAIDiff: null, previewOriginalTree: null });
+        },
+
+        rejectAIDiff: () => {
+          const { previewOriginalTree } = get();
+          if (previewOriginalTree) {
+            set({ tree: previewOriginalTree, pendingAIDiff: null, previewOriginalTree: null, isDirty: true });
+          } else {
+            set({ pendingAIDiff: null });
+          }
+        },
+
         markSaved: () => set({ isDirty: false, lastSavedAt: new Date().toISOString() }),
 
         // ----- Selection State -----
@@ -300,6 +335,7 @@ export const useBuilderStore = create<BuilderState>()(
         isDragging: false,
         showAI: false,
         zoom: 100,
+        activeBreakpoint: 'desktop' as const,
 
         toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
         toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
@@ -307,6 +343,7 @@ export const useBuilderStore = create<BuilderState>()(
         setDragging: (dragging) => set({ isDragging: dragging }),
         toggleAI: () => set((s) => ({ showAI: !s.showAI })),
         setZoom: (zoom) => set({ zoom: Math.max(25, Math.min(200, zoom)) }),
+        setBreakpoint: (breakpoint) => set({ activeBreakpoint: breakpoint }),
 
         // ----- Drag State -----
         dragNodeId: null,

@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createAIStream } from '@/lib/ai/streaming';
+import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
+import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimizer';
 import * as aiMemory from '@/lib/ai/memory';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generateSection } from '@/features/ai/component-generator';
@@ -30,88 +32,126 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Fetch styleguide
-  let styleguideData: { colors?: string; typography?: string } | undefined;
-  if (styleguideId) {
-    try {
-      const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
-      if (sg) styleguideData = { colors: sg.colors, typography: sg.typography };
-    } catch { /* non-fatal */ }
-  }
-
-  // Load session
-  let miniContext = '';
-  let sessionId = '';
-  let history: BaseMessage[] = [];
-
-  try {
-    const session = await aiMemory.getOrCreateSession(projectId, pageId);
-    sessionId = session.id;
-    miniContext = await aiMemory.getMiniContext(session.id);
-    history = await aiMemory.getSessionHistory(session.id);
-  } catch { /* non-fatal */ }
-
-  const capturedSessionId = sessionId;
-
-  let stream: ReadableStream<Uint8Array>;
-
-  try {
-    stream = createAIStream(prompt, {
-      styleguideData,
-      miniContext: miniContext || undefined,
-      history,
-    });
-  } catch (streamError) {
-    // Fallback to template-based generation
-    console.error('Stream creation failed, using template fallback:', streamError);
-
-    const intent = parsePrompt(prompt);
-    const nodes = intent.componentCategory
-      ? [generateSection(intent.componentCategory as any, intent.properties)]
-      : [];
-
-    const fallbackResponse: AIGenerationResponse = {
-      action: intent.action,
-      nodes,
-      targetNodeId: undefined,
-      position: 0,
-    };
-
-    // Create a synthetic stream that immediately emits the fallback result
-    const encoder = new TextEncoder();
-    stream = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', result: fallbackResponse })}\n\n`));
-        controller.close();
-      },
-    });
-  }
-
-  // Wrap stream to persist messages after completion
-  const reader = stream.getReader();
   const encoder = new TextEncoder();
+  const send = (event: Record<string, unknown>) => {
+    // We'll collect these and send from inside the stream
+  };
 
-  const wrappedStream = new ReadableStream<Uint8Array>({
+  // --- Create pipeline stream (all work inside stream for status events) ---
+  const pipelineStream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      const send = (event: Record<string, unknown>) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      };
+
       let finalResult: AIGenerationResponse | null = null;
+      let capturedSessionId = '';
 
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        // STEP 1: Load context
+        send({ type: 'status', step: 'loading_context', label: 'Loading page context...' });
 
-          // Parse SSE to capture the final result
-          const text = new TextDecoder().decode(value);
-          const match = text.match(/^data: ([\s\S]+)\n\n$/);
-          if (match) {
-            try {
-              const event = JSON.parse(match[1]);
-              if (event.type === 'done') finalResult = event.result;
-            } catch { /* ignore parse errors on intermediate chunks */ }
-          }
-
-          controller.enqueue(value);
+        let styleguideData: { colors?: string; typography?: string } | undefined;
+        if (styleguideId) {
+          try {
+            const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
+            if (sg) styleguideData = { colors: sg.colors, typography: sg.typography };
+          } catch { /* non-fatal */ }
         }
+
+        let treeSummary: string | undefined;
+        let treeData: unknown = null;
+        try {
+          const page = await prisma.page.findUnique({ where: { id: pageId } });
+          if (page?.treeData) {
+            treeData = page.treeData;
+            treeSummary = buildTreeSummary(page.treeData);
+          }
+        } catch { /* non-fatal */ }
+
+        let miniContext = '';
+        let history: BaseMessage[] = [];
+        try {
+          const session = await aiMemory.getOrCreateSession(projectId, pageId);
+          capturedSessionId = session.id;
+          miniContext = await aiMemory.getMiniContext(session.id);
+          history = await aiMemory.getSessionHistory(session.id);
+        } catch { /* non-fatal */ }
+
+        // STEP 2: Optimize prompt
+        send({ type: 'status', step: 'optimizing', label: 'Optimizing prompt...' });
+        const { enrichedPrompt, nameRefs, intent, businessType } = optimizePrompt(prompt);
+        const resolvedTargetId = resolveNameToId(treeData, nameRefs);
+
+        // Route: create_page → template mode, everything else → full AI mode
+        const useTemplateMode = intent === 'create_page';
+
+        // STEP 3-6: Create AI stream (which emits its own status events + chunks)
+        let aiStream: ReadableStream<Uint8Array>;
+        try {
+          aiStream = createAIStream(enrichedPrompt, {
+            styleguideData,
+            miniContext: miniContext || undefined,
+            treeSummary,
+            history,
+            mode: useTemplateMode ? 'template' : 'full',
+            businessType: businessType ?? undefined,
+          });
+        } catch (streamError) {
+          // Fallback to template-based generation
+          console.error('Stream creation failed, using template fallback:', streamError);
+
+          const intent = parsePrompt(prompt);
+          const nodes = intent.componentCategory
+            ? [generateSection(intent.componentCategory as any, intent.properties)]
+            : [];
+
+          const fallbackResponse: AIGenerationResponse = {
+            action: intent.action,
+            nodes,
+            targetNodeId: undefined,
+            position: 0,
+          };
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', result: fallbackResponse })}\n\n`));
+          finalResult = fallbackResponse;
+          controller.close();
+          return;
+        }
+
+        // Pipe AI stream events, capture final result
+        const reader = aiStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const text = new TextDecoder().decode(value);
+            const match = text.match(/^data: ([\s\S]+)\n\n$/);
+            if (match) {
+              try {
+                const event = JSON.parse(match[1]);
+                if (event.type === 'done') {
+                  finalResult = event.result;
+                  // Merge server-side resolved @name → targetNodeId
+                  if (resolvedTargetId && finalResult && !finalResult.targetNodeId) {
+                    finalResult.targetNodeId = resolvedTargetId;
+                    const rewritten = encoder.encode(`data: ${JSON.stringify({ ...event, result: finalResult })}\n\n`);
+                    controller.enqueue(rewritten);
+                    continue;
+                  }
+                }
+              } catch { /* ignore parse errors on intermediate chunks */ }
+            }
+
+            controller.enqueue(value);
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unknown pipeline error';
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`));
       } finally {
         // Persist messages after stream completes
         if (capturedSessionId && finalResult) {
@@ -119,16 +159,9 @@ export async function POST(request: NextRequest) {
             await aiMemory.appendUserMessage(capturedSessionId, prompt);
 
             const actionStr = finalResult.action as string;
-            // For clarify: persist human-readable message text, not JSON
-            const assistantContent = actionStr === 'clarify'
-              ? (finalResult.message ?? '')
-              : JSON.stringify(finalResult);
-            await aiMemory.appendAssistantMessage(
-              capturedSessionId,
-              assistantContent,
-              actionStr,
-            );
-            // Only update mini-context for generation actions, not clarify
+            const assistantContent = finalResult.message
+              ?? `${actionStr.replace(/_/g, ' ')} applied successfully`;
+            await aiMemory.appendAssistantMessage(capturedSessionId, assistantContent, actionStr);
             if (actionStr !== 'clarify') {
               await aiMemory.appendMiniContext(capturedSessionId, actionStr, prompt);
             }
@@ -136,7 +169,6 @@ export async function POST(request: NextRequest) {
             console.error('Failed to persist session after stream:', err);
           }
 
-          // Log to AIPromptLog
           try {
             await prisma.aIPromptLog.create({
               data: {
@@ -156,7 +188,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return new Response(wrappedStream, {
+  return new Response(pipelineStream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',

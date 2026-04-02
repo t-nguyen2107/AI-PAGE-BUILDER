@@ -116,6 +116,7 @@ export const apiClient = {
     onChunk: (text: string) => void,
     onDone: (result: AIGenerationResponse) => void,
     onError: (error: string) => void,
+    onStatus?: (step: string, label: string) => void,
   ): AbortController {
     const controller = new AbortController();
 
@@ -155,6 +156,7 @@ export const apiClient = {
               if (event.type === 'chunk' && event.content) onChunk(event.content);
               else if (event.type === 'done' && event.result) onDone(event.result);
               else if (event.type === 'error') onError(event.message ?? 'Unknown stream error');
+              else if (event.type === 'status' && event.step) onStatus?.(event.step, event.label ?? event.step);
             } catch { /* skip malformed events */ }
           }
         }

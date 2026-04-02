@@ -22,6 +22,31 @@ export function createStructuredModel(model: BaseChatModel) {
  * Here we only validate the essential top-level fields — NOT the recursive
  * DOMNode structure. The store's applyAIDiff handles node-level validation.
  */
+const THINK_TAG_RE = /<think[\s\S]*?<\/think>/gi;
+const THINK_CAPTURE_RE = /<think[^>]*>([\s\S]*?)<\/think>/gi;
+
+/** Strip <think/> tags that some models emit (e.g., Qwen 3, DeepSeek-R1) */
+function stripThinkTags(text: string): string {
+  return text.replace(THINK_TAG_RE, '');
+}
+
+/**
+ * Extract reasoning content from <think/> tags and return both
+ * the reasoning text and the cleaned text without think tags.
+ */
+export function extractReasoning(text: string): { reasoning: string | null; cleaned: string } {
+  const reasoningParts: string[] = [];
+  let match: RegExpExecArray | null;
+  const re = new RegExp(THINK_CAPTURE_RE.source, THINK_CAPTURE_RE.flags);
+  while ((match = re.exec(text)) !== null) {
+    const content = match[1]?.trim();
+    if (content) reasoningParts.push(content);
+  }
+  const reasoning = reasoningParts.length > 0 ? reasoningParts.join('\n') : null;
+  const cleaned = text.replace(THINK_TAG_RE, '').trim();
+  return { reasoning, cleaned };
+}
+
 export function validateOutput(raw: unknown): {
   data: AIGenerationResponse | null;
   error: string | null;
@@ -39,7 +64,8 @@ export function validateOutput(raw: unknown): {
 
   // Handle "clarify" action — message is required, nodes are empty
   if (obj.action === 'clarify') {
-    const message = typeof obj.message === 'string' ? obj.message : '';
+    const rawMsg = typeof obj.message === 'string' ? obj.message : '';
+    const message = stripThinkTags(rawMsg).trim();
     if (!message) {
       return { data: null, error: 'Clarify action requires a "message" field with questions for the user' };
     }
@@ -78,7 +104,7 @@ export function validateOutput(raw: unknown): {
       nodes: nodes as AIGenerationResponse['nodes'],
       targetNodeId: typeof obj.targetNodeId === 'string' ? obj.targetNodeId : undefined,
       position: typeof obj.position === 'number' ? obj.position : undefined,
-      message: typeof obj.message === 'string' ? obj.message : undefined,
+      message: typeof obj.message === 'string' ? stripThinkTags(obj.message).trim() : undefined,
     },
     error: null,
   };

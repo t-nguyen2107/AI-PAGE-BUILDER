@@ -55,12 +55,25 @@ export function TypographyTab({
         options={TEXT_ALIGN_OPTIONS}
         onChange={(e) => onUpdateTypography('textAlign', e.target.value)}
       />
-      <Input
-        label="Color"
-        value={typography.color ?? ''}
-        onChange={(e) => onUpdateTypography('color', e.target.value)}
-        placeholder="#000000"
-      />
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Input
+            label="Color"
+            value={typography.color ?? ''}
+            onChange={(e) => onUpdateTypography('color', e.target.value)}
+            placeholder="#000000"
+          />
+        </div>
+        <div className="pb-0.5">
+          <input
+            type="color"
+            value={typography.color ?? '#000000'}
+            onChange={(e) => onUpdateTypography('color', e.target.value)}
+            className="w-9 h-9 rounded-lg border border-outline-variant cursor-pointer bg-transparent p-0.5"
+            title="Pick color"
+          />
+        </div>
+      </div>
     </div>
   );
 }

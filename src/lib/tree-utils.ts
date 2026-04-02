@@ -53,7 +53,8 @@ export function getChildIndex(parent: DOMNode, childId: string): number {
 
 /** Deep clone a node tree with new IDs */
 export function deepCloneWithNewIds<T extends DOMNode>(node: T): T {
-  const clone = { ...node, id: generateId() };
+  const clone = structuredClone(node);
+  clone.id = generateId();
 
   if (clone.meta) {
     clone.meta = { ...clone.meta, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
@@ -202,6 +203,22 @@ export function getNodesByType(tree: DOMNode, type: NodeType): DOMNode[] {
     results.push(...getNodesByType(child, type));
   }
   return results;
+}
+
+/** Collect all named nodes into a Map<name, id> for @reference resolution */
+export function collectNodeNames(tree: DOMNode): Map<string, string> {
+  const map = new Map<string, string>();
+
+  function walk(node: DOMNode) {
+    if ('name' in node && typeof node.name === 'string' && node.name) {
+      map.set(node.name, node.id);
+    }
+    const children = getNodeChildren(node);
+    for (const child of children) walk(child);
+  }
+
+  walk(tree);
+  return map;
 }
 
 /** Find a node by searching its content, tag, className, or type against a text query */

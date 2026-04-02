@@ -2,6 +2,7 @@ import type { BaseMessage } from '@langchain/core/messages';
 import { createModel } from './provider';
 import { buildChainPrompt } from './prompts/system-prompt';
 import { createStructuredModel, validateOutput } from './output';
+import { sanitizeAIResponse } from './output-sanitizer';
 import type { AIGenerationResponse } from '@/types/ai';
 
 interface ChainOptions {
@@ -35,6 +36,9 @@ export async function invokeAIChain(
     history: options.history ?? [],
   });
 
-  const { data, error } = validateOutput(raw);
+  // Sanitize: fix hierarchy, strip emojis, auto-generate names
+  const sanitized = sanitizeAIResponse(raw as Record<string, unknown>);
+
+  const { data, error } = validateOutput(sanitized);
   return { data, error, raw };
 }

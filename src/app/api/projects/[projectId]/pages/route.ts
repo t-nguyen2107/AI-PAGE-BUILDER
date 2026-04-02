@@ -1,28 +1,9 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
+import { successResponse, errorResponse } from '@/lib/api-response';
+
 export const dynamic = 'force-dynamic';
-
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function successResponse<T>(data: T, status = 200) {
-  return Response.json({
-    success: true,
-    data,
-    meta: { timestamp: new Date().toISOString(), requestId: crypto.randomUUID() },
-  }, { status });
-}
-
-function errorResponse(code: string, message: string, status = 400) {
-  return Response.json({
-    success: false,
-    error: { code, message },
-    meta: { timestamp: new Date().toISOString(), requestId: crypto.randomUUID() },
-  }, { status });
-}
 
 // ---------------------------------------------------------------------------
 // Default empty treeData for a new page
@@ -82,7 +63,13 @@ export async function GET(
       orderBy: { order: 'asc' },
     });
 
-    return successResponse(pages);
+    // Parse treeData JSON strings to objects (like the single-page GET does)
+    const parsed = pages.map((p) => ({
+      ...p,
+      treeData: typeof p.treeData === 'string' ? JSON.parse(p.treeData) : p.treeData,
+    }));
+
+    return successResponse(parsed);
   } catch (err) {
     console.error('Failed to list pages:', err);
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch pages', 500);

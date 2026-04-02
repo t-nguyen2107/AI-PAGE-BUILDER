@@ -22,14 +22,30 @@ function generateFeatureCard(feature: FeatureItem, now: string): ComponentNode {
   const titleId = generateId();
   const descId = generateId();
 
-  const children: ElementNode[] = [
+  const children: ElementNode[] = [];
+
+  // Icon image with pb-icon-box class for the boxed container effect
+  if (feature.icon) {
+    children.push({
+      id: generateId(),
+      type: NodeType.ELEMENT,
+      tag: SemanticTag.IMG,
+      className: 'pb-icon-box',
+      src: feature.icon,
+      attributes: { alt: `${feature.title} icon` },
+      inlineStyles: { width: '24px', height: '24px' },
+      meta: { createdAt: now, updatedAt: now },
+    });
+  }
+
+  children.push(
     {
       id: titleId,
       type: NodeType.ELEMENT,
       tag: SemanticTag.H3,
       className: 'feature-card-title',
       content: feature.title,
-      typography: { fontSize: '1.125rem', fontWeight: '600' },
+      typography: { fontSize: '1.125rem', fontWeight: '600', color: 'var(--foreground)' },
       meta: { createdAt: now, updatedAt: now },
     },
     {
@@ -38,40 +54,22 @@ function generateFeatureCard(feature: FeatureItem, now: string): ComponentNode {
       tag: SemanticTag.P,
       className: 'feature-card-description',
       content: feature.description,
-      typography: { fontSize: '0.95rem', lineHeight: '1.6', color: '#64748b' },
+      typography: { fontSize: '0.95rem', lineHeight: '1.6', color: 'var(--muted-foreground)' },
       meta: { createdAt: now, updatedAt: now },
     },
-  ];
-
-  if (feature.icon) {
-    const iconId = generateId();
-    children.unshift({
-      id: iconId,
-      type: NodeType.ELEMENT,
-      tag: SemanticTag.IMG,
-      className: 'feature-card-icon',
-      src: feature.icon,
-      attributes: { alt: `${feature.title} icon` },
-      inlineStyles: { width: '48px', height: '48px' },
-      meta: { createdAt: now, updatedAt: now },
-    });
-  }
+  );
 
   return {
     id: cardId,
     type: NodeType.COMPONENT,
     tag: SemanticTag.DIV,
-    className: 'feature-card',
+    className: 'pb-card',
     category: ComponentCategory.FEATURES,
     layout: {
       display: DisplayType.FLEX,
       flexDirection: FlexDirection.COLUMN,
       gap: '0.75rem',
       padding: '1.5rem',
-    },
-    inlineStyles: {
-      borderRadius: '12px',
-      border: '1px solid #e2e8f0',
     },
     meta: { createdAt: now, updatedAt: now, aiGenerated: true },
     children,
@@ -87,9 +85,15 @@ function generateFeatureCard(feature: FeatureItem, now: string): ComponentNode {
  *   featureData?: FeatureItem[] - Custom feature data
  */
 export function generateFeaturesGrid(props?: Record<string, unknown>): SectionNode {
+  // Handle items being either an array (data from defaultContent/AI) or a number (count)
+  let customData: FeatureItem[] | undefined = props?.featureData as FeatureItem[] | undefined;
+  if (Array.isArray(props?.items) && (props.items as unknown[]).length > 0 && typeof (props.items as unknown[])[0] === 'object') {
+    customData = props.items as FeatureItem[];
+  }
   const columns = Math.max(2, Math.min(4, (props?.columns as number) ?? 3));
-  const itemCount = (props?.items as number) ?? columns * 2;
-  const customData = props?.featureData as FeatureItem[] | undefined;
+  const itemCount = customData
+    ? customData.length
+    : (props?.items as number) ?? columns * 2;
 
   const features: FeatureItem[] = customData
     ? customData.slice(0, itemCount)
@@ -99,6 +103,7 @@ export function generateFeaturesGrid(props?: Record<string, unknown>): SectionNo
   const sectionId = generateId();
   const containerId = generateId();
   const titleId = generateId();
+  const subtitleId = generateId();
 
   const featureCards = features.map((f) => generateFeatureCard(f, now));
 
@@ -122,15 +127,24 @@ export function generateFeaturesGrid(props?: Record<string, unknown>): SectionNo
             tag: SemanticTag.DIV,
             className: 'features-title-wrap',
             meta: { createdAt: now, updatedAt: now },
-            layout: { display: DisplayType.FLEX, justifyContent: 'center' },
+            layout: { display: DisplayType.FLEX, flexDirection: FlexDirection.COLUMN, alignItems: 'center', gap: '0.5rem', gridColumn: '1 / -1' },
             children: [
               {
                 id: titleId,
                 type: NodeType.ELEMENT,
                 tag: SemanticTag.H2,
-                className: 'features-title',
+                className: 'pb-section-title',
                 content: 'Features',
-                typography: { fontSize: '2rem', fontWeight: '700', textAlign: TextAlign.CENTER },
+                typography: { textAlign: TextAlign.CENTER },
+                meta: { createdAt: now, updatedAt: now },
+              },
+              {
+                id: subtitleId,
+                type: NodeType.ELEMENT,
+                tag: SemanticTag.P,
+                className: 'pb-section-subtitle',
+                content: 'Everything you need to build amazing websites',
+                typography: { textAlign: TextAlign.CENTER },
                 meta: { createdAt: now, updatedAt: now },
               },
             ],
@@ -153,6 +167,6 @@ export function generateFeaturesGrid(props?: Record<string, unknown>): SectionNo
       alignItems: 'center',
       padding: '4rem 0',
     },
-    background: { color: '#ffffff' },
+    background: { color: 'var(--background)' },
   };
 }

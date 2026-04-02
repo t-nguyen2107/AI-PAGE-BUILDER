@@ -54,6 +54,14 @@
   /* Success */
   --success: #1b6d3c;
 
+  /* On-colors (secondary targets) */
+  --on-error: #ffffff;
+  --on-error-container: #ffffff;
+  --on-secondary-fixed: #191c1d;
+
+  /* Info */
+  --info: var(--primary-container);
+
   /* Inverse */
   --inverse-surface: #191c1d;
   --inverse-on-surface: #f0f0f4;
@@ -117,8 +125,12 @@
   /* On-colors */
   --color-on-surface: var(--on-surface);
   --color-on-surface-variant: var(--on-surface-variant);
+  --color-on-surface-outline: var(--on-surface-outline);
   --color-on-primary: var(--on-primary);
   --color-on-primary-container: var(--on-primary-container);
+  --color-on-error: var(--on-error);
+  --color-on-error-container: var(--on-error-container);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
 
   /* Secondary */
   --color-secondary: var(--secondary);
@@ -140,6 +152,9 @@
 
   /* Success */
   --color-success: var(--success);
+
+  /* Info */
+  --color-info: var(--info);
 
   /* Inverse */
   --color-inverse-surface: var(--inverse-surface);
@@ -223,6 +238,42 @@ body {
 }
 .animate-ai-pulse {
   animation: ai-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* AI thinking dots bounce */
+@keyframes thinkingBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* AI icon spin */
+@keyframes aiSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* AI icon gentle pulse (idle state) */
+@keyframes aiPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.1); }
+}
+
+/* Slow breathing pulse for glow effect */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+/* Floating animation for empty state orb */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Pulse glow for orb background */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
 }
 
 /* Primary gradient for CTAs */
@@ -329,3 +380,287 @@ body {
     @apply font-sans;
   }
 }
+
+/* Panel slide transition */
+.panel-transition {
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Empty node placeholder on canvas */
+.empty-node-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  border: 2px dashed var(--outline-variant);
+  border-radius: var(--radius-lg);
+  color: var(--on-surface-outline);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.empty-node-placeholder.section-empty {
+  min-height: 120px;
+}
+
+/* ============================================================
+   Page Builder Template — shadcn/ui-inspired Helper Classes
+   ============================================================ */
+
+/* --- Card System --- */
+.pb-card {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.pb-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.pb-card-static {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.pb-card-highlighted {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 2px solid var(--primary-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+
+/* --- Button System --- */
+.pb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+  border: none;
+}
+.pb-btn:hover { opacity: 0.9; }
+.pb-btn:active { transform: scale(0.98); }
+
+.pb-btn-primary {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  box-shadow: var(--shadow-sm);
+}
+.pb-btn-primary:hover { box-shadow: var(--shadow-md); }
+
+.pb-btn-outline {
+  background: transparent;
+  color: var(--primary-container);
+  border: 1px solid var(--primary-container);
+}
+.pb-btn-outline:hover {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.pb-btn-ghost {
+  background: transparent;
+  color: var(--primary-container);
+}
+.pb-btn-ghost:hover { background: var(--muted); }
+
+.pb-btn-white {
+  background: #ffffff;
+  color: var(--primary-container);
+  box-shadow: var(--shadow-sm);
+}
+.pb-btn-white:hover { box-shadow: var(--shadow-md); }
+
+/* --- Section Backgrounds --- */
+.pb-section-muted {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.pb-section-dark {
+  background: var(--inverse-surface);
+  color: var(--inverse-on-surface);
+}
+.pb-section-gradient {
+  background: var(--primary-gradient);
+  color: var(--on-primary);
+}
+
+/* --- Navigation --- */
+.pb-nav-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+/* --- Input Fields --- */
+.pb-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pb-input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.pb-input::placeholder { color: var(--muted-foreground); }
+
+/* --- Badge / Tag --- */
+.pb-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* --- Avatar --- */
+.pb-avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+/* --- Link Styles --- */
+.pb-link {
+  color: var(--primary-container);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+.pb-link:hover { opacity: 0.8; text-decoration: underline; }
+
+/* --- FAQ Item --- */
+.pb-faq-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  transition: box-shadow 0.2s ease;
+}
+.pb-faq-item:hover { box-shadow: var(--shadow-sm); }
+
+/* --- Stat Value (gradient text) --- */
+.pb-stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+/* --- Quote Mark --- */
+.pb-quote {
+  color: var(--primary-container);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+/* --- Section Title Helpers --- */
+.pb-section-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.pb-section-subtitle {
+  font-size: 1.125rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* --- Logo Item --- */
+.pb-logo-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: box-shadow 0.2s ease;
+}
+.pb-logo-item:hover { box-shadow: var(--shadow-sm); }
+
+/* --- Divider --- */
+.pb-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* --- Feature icon container --- */
+.pb-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--muted);
+  width: 48px;
+  height: 48px;
+}
+
+/* ============================================================
+   ANIMATIONS — AI-generated sites reference these
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fadeIn { animation: fadeIn 0.5s ease-out forwards; }
+.animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; }
+.animate-fadeInDown { animation: fadeInDown 0.6s ease-out forwards; }
+.animate-slideInLeft { animation: slideInLeft 0.5s ease-out forwards; }
+.animate-slideInRight { animation: slideInRight 0.5s ease-out forwards; }
+.animate-scaleIn { animation: scaleIn 0.4s ease-out forwards; }
+.animate-shimmer { animation: shimmer 2s linear infinite; }

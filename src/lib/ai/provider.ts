@@ -19,6 +19,7 @@ export function createModel(override?: Partial<AIConfig>): BaseChatModel {
         temperature: config.temperature,
         format: 'json',
         maxRetries: config.maxRetries,
+        numPredict: config.maxTokens,
       });
 
     case 'openai':
@@ -27,6 +28,10 @@ export function createModel(override?: Partial<AIConfig>): BaseChatModel {
         apiKey: config.apiKey,
         temperature: config.temperature,
         maxRetries: config.maxRetries,
+        maxTokens: config.maxTokens,
+        configuration: {
+          baseURL: config.baseUrl,
+        },
       });
 
     case 'anthropic':
@@ -35,6 +40,7 @@ export function createModel(override?: Partial<AIConfig>): BaseChatModel {
         apiKey: config.apiKey,
         temperature: config.temperature,
         maxRetries: config.maxRetries,
+        maxTokens: config.maxTokens,
       });
 
     default:

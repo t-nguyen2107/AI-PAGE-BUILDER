@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { useKeyboardShortcuts } from '@/lib/use-keyboard-shortcuts';
+import { useAutoSave } from '@/hooks/use-auto-save';
 import { ToastContainer } from '@/components/ui/toast-container';
 
 /**
  * Client wrapper that registers builder-wide side effects
- * (keyboard shortcuts, etc.). Must be rendered inside the builder layout.
+ * (keyboard shortcuts, auto-save, etc.). Must be rendered inside the builder layout.
  */
 export function BuilderClientShell({
   projectId,
@@ -16,6 +17,7 @@ export function BuilderClientShell({
   children: React.ReactNode;
 }) {
   useKeyboardShortcuts(projectId);
+  useAutoSave(projectId);
 
   return (
     <>

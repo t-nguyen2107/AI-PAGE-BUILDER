@@ -18,14 +18,29 @@ const nodeMetaSchema = z.object({
   updatedAt: z.string(),
 });
 
+const effectsPropertiesSchema = z.object({
+  borderWidth: z.string().optional(),
+  borderColor: z.string().optional(),
+  borderStyle: z.enum(['none', 'solid', 'dashed', 'dotted', 'double']).optional(),
+  borderRadius: z.string().optional(),
+  boxShadow: z.string().optional(),
+  opacity: z.string().optional(),
+  transform: z.string().optional(),
+  transformOrigin: z.string().optional(),
+  transition: z.string().optional(),
+  filter: z.string().optional(),
+});
+
 const baseNodeSchema = z.object({
   id: z.string(),
+  name: z.string().optional(),
   type: z.nativeEnum(NodeType),
   tag: z.nativeEnum(SemanticTag),
   className: z.string().optional(),
   inlineStyles: z.record(z.string(), z.string()).optional(),
   attributes: z.record(z.string(), z.string()).optional(),
   meta: nodeMetaSchema.optional(),
+  effects: effectsPropertiesSchema.optional(),
 });
 
 const layoutPropertiesSchema = z.object({
@@ -33,7 +48,13 @@ const layoutPropertiesSchema = z.object({
   flexDirection: z.nativeEnum(FlexDirection).optional(),
   justifyContent: z.string().optional(),
   alignItems: z.string().optional(),
+  alignContent: z.string().optional(),
   gap: z.string().optional(),
+  flexWrap: z.enum(['nowrap', 'wrap', 'wrap-reverse']).optional(),
+  flexGrow: z.string().optional(),
+  flexShrink: z.string().optional(),
+  flexBasis: z.string().optional(),
+  order: z.string().optional(),
   gridTemplateColumns: z.string().optional(),
   gridTemplateRows: z.string().optional(),
   padding: z.string().optional(),
@@ -104,14 +125,14 @@ const containerNodeSchema: z.ZodType = baseNodeSchema.extend({
 
 const sectionNodeSchema: z.ZodType = baseNodeSchema.extend({
   type: z.literal(NodeType.SECTION),
-  tag: z.nativeEnum(SemanticTag),
+  tag: z.enum([SemanticTag.SECTION, SemanticTag.HEADER, SemanticTag.FOOTER, SemanticTag.NAV]),
   children: z.array(containerNodeSchema),
   layout: layoutPropertiesSchema,
   background: backgroundPropertiesSchema.optional(),
   meta: nodeMetaSchema.extend({
     isGlobal: z.boolean().optional(),
     sectionName: z.string().optional(),
-  }).optional(),
+  }),
 });
 
 const pageNodeSchema: z.ZodType = baseNodeSchema.extend({
@@ -144,6 +165,7 @@ export {
   layoutPropertiesSchema,
   typographyPropertiesSchema,
   backgroundPropertiesSchema,
+  effectsPropertiesSchema,
   pageNodeSchema,
   sectionNodeSchema,
   containerNodeSchema,

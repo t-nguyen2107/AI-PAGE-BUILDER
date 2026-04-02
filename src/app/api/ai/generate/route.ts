@@ -2,31 +2,18 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { invokeAIChain } from '@/lib/ai/chain';
 import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
+import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimizer';
 import * as aiMemory from '@/lib/ai/memory';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generateSection } from '@/features/ai/component-generator';
+import { successResponse, errorResponse } from '@/lib/api-response';
+import { assemblePage } from '@/features/ai/template-assembler';
+import { validateTemplateResponse } from '@/lib/ai/prompts/template-schema';
+import { buildTemplatePrompt } from '@/lib/ai/prompts/template-prompt';
+import { createModel } from '@/lib/ai/provider';
+import { extractJSON } from '@/lib/ai/streaming';
 
 export const dynamic = 'force-dynamic';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function successResponse<T>(data: T, status = 200) {
-  return Response.json({
-    success: true,
-    data,
-    meta: { timestamp: new Date().toISOString(), requestId: crypto.randomUUID() },
-  }, { status });
-}
-
-function errorResponse(code: string, message: string, status = 400) {
-  return Response.json({
-    success: false,
-    error: { code, message },
-    meta: { timestamp: new Date().toISOString(), requestId: crypto.randomUUID() },
-  }, { status });
-}
 
 // ---------------------------------------------------------------------------
 // POST /api/ai/generate — AI prompt-to-JSON generation (LangChain)
@@ -114,12 +101,57 @@ export async function POST(request: NextRequest) {
     console.error('Failed to build tree context:', err);
   }
 
-  // --- Invoke LangChain ---
+  // --- Optimize prompt with context ---
+  const { enrichedPrompt, nameRefs, intent, businessType } = optimizePrompt(prompt);
+
+  // --- Resolve @name references to targetNodeId ---
+  let resolvedTargetNodeId = targetNodeId;
+  if (!resolvedTargetNodeId && nameRefs.length > 0) {
+    try {
+      const page = await prisma.page.findUnique({ where: { id: pageId } });
+      if (page?.treeData) {
+        resolvedTargetNodeId = resolveNameToId(page.treeData, nameRefs);
+      }
+    } catch { /* non-fatal */ }
+  }
+
+  // --- Template mode for full-page generation ---
+  if (intent === 'create_page') {
+    try {
+      const model = createModel();
+      const prompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData });
+      const messages = await prompt.formatMessages({ input: enrichedPrompt });
+      const response = await model.invoke(messages);
+
+      const text = typeof response.content === 'string' ? response.content : '';
+      const parsed = extractJSON(text);
+
+      if (parsed) {
+        const { data: plan, error: planError } = validateTemplateResponse(parsed);
+        if (plan && !planError) {
+          const assembled = assemblePage(plan, businessType ?? undefined);
+          return successResponse({
+            action: assembled.action,
+            nodes: assembled.nodes,
+            targetNodeId: assembled.targetNodeId ?? resolvedTargetNodeId ?? null,
+            position: assembled.position ?? position ?? 0,
+            message: assembled.message ?? null,
+          });
+        }
+      }
+      // If template mode fails, fall through to full AI chain
+      console.warn('[generate/route] Template mode failed, falling back to full AI chain');
+    } catch (templateErr) {
+      console.warn('[generate/route] Template mode error, falling back:', templateErr);
+    }
+  }
+
+  // --- Invoke LangChain (full mode or template fallback) ---
   let chainResult: { data: import('@/types/ai').AIGenerationResponse | null; error: string | null; raw: unknown };
   let chainError: string | null = null;
 
   try {
-    chainResult = await invokeAIChain(prompt, {
+    chainResult = await invokeAIChain(enrichedPrompt, {
       styleguideData,
       miniContext: miniContext || undefined,
       history,
@@ -166,7 +198,7 @@ export async function POST(request: NextRequest) {
     ? {
         action: responseData.action,
         nodes: responseData.nodes,
-        targetNodeId: responseData.targetNodeId ?? targetNodeId ?? null,
+        targetNodeId: responseData.targetNodeId ?? resolvedTargetNodeId ?? null,
         position: responseData.position ?? position ?? 0,
         message: responseData.message ?? null,
       }
@@ -179,10 +211,8 @@ export async function POST(request: NextRequest) {
 
       if (overallSuccess && finalData) {
         const actionStr = finalData.action as string;
-        // For clarify: persist human-readable message text, not JSON
-        const assistantContent = actionStr === 'clarify'
-          ? (finalData.message ?? '')
-          : JSON.stringify(finalData);
+        const assistantContent = finalData.message
+          ?? `${actionStr.replace(/_/g, ' ')} applied successfully`;
         await aiMemory.appendAssistantMessage(
           sessionId,
           assistantContent,

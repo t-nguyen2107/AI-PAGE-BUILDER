@@ -41,7 +41,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
       />
       {/* Content */}
       <div
-        className={`relative ${maxWidth} w-full bg-white rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden`}
+        className={`relative ${maxWidth} w-full bg-surface-lowest rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden`}
       >
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/10">

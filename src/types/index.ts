@@ -8,6 +8,7 @@ export type {
   LayoutProperties,
   TypographyProperties,
   BackgroundProperties,
+  EffectsProperties,
   PageNode,
   SectionNode,
   ContainerNode,

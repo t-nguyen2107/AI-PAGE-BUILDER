@@ -90,21 +90,10 @@ export default function BuilderProjectPage({
     return (
       <div className="fixed inset-0 bg-surface/80 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="text-center max-w-sm">
-          <div className="w-12 h-12 rounded-full bg-red-900/20 flex items-center justify-center mx-auto mb-3">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="text-red-400"
-            >
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v4M12 16h.01" />
-            </svg>
+          <div className="w-12 h-12 rounded-full bg-error-container/20 flex items-center justify-center mx-auto mb-3">
+            <span className="material-symbols-outlined text-error text-[24px]">error</span>
           </div>
-          <p className="text-sm text-red-400">{error}</p>
+          <p className="text-sm text-error">{error}</p>
         </div>
       </div>
     );

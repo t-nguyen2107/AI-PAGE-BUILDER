@@ -56,7 +56,7 @@ const ElementRendererInner: React.FC<ElementRendererProps> = ({ node }) => {
   if (VOID_TAGS.has(tagString)) {
     const isInput = (tagString as string) === 'input';
     return (
-      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT}>
+      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT} node={node}>
         {renderElement(tag, {
           className: node.className,
           style: styleProp,
@@ -70,15 +70,26 @@ const ElementRendererInner: React.FC<ElementRendererProps> = ({ node }) => {
   // --- Image element ---
   if (tagString === SemanticTag.IMG) {
     return (
-      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT}>
+      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT} node={node}>
         {renderElement(tag, {
           src: node.src,
           alt: node.content ?? '',
           className: node.className,
           style: styleProp,
           loading: 'lazy',
+          onError: (e: React.SyntheticEvent<HTMLImageElement>) => {
+            const img = e.currentTarget;
+            img.style.display = 'none';
+            const placeholder = img.nextElementSibling as HTMLElement | null;
+            if (placeholder) placeholder.style.display = 'flex';
+          },
           ...node.attributes,
         })}
+        {/* Broken image fallback — hidden by default */}
+        <div style={{ display: 'none', alignItems: 'center', justifyContent: 'center', minHeight: 80, padding: 16, background: 'var(--surface-container)', borderRadius: 'var(--radius-lg)', color: 'var(--on-surface-outline)', fontSize: 12, gap: 8 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>broken_image</span>
+          <span>{node.content || 'Image not found'}</span>
+        </div>
       </NodeWrapper>
     );
   }
@@ -86,7 +97,7 @@ const ElementRendererInner: React.FC<ElementRendererProps> = ({ node }) => {
   // --- Link element ---
   if (tagString === SemanticTag.A) {
     return (
-      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT}>
+      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT} node={node}>
         {renderElement(
           tag,
           {
@@ -105,7 +116,7 @@ const ElementRendererInner: React.FC<ElementRendererProps> = ({ node }) => {
   // --- Form element — prevent default submit ---
   if (tagString === SemanticTag.FORM) {
     return (
-      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT}>
+      <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT} node={node}>
         {renderElement(
           tag,
           {
@@ -123,7 +134,7 @@ const ElementRendererInner: React.FC<ElementRendererProps> = ({ node }) => {
 
   // --- List elements (ul/ol) and generic text elements ---
   return (
-    <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT}>
+    <NodeWrapper nodeId={node.id} nodeType={NodeType.ELEMENT} node={node}>
       {renderElement(
         tag,
         {

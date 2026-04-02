@@ -11,6 +11,7 @@ export interface UseAIGenerationOptions {
   onChunk?: (text: string) => void;
   onDone?: (result: AIGenerationResponse) => void;
   onError?: (error: string) => void;
+  onStatus?: (step: string, label: string) => void;
 }
 
 export interface UseAIGenerationReturn {
@@ -77,6 +78,7 @@ export function useAIGeneration(opts: UseAIGenerationOptions): UseAIGenerationRe
       const controller = new AbortController();
       abortRef.current = controller;
       loadingRef.current = true;
+      setIsLoading(true);
 
       apiClient.generateFromPromptStream(
         {
@@ -91,6 +93,7 @@ export function useAIGeneration(opts: UseAIGenerationOptions): UseAIGenerationRe
         },
         (result) => {
           loadingRef.current = false;
+          setIsLoading(false);
           abortRef.current = null;
           if (result.action !== 'clarify') {
             applyResponse(result);
@@ -99,9 +102,11 @@ export function useAIGeneration(opts: UseAIGenerationOptions): UseAIGenerationRe
         },
         (error) => {
           loadingRef.current = false;
+          setIsLoading(false);
           abortRef.current = null;
           opts.onError?.(error);
         },
+        opts.onStatus,
       );
     },
     [opts, currentPageId, selectedNodeId, tree, applyResponse],
@@ -111,6 +116,8 @@ export function useAIGeneration(opts: UseAIGenerationOptions): UseAIGenerationRe
     abortRef.current?.abort();
     abortRef.current = null;
     loadingRef.current = false;
+    setIsLoading(false);
   }, []);
 
-  ret
+  return { send, cancel, loading: isLoading };
+}

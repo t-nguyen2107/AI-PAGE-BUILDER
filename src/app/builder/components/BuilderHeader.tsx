@@ -5,6 +5,7 @@ import { useBuilderStore, useHistory } from '@/store';
 import { useToastStore } from '@/store/toast-store';
 import { apiClient } from '@/lib/api-client';
 import { findNodeByText } from '@/lib/tree-utils';
+import { RevisionBrowser } from '@/features/history/RevisionBrowser';
 
 export function BuilderHeader({ projectId }: { projectId: string }) {
   const tree = useBuilderStore((s) => s.tree);
@@ -22,6 +23,7 @@ export function BuilderHeader({ projectId }: { projectId: string }) {
 
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const handleSave = useCallback(async () => {
@@ -83,26 +85,27 @@ export function BuilderHeader({ projectId }: { projectId: string }) {
   );
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl flex justify-between items-center h-16 px-8 border-b border-slate-100/50">
+    <>
+    <header className="fixed top-0 w-full z-50 bg-surface-lowest/80 backdrop-blur-xl flex justify-between items-center h-16 px-8 border-b border-outline-variant/50">
       {/* Left: Brand + Nav */}
       <div className="flex items-center gap-8">
-        <span className="text-lg font-bold tracking-tighter text-slate-900">CuratorAI</span>
+        <span className="text-lg font-bold tracking-tighter text-on-surface">CuratorAI</span>
         <nav className="hidden md:flex items-center gap-6">
           <button
             onClick={() => handleNavClick('pages')}
-            className="text-blue-700 font-semibold border-b-2 border-blue-700 pb-1 text-sm tracking-tight"
+            className="text-primary-container font-semibold border-b-2 border-primary-container pb-1 text-sm tracking-tight"
           >
             Pages
           </button>
           <button
-            onClick={() => handleNavClick('layers')}
-            className="text-slate-500 hover:text-slate-900 transition-colors duration-200 text-sm tracking-tight"
+            onClick={() => setHistoryOpen(true)}
+            className="text-on-surface-variant hover:text-on-surface transition-colors duration-200 text-sm tracking-tight"
           >
             History
           </button>
           <button
             onClick={() => handleNavClick('library')}
-            className="text-slate-500 hover:text-slate-900 transition-colors duration-200 text-sm tracking-tight"
+            className="text-on-surface-variant hover:text-on-surface transition-colors duration-200 text-sm tracking-tight"
           >
             Components
           </button>
@@ -115,7 +118,7 @@ export function BuilderHeader({ projectId }: { projectId: string }) {
         <button
           onClick={() => undo()}
           disabled={!canUndo}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="p-1.5 rounded-lg text-on-surface-outline hover:text-on-surface hover:bg-surface-container disabled:opacity-30 disabled:pointer-events-none transition-colors"
           title="Undo"
         >
           <span className="material-symbols-outlined text-[18px]">undo</span>
@@ -123,17 +126,17 @@ export function BuilderHeader({ projectId }: { projectId: string }) {
         <button
           onClick={() => redo()}
           disabled={!canRedo}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="p-1.5 rounded-lg text-on-surface-outline hover:text-on-surface hover:bg-surface-container disabled:opacity-30 disabled:pointer-events-none transition-colors"
           title="Redo"
         >
           <span className="material-symbols-outlined text-[18px]">redo</span>
         </button>
 
-        <div className="h-5 w-px bg-slate-200" />
+        <div className="h-5 w-px bg-outline" />
 
         {/* Search */}
-        <div className="relative flex items-center h-9 px-3 bg-slate-100/50 rounded-lg">
-          <span className="material-symbols-outlined text-sm text-slate-400 mr-2">search</span>
+        <div className="relative flex items-center h-9 px-3 bg-surface-container/50 rounded-lg">
+          <span className="material-symbols-outlined text-sm text-on-surface-outline mr-2">search</span>
           <input
             ref={searchRef}
             className="bg-transparent border-none focus:ring-0 text-xs w-48"
@@ -152,14 +155,14 @@ export function BuilderHeader({ projectId }: { projectId: string }) {
 
         <button
           onClick={handlePreview}
-          className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-slate-50 transition-colors rounded-lg"
+          className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors rounded-lg"
         >
           Preview
         </button>
         <button
           onClick={handleSave}
           disabled={!isDirty || saving || !currentPageId}
-          className="bg-surface-container-highest text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+          className="bg-surface-container-highest text-on-surface px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-container transition-colors disabled:opacity-40 disabled:pointer-events-none"
         >
           {saving ? 'Saving...' : 'Save'}
         </button>
@@ -177,5 +180,7 @@ export function BuilderHeader({ projectId }: { projectId: string }) {
         </div>
       </div>
     </header>
+    <RevisionBrowser projectId={projectId} open={historyOpen} onClose={() => setHistoryOpen(false)} />
+    </>
   );
 }

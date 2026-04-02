@@ -10,6 +10,7 @@ const seoIssueSeveritySchema = z.enum(['error', 'warning', 'info']);
 const seoIssueCategorySchema = z.enum([
   'heading',
   'semantic',
+  'semantic-html',
   'meta',
   'accessibility',
   'performance',

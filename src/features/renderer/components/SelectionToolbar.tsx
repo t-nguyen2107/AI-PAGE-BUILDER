@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useBuilderStore } from '@/store';
 import { apiClient } from '@/lib/api-client';
-import type { AIGenerationResponse, DOMNode } from '@/types';
+import type { AIGenerationResponse, AIDiff, DOMNode } from '@/types';
 import { NodeType, SemanticTag } from '@/types/enums';
 
 interface ToolbarPosition {
@@ -19,7 +19,7 @@ export function SelectionToolbar({ projectId }: { projectId: string }) {
   const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
   const tree = useBuilderStore((s) => s.tree);
   const currentPageId = useBuilderStore((s) => s.currentPageId);
-  const applyAIDiff = useBuilderStore((s) => s.applyAIDiff);
+  const previewAIDiff = useBuilderStore((s) => s.previewAIDiff);
   const removeNode = useBuilderStore((s) => s.removeNode);
   const clearSelection = useBuilderStore((s) => s.clearSelection);
 
@@ -85,26 +85,14 @@ export function SelectionToolbar({ projectId }: { projectId: string }) {
         });
 
         if (res.success && res.data && res.data.action !== 'clarify') {
-          if (res.data.action === 'full_page' && res.data.nodes.length > 0 && res.data.nodes[0].type !== NodeType.PAGE) {
-            const pageNode = {
-              id: tree?.id ?? `page_${Date.now()}`,
-              type: NodeType.PAGE,
-              tag: SemanticTag.MAIN,
-              className: '',
-              children: res.data.nodes,
-              meta: tree?.meta ?? { title: 'Untitled Page', slug: 'untitled', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-              styleguideId: tree?.styleguideId ?? '',
-              globalSectionIds: tree?.globalSectionIds ?? [],
-            };
-            applyAIDiff({ action: res.data.action, targetNodeId: tree?.id ?? '', payload: pageNode as DOMNode, position: res.data.position });
-          } else {
-            applyAIDiff({
-              action: res.data.action,
-              targetNodeId: res.data.targetNodeId ?? selectedNodeId,
-              payload: res.data.nodes.length === 1 ? res.data.nodes[0] : res.data.nodes,
-              position: res.data.position,
-            });
-          }
+          const result = res.data;
+          const diff: AIDiff = {
+            action: result.action,
+            targetNodeId: result.targetNodeId ?? selectedNodeId,
+            payload: result.nodes.length === 1 ? result.nodes[0] : result.nodes,
+            position: result.position,
+          };
+          previewAIDiff(diff);
         }
       } catch {
         // Silently fail — toolbar actions are quick edits
@@ -112,7 +100,7 @@ export function SelectionToolbar({ projectId }: { projectId: string }) {
         setLoading(false);
       }
     },
-    [selectedNodeId, projectId, currentPageId, tree, loading, applyAIDiff],
+    [selectedNodeId, projectId, currentPageId, tree, loading, previewAIDiff],
   );
 
   const handleDelete = useCallback(() => {
@@ -125,7 +113,7 @@ export function SelectionToolbar({ projectId }: { projectId: string }) {
 
   const toolbar = (
     <div
-      className="fixed z-50 flex items-center gap-1 bg-white/90 backdrop-blur-xl rounded-xl px-2 py-1.5 shadow-xl border border-outline-variant/20"
+      className="fixed z-50 flex items-center gap-1 bg-surface-lowest/90 backdrop-blur-xl rounded-xl px-2 py-1.5 shadow-xl border border-outline-variant/20"
       style={{ top: position.top, left: position.left }}
     >
       {isTextElement && (

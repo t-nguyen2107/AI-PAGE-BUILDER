@@ -13,8 +13,12 @@ export const CATEGORY_SEMANTIC_MAP: Record<string, SemanticTag[]> = {
   'header-nav': [SemanticTag.HEADER, SemanticTag.NAV],
   footer: [SemanticTag.FOOTER],
   contact: [SemanticTag.SECTION],
-  faq: [SemanticTag.SECTION],
+  faq: [SemanticTag.FIGURE],
   gallery: [SemanticTag.SECTION],
+  stats: [SemanticTag.SECTION],
+  team: [SemanticTag.SECTION],
+  'logo-grid': [SemanticTag.SECTION],
+  blog: [SemanticTag.ARTICLE, SemanticTag.SECTION],
 };
 
 /**

@@ -32,7 +32,7 @@ const ItemRendererInner: React.FC<ItemRendererProps> = ({ node }) => {
   const hasContent = node.content !== undefined && node.content !== null;
 
   return (
-    <NodeWrapper nodeId={node.id} nodeType={NodeType.ITEM}>
+    <NodeWrapper nodeId={node.id} nodeType={NodeType.ITEM} node={node}>
       {renderElement(
         tag,
         {
