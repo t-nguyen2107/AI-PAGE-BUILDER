@@ -21,6 +21,7 @@ import { generateFeaturesZigzag } from './templates/features-zigzag';
 import { generateFeaturesSimple2Col } from './templates/features-simple-2col';
 import { generatePricingSection } from './templates/pricing-section';
 import { generatePricingMinimal } from './templates/pricing-minimal';
+import { generateHyperUIPricingSection } from './templates/pricing-section-hyperui';
 import { generateTestimonialSection } from './templates/testimonial-section';
 import { generateTestimonialSingle } from './templates/testimonial-single';
 import { generateCtaSection } from './templates/cta-section';
@@ -39,6 +40,15 @@ import { generateStatsGrid } from './templates/stats-grid';
 import { generateTeamSection } from './templates/team-section';
 import { generateLogoGridSection } from './templates/logo-grid-section';
 import { generateBlogSection } from './templates/blog-section';
+
+// Tailwind (Style B) templates — use className + layout: {}
+import { generateHeroTWDarkBg } from './templates/hero-tw-dark-bg';
+import { generateHeroTWLightCentered } from './templates/hero-tw-light-centered';
+import { generateHeroTWSplit } from './templates/hero-tw-split';
+import { generateFeaturesTWCards } from './templates/features-tw-cards';
+import { generatePricingTW2Tier } from './templates/pricing-tw-2tier';
+import { generateTestimonialTWStars } from './templates/testimonial-tw-stars';
+import { generateCtaTWSplit } from './templates/cta-tw-split';
 
 // Helper to cast typed content to the existing props format
 const p = (content: unknown): Record<string, unknown> | undefined => content as Record<string, unknown>;
@@ -390,6 +400,21 @@ export function initializeRegistry(): void {
     },
   });
 
+  registerTemplate<PricingContent>({
+    id: 'pricing_hyperui_3tier',
+    category: 'pricing',
+    label: 'HyperUI 3-Tier Pricing',
+    description: '3-tier pricing cards with highlighted Pro tier (indigo border), hover effects, and text checkmarks. Responsive grid layout.',
+    generate: (content) => generateHyperUIPricingSection(p(content)),
+    defaultContent: {
+      tiers: [
+        { name: 'Starter', price: '$20', period: '/month', features: ['10 users included', '2GB of storage', 'Email support', 'Help center access'], highlighted: false, ctaText: 'Get Started' },
+        { name: 'Pro', price: '$30', period: '/month', features: ['20 users included', '5GB of storage', 'Email support', 'Help center access', 'Phone support', 'Community access'], highlighted: true, ctaText: 'Get Started' },
+        { name: 'Enterprise', price: '$99', period: '/month', features: ['Unlimited users', '100GB of storage', 'Priority email support', 'Help center access', '24/7 Phone support', 'Community access', 'Custom integrations'], highlighted: false, ctaText: 'Contact Sales' },
+      ],
+    },
+  });
+
   // ─── Testimonial Variant ──────────────────────────────────────────────
   registerTemplate<TestimonialContent>({
     id: 'testimonial_single',
@@ -501,6 +526,128 @@ export function initializeRegistry(): void {
         { title: 'Product', links: ['Features', 'Pricing'] },
         { title: 'Company', links: ['About', 'Blog'] },
       ],
+    },
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // TAILWIND (STYLE B) TEMPLATES — className + layout: {}
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ─── Tailwind Hero Variants ────────────────────────────────────────────
+  registerTemplate<HeroContent>({
+    id: 'hero_tw_dark_bg',
+    category: 'hero',
+    label: 'Dark BG Hero (TW)',
+    description: 'Dark background with image overlay, badge, heading, 2 CTAs, and stats bar. Tailwind classes.',
+    generate: (content) => generateHeroTWDarkBg(p(content)),
+    defaultContent: {
+      heading: 'Design Without Limits',
+      subtext: 'Create stunning, responsive websites with our comprehensive collection of professionally designed components.',
+      badge: 'New Release',
+      ctaText: 'Get Started',
+      ctaHref: '#',
+      ctaSecondaryText: 'Learn More',
+      backgroundUrl: '/stock/hero/tech-dark.webp',
+    },
+  });
+
+  registerTemplate<HeroContent>({
+    id: 'hero_tw_light_centered',
+    category: 'hero',
+    label: 'Light Centered Hero (TW)',
+    description: 'Light background, centered heading with badge, 4 feature cards, and CTA. Tailwind classes.',
+    generate: (content) => generateHeroTWLightCentered(p(content)),
+    defaultContent: {
+      heading: 'The Complete UI Toolkit',
+      subtext: 'Everything you need to build professional websites. From simple buttons to complex dashboards.',
+      badge: 'New',
+      ctaText: 'Get Started',
+      ctaHref: '#',
+    },
+  });
+
+  registerTemplate<HeroContent>({
+    id: 'hero_tw_split',
+    category: 'hero',
+    label: 'Split Image Hero (TW)',
+    description: 'Left text (heading, features, CTA) + right image split layout. Tailwind classes.',
+    generate: (content) => generateHeroTWSplit(p(content)),
+    defaultContent: {
+      heading: 'Design Without Limits',
+      subtext: 'Create stunning, responsive websites with our comprehensive collection.',
+      ctaText: 'Get Started',
+      ctaHref: '#',
+      ctaSecondaryText: 'Learn More',
+      backgroundUrl: '/stock/hero/office-modern.webp',
+    },
+  });
+
+  // ─── Tailwind Features Variant ─────────────────────────────────────────
+  registerTemplate<FeaturesContent>({
+    id: 'features_tw_cards',
+    category: 'features',
+    label: 'Feature Cards (TW)',
+    description: '3-column feature cards with icons, titles, and descriptions. Dark icon boxes. Tailwind classes.',
+    generate: (content) => generateFeaturesTWCards(p(content)),
+    defaultContent: {
+      heading: 'Features',
+      subtitle: 'Everything you need to build amazing websites',
+      items: [
+        { title: 'Fast Performance', description: 'Optimized for speed with lightning-fast load times and smooth interactions.' },
+        { title: 'Secure & Reliable', description: 'Enterprise-grade security with 99.9% uptime guarantee.' },
+        { title: 'Easy Integration', description: 'Seamlessly connect with your existing tools and workflows.' },
+      ],
+    },
+  });
+
+  // ─── Tailwind Pricing Variant ──────────────────────────────────────────
+  registerTemplate<PricingContent>({
+    id: 'pricing_tw_2tier',
+    category: 'pricing',
+    label: 'Pricing Cards (TW)',
+    description: '2 or 3-tier pricing cards with highlighted tier, feature checkmarks. Tailwind classes.',
+    generate: (content) => generatePricingTW2Tier(p(content)),
+    defaultContent: {
+      heading: 'Pricing Plans',
+      subtitle: 'Choose the plan that fits your needs',
+      tiers: [
+        { name: 'Starter', price: '$20', period: '/month', features: ['10 users', '2GB storage', 'Email support'], highlighted: false },
+        { name: 'Pro', price: '$30', period: '/month', features: ['20 users', '5GB storage', 'Priority support', 'Phone support'], highlighted: true },
+        { name: 'Enterprise', price: '$99', period: '/month', features: ['Unlimited users', '100GB storage', '24/7 support', 'Custom integrations'], highlighted: false },
+      ],
+    },
+  });
+
+  // ─── Tailwind Testimonial Variant ──────────────────────────────────────
+  registerTemplate<TestimonialContent>({
+    id: 'testimonial_tw_stars',
+    category: 'testimonial',
+    label: 'Star Rating Testimonials (TW)',
+    description: 'Testimonial cards with 5-star ratings, quotes, and author info. Tailwind classes.',
+    generate: (content) => generateTestimonialTWStars(p(content)),
+    defaultContent: {
+      heading: 'What Our Customers Say',
+      subtitle: 'Trusted by thousands of teams worldwide',
+      quotes: [
+        { quote: 'This platform transformed our workflow. We shipped twice as fast.', author: 'Sarah Johnson', role: 'CTO, TechCorp' },
+        { quote: 'The best builder experience I have ever used. Intuitive and powerful.', author: 'Mike Chen', role: 'Designer, StartupXYZ' },
+        { quote: 'Our conversion rates improved by 40% after switching.', author: 'Emily Davis', role: 'Marketing Lead, GrowthCo' },
+      ],
+    },
+  });
+
+  // ─── Tailwind CTA Variant ──────────────────────────────────────────────
+  registerTemplate<CTAContent>({
+    id: 'cta_tw_split',
+    category: 'cta',
+    label: 'Split CTA (TW)',
+    description: 'Dark background with split layout: heading + subtext on left, CTA buttons on right. Tailwind classes.',
+    generate: (content) => generateCtaTWSplit(p(content)),
+    defaultContent: {
+      heading: 'Ready to Get Started?',
+      subtext: 'Join thousands of users who are already building faster.',
+      ctaText: 'Sign Up Now',
+      ctaHref: '#',
     },
   });
 }

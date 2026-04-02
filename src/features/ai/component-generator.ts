@@ -2,6 +2,7 @@ import { ComponentCategory, NodeType, SemanticTag, DisplayType, FlexDirection } 
 import { generateId } from '@/lib/id';
 import type { SectionNode, ComponentNode } from '@/types/dom-tree';
 import { generateHeroSection } from './templates/hero-section';
+import { generateHeroSplitSection } from './templates/hero-split';
 import { generatePricingSection } from './templates/pricing-section';
 import { generateFeaturesGrid } from './templates/features-grid';
 import { generateTestimonialSection } from './templates/testimonial-section';
@@ -96,3 +97,6 @@ export function generateComponent(
     },
   };
 }
+
+// Export individual template generators for direct use
+export { generateHeroSplitSection };

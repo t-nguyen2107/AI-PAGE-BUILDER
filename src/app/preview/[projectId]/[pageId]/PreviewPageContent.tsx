@@ -1,28 +1,20 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import type { PageNode, SectionNode } from '@/types';
-import { PreviewRenderer } from '@/features/renderer/components/PreviewRenderer';
+import React from "react";
+import Link from "next/link";
+import { Render } from "@puckeditor/core";
+import "@puckeditor/core/puck.css";
+import { config } from "@/puck/puck.config";
+import type { Data } from "@puckeditor/core";
 
 interface PreviewPageContentProps {
-  tree: PageNode;
-  headerSections: SectionNode[];
-  footerSections: SectionNode[];
+  data: Data;
   projectId: string;
   pageId: string;
 }
 
-/**
- * Client component that renders the preview page content.
- *
- * Wraps PreviewRenderer with a floating "Back to Editor" button
- * that links back to the builder for this page.
- */
 export function PreviewPageContent({
-  tree,
-  headerSections,
-  footerSections,
+  data,
   projectId,
   pageId,
 }: PreviewPageContentProps) {
@@ -32,31 +24,31 @@ export function PreviewPageContent({
       <Link
         href={`/builder/${projectId}/pages/${pageId}`}
         style={{
-          position: 'fixed',
+          position: "fixed",
           top: 16,
           left: 16,
           zIndex: 9999,
-          display: 'inline-flex',
-          alignItems: 'center',
+          display: "inline-flex",
+          alignItems: "center",
           gap: 6,
-          padding: '8px 16px',
-          backgroundColor: '#1a1a2e',
-          color: '#ffffff',
-          border: 'none',
+          padding: "8px 16px",
+          backgroundColor: "#1a1a2e",
+          color: "#ffffff",
+          border: "none",
           borderRadius: 8,
           fontSize: 14,
           fontWeight: 500,
-          textDecoration: 'none',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-          cursor: 'pointer',
-          transition: 'background-color 0.15s ease',
+          textDecoration: "none",
+          fontFamily: "system-ui, -apple-system, sans-serif",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+          cursor: "pointer",
+          transition: "background-color 0.15s ease",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.backgroundColor = '#16213e';
+          (e.currentTarget as HTMLElement).style.backgroundColor = "#16213e";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.backgroundColor = '#1a1a2e';
+          (e.currentTarget as HTMLElement).style.backgroundColor = "#1a1a2e";
         }}
       >
         <svg
@@ -78,12 +70,8 @@ export function PreviewPageContent({
         Back to Editor
       </Link>
 
-      {/* Page content rendered by PreviewRenderer */}
-      <PreviewRenderer
-        node={tree}
-        globalHeaderSections={headerSections}
-        globalFooterSections={footerSections}
-      />
+      {/* Render page using Puck's Render component */}
+      <Render config={config} data={data} />
     </>
   );
 }

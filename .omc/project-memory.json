@@ -190,20 +190,38 @@
   "hotPaths": [
     {
       "path": "",
-      "accessCount": 203,
-      "lastAccessed": 1775061116774,
+      "accessCount": 208,
+      "lastAccessed": 1775099672019,
       "type": "directory"
     },
     {
       "path": "src",
-      "accessCount": 131,
-      "lastAccessed": 1775059644289,
+      "accessCount": 146,
+      "lastAccessed": 1775107025109,
       "type": "directory"
+    },
+    {
+      "path": "src\\types\\enums.ts",
+      "accessCount": 73,
+      "lastAccessed": 1775106774292,
+      "type": "file"
     },
     {
       "path": "src\\app\\api\\ai\\generate\\route.ts",
       "accessCount": 72,
       "lastAccessed": 1775061380262,
+      "type": "file"
+    },
+    {
+      "path": "src\\types\\dom-tree.ts",
+      "accessCount": 70,
+      "lastAccessed": 1775099691088,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\api-client.ts",
+      "accessCount": 65,
+      "lastAccessed": 1775099140450,
       "type": "file"
     },
     {
@@ -213,39 +231,21 @@
       "type": "file"
     },
     {
-      "path": "src\\lib\\api-client.ts",
-      "accessCount": 62,
-      "lastAccessed": 1775093554535,
-      "type": "file"
-    },
-    {
-      "path": "src\\types\\enums.ts",
-      "accessCount": 61,
-      "lastAccessed": 1775093544812,
-      "type": "file"
-    },
-    {
-      "path": "src\\types\\dom-tree.ts",
-      "accessCount": 54,
-      "lastAccessed": 1775094214137,
-      "type": "file"
-    },
-    {
       "path": "src\\types\\ai.ts",
       "accessCount": 35,
       "lastAccessed": 1775093545126,
       "type": "file"
     },
     {
-      "path": "src\\types\\index.ts",
-      "accessCount": 33,
-      "lastAccessed": 1775093544519,
+      "path": "src\\schemas\\dom-node.schema.ts",
+      "accessCount": 34,
+      "lastAccessed": 1775098822276,
       "type": "file"
     },
     {
-      "path": "src\\schemas\\dom-node.schema.ts",
+      "path": "src\\types\\index.ts",
       "accessCount": 33,
-      "lastAccessed": 1775093553611,
+      "lastAccessed": 1775093544519,
       "type": "file"
     },
     {
@@ -262,8 +262,8 @@
     },
     {
       "path": "src\\store\\index.ts",
-      "accessCount": 25,
-      "lastAccessed": 1775050459442,
+      "accessCount": 26,
+      "lastAccessed": 1775106951282,
       "type": "file"
     },
     {
@@ -291,6 +291,12 @@
       "type": "file"
     },
     {
+      "path": "src\\types\\project.ts",
+      "accessCount": 18,
+      "lastAccessed": 1775098979455,
+      "type": "file"
+    },
+    {
       "path": "src\\lib\\prisma.ts",
       "accessCount": 17,
       "lastAccessed": 1775093554519,
@@ -303,12 +309,6 @@
       "type": "file"
     },
     {
-      "path": "src\\types\\project.ts",
-      "accessCount": 16,
-      "lastAccessed": 1775093545050,
-      "type": "file"
-    },
-    {
       "path": "src\\schemas\\ai-diff.schema.ts",
       "accessCount": 15,
       "lastAccessed": 1775093553944,
@@ -316,8 +316,8 @@
     },
     {
       "path": "src\\lib\\id.ts",
-      "accessCount": 13,
-      "lastAccessed": 1775093563103,
+      "accessCount": 14,
+      "lastAccessed": 1775098696258,
       "type": "file"
     },
     {

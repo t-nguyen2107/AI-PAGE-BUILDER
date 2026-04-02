@@ -145,7 +145,7 @@ export interface ContainerNode extends BaseNode {
 export interface ComponentNode extends BaseNode {
   type: NodeType.COMPONENT;
   tag: SemanticTag.DIV | SemanticTag.ARTICLE | SemanticTag.FIGURE;
-  children: ElementNode[];
+  children: (ElementNode | ComponentNode)[];
   layout?: LayoutProperties;
   category?: ComponentCategory;
 }

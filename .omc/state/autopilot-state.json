@@ -1,0 +1,12 @@
+{
+  "active": false,
+  "current_phase": "completed",
+  "task_description": "Puck Core Migration Phase 0-2 complete",
+  "completed_at": "2026-04-02T05:25:00Z",
+  "_meta": {
+    "mode": "autopilot",
+    "sessionId": null,
+    "updatedAt": "2026-04-02T05:29:12.671Z",
+    "updatedBy": "state_write_tool"
+  }
+}

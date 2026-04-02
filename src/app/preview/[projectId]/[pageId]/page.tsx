@@ -1,8 +1,8 @@
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
-import { prisma } from '@/lib/prisma';
-import type { PageNode, SectionNode } from '@/types';
-import { PreviewPageContent } from './PreviewPageContent';
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import { PreviewPageContent } from "./PreviewPageContent";
+import { convertTreeDataToPuck } from "@/puck/migration";
 
 interface PreviewPageProps {
   params: Promise<{
@@ -11,21 +11,13 @@ interface PreviewPageProps {
   }>;
 }
 
-/**
- * Fetch page data and global sections for preview.
- * Returns null if page not found.
- */
 async function getPageData(projectId: string, pageId: string) {
   const page = await prisma.page.findFirst({
-    where: {
-      id: pageId,
-      projectId,
-    },
+    where: { id: pageId, projectId },
   });
 
   if (!page) return null;
 
-  // Fetch global sections (header/footer) for the project
   const globalSections = await prisma.globalSection.findMany({
     where: { projectId },
   });
@@ -33,89 +25,42 @@ async function getPageData(projectId: string, pageId: string) {
   return { page, globalSections };
 }
 
-/**
- * Generate metadata for the preview page.
- * Uses SEO fields from the Page model, falling back to the page title.
- */
 export async function generateMetadata(props: PreviewPageProps): Promise<Metadata> {
   const { projectId, pageId } = await props.params;
   const data = await getPageData(projectId, pageId);
 
-  if (!data) {
-    return { title: 'Page Not Found' };
-  }
+  if (!data) return { title: "Page Not Found" };
 
   const { page } = data;
-
-  // Try to extract meta from the treeData as a fallback
-  let treeTitle: string | undefined;
-  let treeDescription: string | undefined;
-  try {
-    const tree = JSON.parse(page.treeData) as PageNode;
-    treeTitle = tree.meta?.title;
-    treeDescription = tree.meta?.description;
-  } catch {
-    // treeData may be malformed — ignore
-  }
-
-  const title = page.seoTitle || treeTitle || page.title;
-  const description = page.seoDescription || treeDescription || undefined;
+  const title = page.seoTitle || page.title;
+  const description = page.seoDescription || undefined;
   const keywords = page.seoKeywords ?? undefined;
 
-  return {
-    title,
-    description,
-    keywords,
-  };
+  return { title, description, keywords };
 }
 
-/**
- * Preview Page — Server Component.
- *
- * Fetches the page and global sections from the database, parses the tree
- * data, and renders a clean preview with no builder UI. The actual rendering
- * is delegated to the client-side PreviewPageContent component.
- */
 export default async function PreviewPage(props: PreviewPageProps) {
   const { projectId, pageId } = await props.params;
   const data = await getPageData(projectId, pageId);
 
-  if (!data) {
-    notFound();
-  }
+  if (!data) notFound();
 
-  const { page, globalSections } = data;
+  const { page } = data;
 
-  // Parse the page tree
-  let tree: PageNode;
+  // Parse treeData — support both Puck and old DOM formats
+  let puckData;
   try {
-    tree = JSON.parse(page.treeData) as PageNode;
+    const raw = JSON.parse(page.treeData);
+    puckData = convertTreeDataToPuck(raw);
   } catch {
     notFound();
   }
 
-  // Parse global sections into SectionNode objects
-  const headerSections: SectionNode[] = [];
-  const footerSections: SectionNode[] = [];
-
-  for (const gs of globalSections) {
-    try {
-      const sectionNode = JSON.parse(gs.treeData) as SectionNode;
-      if (gs.sectionType === 'header' || gs.sectionType === 'nav') {
-        headerSections.push(sectionNode);
-      } else if (gs.sectionType === 'footer') {
-        footerSections.push(sectionNode);
-      }
-    } catch {
-      // Skip malformed global sections
-    }
-  }
+  if (!puckData) notFound();
 
   return (
     <PreviewPageContent
-      tree={tree}
-      headerSections={headerSections}
-      footerSections={footerSections}
+      data={puckData}
       projectId={projectId}
       pageId={pageId}
     />

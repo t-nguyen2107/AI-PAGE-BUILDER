@@ -124,7 +124,23 @@
       "Bash('/c/Users/MR THIEN/.claude/skills/gstack/browse/dist/browse' goto http://localhost:3000/builder/cmng5tmzk0007dcwojd0osyrq)",
       "Bash(where bun:*)",
       "Bash(curl -fsSL https://bun.sh/install)",
-      "Bash(bash)"
+      "Bash(bash)",
+      "Bash(npm uninstall:*)",
+      "Bash(1-20)",
+      "Bash(: 2)",
+      "Bash(3-3-Bash)",
+      "Bash(ls f:/web_source/pageBuilder/src/app/builder/[projectId]/)",
+      "Bash(npm list:*)",
+      "Bash(rm -f \"web_source/pageBuilder/src/features/ai/templates/hero-tw-center-light.ts\")",
+      "Bash(rm -f \"web_source/pageBuilder/src/features/ai/templates/hero-tw-split.ts\")",
+      "Bash(rm -f \"web_source/pageBuilder/src/features/ai/templates/features-tw-cards.ts\")",
+      "Bash(rm -f \"web_source/pageBuilder/src/features/ai/templates/pricing-tw-2tier.ts\")",
+      "Bash(rm -f \"web_source/pageBuilder/src/features/ai/templates/testimonial-tw-stars.ts\")",
+      "Bash(rm -f scripts/html-to-template.ts)",
+      "Bash(rm scripts/html-to-template.ts)",
+      "Bash(node -e \"const {parse} = require\\('node-html-parser'\\); const r = parse\\('<section class=\\\\\"bg-gray-900\\\\\"><div class=\\\\\"flex\\\\\"><h1 class=\\\\\"text-2xl\\\\\">Hello</h1></div></section>'\\); console.log\\(JSON.stringify\\({tag: r.tagName, classes: r.classNames, children: r.childNodes.length}, null, 2\\)\\)\")",
+      "Bash(curl -s http://localhost:3000/builder/cmng5tmzk0007dcwojd0osyrq -o2)",
+      "Bash(curl -s http://localhost:3000)"
     ],
     "additionalDirectories": [
       "C:\\Users\\MR THIEN\\.claude\\hud",
@@ -132,7 +148,8 @@
       "F:\\web_source\\pageBuilder\\src\\app\\api\\projects\\[projectId]\\global-sections",
       "f:\\web_source\\pageBuilder\\.claude\\agents",
       "C:\\Users\\MR THIEN\\.claude\\plans",
-      "\\tmp"
+      "\\tmp",
+      "F:\\web_source\\hyperui-main\\dist"
     ]
   },
   "enabledPlugins": {

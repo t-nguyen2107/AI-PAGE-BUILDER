@@ -148,6 +148,7 @@ function getCategoryFromNode(node: DOMNode): string {
     'hero-section': 'hero',
     'features-section': 'features',
     'pricing-section': 'pricing',
+    'hyperui-pricing-section': 'pricing',
     'testimonial-section': 'testimonial',
     'pb-section-gradient': 'cta',
     'faq-section': 'faq',
