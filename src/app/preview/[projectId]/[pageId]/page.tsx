@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { PreviewPageContent } from "./PreviewPageContent";
 import { convertTreeDataToPuck } from "@/puck/migration";
 
+// ISR: revalidate every 60 seconds
+export const revalidate = 60;
+
 interface PreviewPageProps {
   params: Promise<{
     projectId: string;

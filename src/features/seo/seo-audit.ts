@@ -1,68 +1,253 @@
-import { NodeType, SemanticTag } from '@/types/enums';
-import type { PageNode, DOMNode, ElementNode, SectionNode, ContainerNode, ComponentNode } from '@/types/dom-tree';
-import type { HeadingIssue, SEOIssue, SEOAuditResult, SEOMeta } from '@/types/seo';
-import { validateHeadingHierarchy } from './heading-validator';
-import { generateMetaFromPage } from './meta-generator';
-
-/** Semantic sectioning tags that are meaningful for SEO. */
-const SEMANTIC_SECTION_TAGS = new Set<string>([
-  SemanticTag.HEADER,
-  SemanticTag.NAV,
-  SemanticTag.MAIN,
-  SemanticTag.SECTION,
-  SemanticTag.ARTICLE,
-  SemanticTag.ASIDE,
-  SemanticTag.FOOTER,
-]);
-
-/** All heading tags. */
-const HEADING_TAGS = new Set<string>([
-  SemanticTag.H1, SemanticTag.H2, SemanticTag.H3,
-  SemanticTag.H4, SemanticTag.H5, SemanticTag.H6,
-]);
-
-// ---- Recursive tree walkers ----
-
-function walkTree(node: DOMNode, visitor: (n: DOMNode) => void): void {
-  visitor(node);
-  if ('children' in node && Array.isArray(node.children)) {
-    for (const child of node.children as DOMNode[]) {
-      walkTree(child, visitor);
-    }
-  }
-}
-
-interface ImageCheck {
-  nodeId: string;
-  hasAlt: boolean;
-}
-
-interface LinkCheck {
-  nodeId: string;
-  hasHref: boolean;
-}
-
 /**
- * Runs a full SEO audit on a page tree.
+ * SEO Audit — full audit on Puck page data.
  *
  * Checks:
  * - Heading hierarchy (single h1, no skipped levels, no empties)
- * - Semantic HTML tags used properly
+ * - Semantic HTML structure (header, footer, nav links, section headings)
+ * - Meta title and description
  * - All images have alt text
  * - All links have href
- * - Page has title and description
- * - No empty sections
+ * - No empty page
  */
-export function auditSEO(tree: PageNode): SEOAuditResult {
+
+import type { Data, ComponentData } from '@puckeditor/core';
+import type { SEOIssue, SEOAuditResult, SEOMeta } from '@/types/seo';
+import { validateHeadingHierarchy } from './heading-validator';
+import { generateMetaFromPage } from './meta-generator';
+import { validateSemanticHTML } from './html-validator';
+
+// ─── Helpers ─────────────────────────────────────────────────────────
+
+function getProps(component: ComponentData): Record<string, unknown> {
+  return (component.props ?? {}) as Record<string, unknown>;
+}
+
+function getId(component: ComponentData): string {
+  return String(getProps(component).id ?? component.type);
+}
+
+// ─── Image alt-text checker ──────────────────────────────────────────
+
+function checkImageAltText(data: Data): SEOIssue[] {
+  const issues: SEOIssue[] = [];
+
+  for (const component of data.content) {
+    const props = getProps(component);
+    const id = getId(component);
+
+    // Direct image components
+    if (component.type === 'ImageBlock') {
+      const alt = (props.alt as string)?.trim();
+      if (!alt) {
+        issues.push({
+          severity: 'error',
+          category: 'accessibility',
+          nodeId: id,
+          message: 'ImageBlock is missing alt text.',
+          suggestion: 'Add descriptive alt text for accessibility and SEO.',
+        });
+      }
+    }
+
+    // Background images (HeroSection, Banner, CTASection, etc.)
+    if (typeof props.backgroundUrl === 'string' && props.backgroundUrl.trim()) {
+      // Background images don't require alt text per se, but we note if they're decorative
+      // Only flag if the component has no heading/subtext (the bg image IS the content)
+      if (!props.heading && !props.subtext && !props.title) {
+        issues.push({
+          severity: 'info',
+          category: 'accessibility',
+          nodeId: id,
+          message: `${component.type} has a background image but no text content. Screen readers won't perceive the image.`,
+          suggestion: 'Add heading or subtext to provide context for the background image.',
+        });
+      }
+    }
+
+    // Gallery images
+    if (Array.isArray(props.images)) {
+      for (let i = 0; i < props.images.length; i++) {
+        const img = props.images[i] as Record<string, unknown>;
+        const alt = (img.alt as string)?.trim();
+        if (!alt) {
+          issues.push({
+            severity: 'error',
+            category: 'accessibility',
+            nodeId: `${id}-img-${i}`,
+            message: `Gallery image ${i + 1} is missing alt text.`,
+            suggestion: 'Add alt text to all gallery images.',
+          });
+        }
+      }
+    }
+
+    // Logo grid images — logos are decorative by nature, light check
+    if (Array.isArray(props.logos)) {
+      for (let i = 0; i < props.logos.length; i++) {
+        const logo = props.logos[i] as Record<string, unknown>;
+        const name = (logo.name as string)?.trim();
+        if (!name) {
+          issues.push({
+            severity: 'warning',
+            category: 'accessibility',
+            nodeId: `${id}-logo-${i}`,
+            message: `Logo ${i + 1} is missing a name (used as alt text).`,
+            suggestion: 'Add a name for each logo to serve as accessible text.',
+          });
+        }
+      }
+    }
+
+    // Product card images
+    if (Array.isArray(props.products)) {
+      for (let i = 0; i < props.products.length; i++) {
+        const product = props.products[i] as Record<string, unknown>;
+        // Products need a name at minimum
+        if (!(product.name as string)?.trim()) {
+          issues.push({
+            severity: 'warning',
+            category: 'accessibility',
+            nodeId: `${id}-product-${i}`,
+            message: `Product card ${i + 1} is missing a name.`,
+            suggestion: 'Add a product name for accessibility.',
+          });
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
+// ─── Link href checker ───────────────────────────────────────────────
+
+function checkLinksHref(data: Data): SEOIssue[] {
+  const issues: SEOIssue[] = [];
+
+  for (const component of data.content) {
+    const props = getProps(component);
+    const id = getId(component);
+
+    // CTA links
+    const ctaFields = [
+      { hrefProp: 'ctaHref', textProp: 'ctaText' },
+      { hrefProp: 'ctaSecondaryHref', textProp: 'ctaSecondaryText' },
+    ];
+    for (const { hrefProp, textProp } of ctaFields) {
+      const text = (props[textProp] as string)?.trim();
+      const href = (props[hrefProp] as string)?.trim();
+      if (text && !href) {
+        issues.push({
+          severity: 'warning',
+          category: 'accessibility',
+          nodeId: id,
+          message: `CTA "${textProp}" has text but no href.`,
+          suggestion: 'Add a valid URL to the CTA button.',
+        });
+      }
+    }
+
+    // HeaderNav links
+    if (Array.isArray(props.links)) {
+      for (let i = 0; i < props.links.length; i++) {
+        const link = props.links[i] as Record<string, unknown>;
+        const label = (link.label as string)?.trim();
+        const href = (link.href as string)?.trim();
+        if (label && !href) {
+          issues.push({
+            severity: 'warning',
+            category: 'accessibility',
+            nodeId: `${id}-nav-${i}`,
+            message: `Navigation link "${label}" has no href.`,
+            suggestion: 'Add a valid URL to all navigation links.',
+          });
+        }
+      }
+    }
+
+    // FooterSection link groups
+    if (Array.isArray(props.linkGroups)) {
+      for (const group of props.linkGroups as Record<string, unknown>[]) {
+        if (!Array.isArray(group.links)) continue;
+        for (let i = 0; i < group.links.length; i++) {
+          const link = group.links[i] as Record<string, unknown>;
+          const label = (link.label as string)?.trim();
+          const href = (link.href as string)?.trim();
+          if (label && !href) {
+            issues.push({
+              severity: 'warning',
+              category: 'accessibility',
+              nodeId: `${id}-footer-${i}`,
+              message: `Footer link "${label}" has no href.`,
+              suggestion: 'Add a valid URL to all footer links.',
+            });
+          }
+        }
+      }
+    }
+
+    // Pricing plan CTAs
+    if (Array.isArray(props.plans)) {
+      for (let i = 0; i < props.plans.length; i++) {
+        const plan = props.plans[i] as Record<string, unknown>;
+        const ctaText = (plan.ctaText as string)?.trim();
+        const ctaHref = (plan.ctaHref as string)?.trim();
+        if (ctaText && !ctaHref) {
+          issues.push({
+            severity: 'warning',
+            category: 'accessibility',
+            nodeId: `${id}-plan-${i}`,
+            message: `Pricing plan "${plan.name}" has CTA text but no href.`,
+            suggestion: 'Add a valid URL to the pricing plan CTA.',
+          });
+        }
+      }
+    }
+
+    // Blog post links
+    if (Array.isArray(props.posts)) {
+      for (let i = 0; i < props.posts.length; i++) {
+        const post = props.posts[i] as Record<string, unknown>;
+        const title = (post.title as string)?.trim();
+        const href = (post.href as string)?.trim();
+        if (title && !href) {
+          issues.push({
+            severity: 'warning',
+            category: 'accessibility',
+            nodeId: `${id}-post-${i}`,
+            message: `Blog post "${title}" has no link.`,
+            suggestion: 'Add a URL to each blog post card.',
+          });
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
+// ─── Public API ─────────────────────────────────────────────────────
+
+interface AuditPageMeta {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+}
+
+/**
+ * Runs a full SEO audit on Puck page data.
+ *
+ * @param data - Puck Data object
+ * @param pageMeta - Optional page metadata from DB (title, description, keywords)
+ */
+export function auditSEO(data: Data, pageMeta?: AuditPageMeta): SEOAuditResult {
   const issues: SEOIssue[] = [];
   let deduction = 0;
 
-  // ==============================
   // 1. Heading hierarchy
-  // ==============================
-  const headingIssues: HeadingIssue[] = validateHeadingHierarchy(tree);
+  const headingIssues = validateHeadingHierarchy(data);
   for (const hi of headingIssues) {
-    const severity = hi.issue === 'empty_heading' ? 'warning' : 'error';
+    const severity: SEOIssue['severity'] = hi.issue === 'empty_heading' ? 'warning' : 'error';
     issues.push({
       severity,
       category: 'heading',
@@ -70,31 +255,47 @@ export function auditSEO(tree: PageNode): SEOAuditResult {
       message: hi.message,
       suggestion:
         hi.issue === 'multiple_h1'
-          ? 'Keep only one h1 per page; convert extras to h2.'
+          ? 'Keep only one hero/banner component per page.'
           : hi.issue === 'skipped_level'
             ? 'Use sequential heading levels to maintain a logical document outline.'
-            : 'Add meaningful text content to the heading element.',
+            : 'Add meaningful text to the component heading.',
     });
     deduction += severity === 'error' ? 10 : 5;
   }
 
-  // ==============================
-  // 2. Meta: title and description
-  // ==============================
-  const meta: SEOMeta = generateMetaFromPage(tree);
-  if (!tree.meta.title || tree.meta.title.trim() === '') {
+  // 2. Semantic HTML structure
+  const semanticIssues = validateSemanticHTML(data);
+  for (const si of semanticIssues) {
+    issues.push(si);
+    deduction += si.severity === 'error' ? 10 : si.severity === 'warning' ? 5 : 2;
+  }
+
+  // 3. Meta title and description
+  const meta: SEOMeta = generateMetaFromPage(data, undefined, pageMeta);
+
+  if (pageMeta !== undefined && (!pageMeta.title || pageMeta.title.trim() === '')) {
+    // pageMeta was explicitly provided but title is empty
     issues.push({
       severity: 'error',
       category: 'meta',
       message: 'Page is missing a title.',
-      suggestion: 'Add a descriptive title to the page metadata.',
+      suggestion: 'Add a descriptive title to the page metadata or include a hero section with a heading.',
     });
     deduction += 10;
-  } else if (tree.meta.title.length < 30 || tree.meta.title.length > 60) {
+  } else if (pageMeta === undefined && meta.title === 'Untitled Page') {
+    // No pageMeta provided and no heading found in content
+    issues.push({
+      severity: 'error',
+      category: 'meta',
+      message: 'Page is missing a title.',
+      suggestion: 'Add a descriptive title to the page metadata or include a hero section with a heading.',
+    });
+    deduction += 10;
+  } else if (pageMeta?.title && (pageMeta.title.length < 30 || pageMeta.title.length > 60)) {
     issues.push({
       severity: 'warning',
       category: 'meta',
-      message: `Page title length (${tree.meta.title.length} chars) is outside the recommended 30-60 character range.`,
+      message: `Page title length (${pageMeta.title.length} chars) is outside the recommended 30-60 character range.`,
       suggestion: 'Aim for a title between 30 and 60 characters for optimal SERP display.',
     });
     deduction += 3;
@@ -118,112 +319,32 @@ export function auditSEO(tree: PageNode): SEOAuditResult {
     deduction += 2;
   }
 
-  // ==============================
-  // 3. Semantic HTML tags
-  // ==============================
-  let sectionsChecked = 0;
-  let sectionsWithSemanticTag = 0;
-
-  walkTree(tree, (node) => {
-    if (node.type === NodeType.SECTION) {
-      sectionsChecked++;
-      if (SEMANTIC_SECTION_TAGS.has(node.tag)) {
-        sectionsWithSemanticTag++;
-      }
-    }
-  });
-
-  if (sectionsChecked > 0 && sectionsWithSemanticTag === 0) {
-    issues.push({
-      severity: 'warning',
-      category: 'semantic',
-      message: 'No semantic HTML5 sectioning elements found (header, nav, section, article, aside, footer).',
-      suggestion: 'Use semantic tags instead of plain divs to improve accessibility and SEO.',
-    });
-    deduction += 8;
-  } else if (sectionsChecked > 0) {
-    const ratio = sectionsWithSemanticTag / sectionsChecked;
-    if (ratio < 0.5) {
-      issues.push({
-        severity: 'info',
-        category: 'semantic',
-        message: `Only ${Math.round(ratio * 100)}% of sections use semantic HTML tags.`,
-        suggestion: 'Consider using semantic sectioning elements for more of your sections.',
-      });
-      deduction += 3;
-    }
+  // 4. Image alt text
+  const imageIssues = checkImageAltText(data);
+  for (const ii of imageIssues) {
+    issues.push(ii);
+    deduction += ii.severity === 'error' ? 5 : 2;
   }
 
-  // ==============================
-  // 4. Images need alt text
-  // ==============================
-  const imageChecks: ImageCheck[] = [];
-  walkTree(tree, (node) => {
-    if (node.type === NodeType.ELEMENT && node.tag === SemanticTag.IMG) {
-      const elem = node as ElementNode;
-      const alt = elem.attributes?.alt ?? '';
-      imageChecks.push({ nodeId: node.id, hasAlt: alt.trim().length > 0 });
-    }
-  });
-
-  const imagesWithoutAlt = imageChecks.filter((ic) => !ic.hasAlt);
-  for (const ic of imagesWithoutAlt) {
-    issues.push({
-      severity: 'error',
-      category: 'accessibility',
-      nodeId: ic.nodeId,
-      message: 'Image is missing alt text.',
-      suggestion: 'Add descriptive alt text to all images for accessibility and SEO.',
-    });
-    deduction += 5;
-  }
-
-  // ==============================
   // 5. Links need href
-  // ==============================
-  const linkChecks: LinkCheck[] = [];
-  walkTree(tree, (node) => {
-    if (node.type === NodeType.ELEMENT && node.tag === SemanticTag.A) {
-      const elem = node as ElementNode;
-      const href = elem.href ?? '';
-      linkChecks.push({ nodeId: node.id, hasHref: href.trim().length > 0 });
-    }
-  });
-
-  const linksWithoutHref = linkChecks.filter((lc) => !lc.hasHref);
-  for (const lc of linksWithoutHref) {
-    issues.push({
-      severity: 'warning',
-      category: 'accessibility',
-      nodeId: lc.nodeId,
-      message: 'Link is missing an href attribute.',
-      suggestion: 'All anchor tags should have a valid href.',
-    });
-    deduction += 5;
+  const linkIssues = checkLinksHref(data);
+  for (const li of linkIssues) {
+    issues.push(li);
+    deduction += li.severity === 'error' ? 5 : 3;
   }
 
-  // ==============================
-  // 6. No empty sections
-  // ==============================
-  walkTree(tree, (node) => {
-    if (node.type === NodeType.SECTION) {
-      const section = node as SectionNode;
-      if (!section.children || section.children.length === 0) {
-        issues.push({
-          severity: 'warning',
-          category: 'performance',
-          nodeId: section.id,
-          message: 'Empty section detected with no children.',
-          suggestion: 'Remove empty sections or add content to them.',
-        });
-        deduction += 3;
-      }
-    }
-  });
+  // 6. Empty page
+  if (data.content.length === 0) {
+    issues.push({
+      severity: 'warning',
+      category: 'performance',
+      message: 'Page has no content components.',
+      suggestion: 'Add content sections to the page.',
+    });
+    deduction += 10;
+  }
 
-  // ==============================
   // Compute score
-  // ==============================
   const score = Math.max(0, 100 - deduction);
   const passed = score >= 70;
 

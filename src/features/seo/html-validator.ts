@@ -1,276 +1,142 @@
-import { NodeType, SemanticTag } from '@/types/enums';
-import type { DOMNode, SectionNode, ComponentNode } from '@/types/dom-tree';
+/**
+ * HTML Validator — validates page structure for Puck-based pages.
+ *
+ * Since Puck uses a flat component array instead of a deep DOMNode tree,
+ * structural checks focus on component presence, ordering, and content.
+ */
+
+import type { Data, ComponentData } from '@puckeditor/core';
 import type { SEOIssue } from '@/types/seo';
 
-/** Heading tags mapped to their numeric level. */
-const HEADING_LEVELS: Record<string, number> = {
-  [SemanticTag.H1]: 1,
-  [SemanticTag.H2]: 2,
-  [SemanticTag.H3]: 3,
-  [SemanticTag.H4]: 4,
-  [SemanticTag.H5]: 5,
-  [SemanticTag.H6]: 6,
-};
+// ─── Helpers ─────────────────────────────────────────────────────────
 
-/** Set of all heading tag values for fast lookup. */
-const HEADING_TAGS = new Set(Object.keys(HEADING_LEVELS));
-
-// ---- Tree helpers ----
-
-/** Collect all semantic tags present in a subtree. */
-function collectTagsInSubtree(node: DOMNode): Set<string> {
-  const tags = new Set<string>();
-  walkChildren(node, (child) => {
-    tags.add(child.tag);
-  });
-  return tags;
+function getProps(component: ComponentData): Record<string, unknown> {
+  return (component.props ?? {}) as Record<string, unknown>;
 }
 
-/** Walk all descendant nodes (not the root itself). */
-function walkChildren(node: DOMNode, visitor: (n: DOMNode) => void): void {
-  if ('children' in node && Array.isArray(node.children)) {
-    for (const child of node.children as DOMNode[]) {
-      visitor(child);
-      walkChildren(child, visitor);
-    }
-  }
+function getId(component: ComponentData): string {
+  return String(getProps(component).id ?? component.type);
 }
 
-/** Build a path string like "section > container > component". */
-function buildNodePath(node: DOMNode, ancestors: DOMNode[]): string {
-  const segments = [...ancestors, node].map((n) => n.tag);
-  return segments.join(' > ');
-}
+// ─── Individual checks ───────────────────────────────────────────────
 
-// ---- Individual content model checks ----
-
-/** SECTION should contain at least one heading. */
-function checkSectionHasHeading(
-  node: SectionNode,
-  path: string,
-): SEOIssue | null {
-  if (node.tag !== SemanticTag.SECTION) return null;
-  const tags = collectTagsInSubtree(node);
-  const hasHeading = [...HEADING_TAGS].some((t) => tags.has(t));
-  if (!hasHeading) {
-    return {
+/** Check that HeaderNav has navigation links. */
+function checkNavHasLinks(component: ComponentData, issues: SEOIssue[]): void {
+  if (component.type !== 'HeaderNav') return;
+  const props = getProps(component);
+  const links = props.links as Record<string, unknown>[] | undefined;
+  if (!links || links.length === 0) {
+    issues.push({
       severity: 'warning',
       category: 'semantic-html',
-      nodeId: node.id,
-      message: `<section> at "${path}" does not contain a heading element (h1-h6).`,
-      suggestion:
-        'Add a heading (h2-h6) inside the section to provide an accessible name.',
-    };
+      nodeId: getId(component),
+      message: 'Navigation (HeaderNav) has no links.',
+      suggestion: 'Add navigation links to the header for accessibility and SEO.',
+    });
   }
-  return null;
 }
 
-/** ARTICLE should have a title/heading element. */
-function checkArticleHasHeading(
-  node: ComponentNode,
-  path: string,
-): SEOIssue | null {
-  if (node.tag !== SemanticTag.ARTICLE) return null;
-  const tags = collectTagsInSubtree(node);
-  const hasHeading = [...HEADING_TAGS].some((t) => tags.has(t));
-  if (!hasHeading) {
-    return {
+/** Check that FooterSection has content. */
+function checkFooterHasContent(component: ComponentData, issues: SEOIssue[]): void {
+  if (component.type !== 'FooterSection') return;
+  const props = getProps(component);
+  const hasLinkGroups = Array.isArray(props.linkGroups) && props.linkGroups.length > 0;
+  const hasCopyright = typeof props.copyright === 'string' && props.copyright.trim().length > 0;
+  const hasDescription = typeof props.description === 'string' && props.description.trim().length > 0;
+
+  if (!hasLinkGroups && !hasCopyright && !hasDescription) {
+    issues.push({
       severity: 'warning',
       category: 'semantic-html',
-      nodeId: node.id,
-      message: `<article> at "${path}" does not contain a heading element.`,
-      suggestion:
-        'Give each article a heading (h2-h6) so assistive technologies can identify it.',
-    };
+      nodeId: getId(component),
+      message: 'Footer section has no content (no links, copyright, or description).',
+      suggestion: 'Add link groups, copyright text, or a description to the footer.',
+    });
   }
-  return null;
 }
 
-/** NAV should contain link (<a>) elements. */
-function checkNavHasLinks(
-  node: SectionNode,
-  path: string,
-): SEOIssue | null {
-  if (node.tag !== SemanticTag.NAV) return null;
-  const tags = collectTagsInSubtree(node);
-  if (!tags.has(SemanticTag.A)) {
-    return {
-      severity: 'warning',
+/** Check that sections have a heading. */
+function checkSectionHasHeading(component: ComponentData, issues: SEOIssue[]): void {
+  const sectionTypes = new Set([
+    'FeaturesGrid', 'PricingTable', 'TestimonialSection', 'CTASection',
+    'FAQSection', 'StatsSection', 'TeamSection', 'BlogSection', 'LogoGrid',
+    'ContactForm', 'Gallery', 'SocialProof', 'ComparisonTable',
+    'ProductCards', 'FeatureShowcase', 'NewsletterSignup', 'CountdownTimer',
+  ]);
+  if (!sectionTypes.has(component.type)) return;
+
+  const props = getProps(component);
+  const heading = props.heading as string | undefined;
+  if (!heading || heading.trim().length === 0) {
+    issues.push({
+      severity: 'info',
       category: 'semantic-html',
-      nodeId: node.id,
-      message: `<nav> at "${path}" does not contain any link (<a>) elements.`,
-      suggestion:
-        'Navigation landmarks should contain links. Add anchor elements or consider using a different tag.',
-    };
+      nodeId: getId(component),
+      message: `${component.type} section does not have a heading.`,
+      suggestion: 'Adding a heading to sections improves accessibility and SEO.',
+    });
   }
-  return null;
 }
 
-/** HEADER must not nest another HEADER. */
-function checkHeaderNoNestedHeader(
-  node: SectionNode,
-  path: string,
-): SEOIssue | null {
-  if (node.tag !== SemanticTag.HEADER) return null;
-  const tags = collectTagsInSubtree(node);
-  if (tags.has(SemanticTag.HEADER)) {
-    return {
-      severity: 'error',
-      category: 'semantic-html',
-      nodeId: node.id,
-      message: `<header> at "${path}" contains a nested <header>.`,
-      suggestion: 'Remove the nested <header>. Only one <header> is allowed per sectioning root.',
-    };
-  }
-  return null;
-}
-
-/** FOOTER must not nest another FOOTER. */
-function checkFooterNoNestedFooter(
-  node: SectionNode,
-  path: string,
-): SEOIssue | null {
-  if (node.tag !== SemanticTag.FOOTER) return null;
-  const tags = collectTagsInSubtree(node);
-  if (tags.has(SemanticTag.FOOTER)) {
-    return {
-      severity: 'error',
-      category: 'semantic-html',
-      nodeId: node.id,
-      message: `<footer> at "${path}" contains a nested <footer>.`,
-      suggestion: 'Remove the nested <footer>. Only one <footer> is allowed per sectioning root.',
-    };
-  }
-  return null;
-}
-
-/** ASIDE should ideally be inside main or article for proper relationship. */
-function checkAsideContext(
-  tag: string,
-  nodeId: string,
-  ancestors: DOMNode[],
-  path: string,
-): SEOIssue | null {
-  if (tag !== SemanticTag.ASIDE) return null;
-  const parentTags = ancestors.map((a) => a.tag);
-  const insideMain = parentTags.includes(SemanticTag.MAIN);
-  const insideArticle = parentTags.includes(SemanticTag.ARTICLE);
-  if (!insideMain && !insideArticle) {
-    return {
-      severity: 'warning',
-      category: 'semantic-html',
-      nodeId,
-      message: `<aside> at "${path}" is not inside <main> or <article>.`,
-      suggestion:
-        'Place <aside> inside <main> or <article> to establish a clear relationship with surrounding content.',
-    };
-  }
-  return null;
-}
+// ─── Public API ─────────────────────────────────────────────────────
 
 /**
- * Validates HTML5 content model rules on a DOM tree.
+ * Validates page structure and semantic HTML usage for Puck page data.
  *
  * Checks performed:
- * 1. Section elements contain at least one heading
- * 2. Article elements have a heading
- * 3. Nav elements contain links
- * 4. Aside elements are within main/article
- * 5. Header does not nest another header
- * 6. Footer does not nest another footer
- * 7. Only one main element exists
- * 8. Headings do not skip levels
+ * 1. Navigation has links
+ * 2. Footer has content
+ * 3. Content sections have headings
+ * 4. Page has a header (HeaderNav)
+ * 5. Page has a footer (FooterSection)
+ * 6. Only one hero/banner component
  */
-export function validateSemanticHTML(root: DOMNode): SEOIssue[] {
+export function validateSemanticHTML(data: Data): SEOIssue[] {
   const issues: SEOIssue[] = [];
 
-  // --- Track across full tree ---
-  let mainCount = 0;
-  let lastHeadingLevel = 0;
-  const mainNodeIds: string[] = [];
+  let headerCount = 0;
+  let footerCount = 0;
+  let heroCount = 0;
 
-  // First pass: count <main> elements
-  walkChildren(root, (node) => {
-    if (node.tag === SemanticTag.MAIN) {
-      mainCount++;
-      mainNodeIds.push(node.id);
-    }
-  });
-  // The root itself might be main
-  if (root.tag === SemanticTag.MAIN) {
-    mainCount++;
-    mainNodeIds.push(root.id);
+  for (const component of data.content) {
+    checkNavHasLinks(component, issues);
+    checkFooterHasContent(component, issues);
+    checkSectionHasHeading(component, issues);
+
+    if (component.type === 'HeaderNav') headerCount++;
+    if (component.type === 'FooterSection') footerCount++;
+    if (component.type === 'HeroSection' || component.type === 'Banner') heroCount++;
   }
 
-  if (mainCount > 1) {
+  // Missing header
+  if (headerCount === 0) {
     issues.push({
-      severity: 'error',
+      severity: 'warning',
       category: 'semantic-html',
-      nodeId: mainNodeIds[1],
-      message: `Multiple <main> elements found (${mainCount}). Only one <main> is allowed per document.`,
-      suggestion: 'Remove extra <main> elements. A document must have exactly one main landmark.',
+      message: 'Page does not have a header/navigation component.',
+      suggestion: 'Add a HeaderNav component for proper page structure.',
     });
   }
 
-  // Second pass: recursive content model checks
-  function validateNode(node: DOMNode, ancestors: DOMNode[]): void {
-    const path = buildNodePath(node, ancestors);
-
-    // Section-level checks (SectionNode)
-    if (node.type === NodeType.SECTION) {
-      const section = node as SectionNode;
-      const sectionChecks = [
-        checkSectionHasHeading(section, path),
-        checkNavHasLinks(section, path),
-        checkHeaderNoNestedHeader(section, path),
-        checkFooterNoNestedFooter(section, path),
-      ];
-      for (const issue of sectionChecks) {
-        if (issue !== null) {
-          issues.push(issue);
-        }
-      }
-    }
-
-    // Aside context check (applies to any node with tag=aside)
-    const asideIssue = checkAsideContext(node.tag, node.id, ancestors, path);
-    if (asideIssue !== null) {
-      issues.push(asideIssue);
-    }
-
-    // Component-level checks (ComponentNode)
-    if (node.type === NodeType.COMPONENT) {
-      const component = node as ComponentNode;
-      const articleIssue = checkArticleHasHeading(component, path);
-      if (articleIssue !== null) {
-        issues.push(articleIssue);
-      }
-    }
-
-    // Heading hierarchy check (ElementNode)
-    if (node.type === NodeType.ELEMENT && node.tag in HEADING_LEVELS) {
-      const level = HEADING_LEVELS[node.tag];
-      if (lastHeadingLevel > 0 && level > lastHeadingLevel + 1) {
-        issues.push({
-          severity: 'warning',
-          category: 'semantic-html',
-          nodeId: node.id,
-          message: `Heading level skipped in "${path}": h${lastHeadingLevel} is followed by h${level}.`,
-          suggestion: `Use sequential heading levels. Expected h${lastHeadingLevel + 1} before h${level}.`,
-        });
-      }
-      lastHeadingLevel = level;
-    }
-
-    // Recurse into children
-    if ('children' in node && Array.isArray(node.children)) {
-      for (const child of node.children as DOMNode[]) {
-        validateNode(child, [...ancestors, node]);
-      }
-    }
+  // Missing footer
+  if (footerCount === 0) {
+    issues.push({
+      severity: 'info',
+      category: 'semantic-html',
+      message: 'Page does not have a footer component.',
+      suggestion: 'Add a FooterSection for proper page structure.',
+    });
   }
 
-  validateNode(root, []);
+  // Multiple heroes
+  if (heroCount > 1) {
+    issues.push({
+      severity: 'error',
+      category: 'semantic-html',
+      message: `Multiple hero/banner components found (${heroCount}). Use only one primary hero per page.`,
+      suggestion: 'Keep only one HeroSection or Banner component.',
+    });
+  }
 
   return issues;
 }

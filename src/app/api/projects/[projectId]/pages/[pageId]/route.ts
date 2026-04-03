@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { successResponse, errorResponse } from '@/lib/api-response';
 
@@ -104,6 +105,9 @@ export async function PUT(
         data,
       });
     });
+
+    // Bust ISR cache for the preview page
+    revalidatePath(`/preview/${projectId}/${pageId}`);
 
     return successResponse(updated);
   } catch (err: unknown) {
