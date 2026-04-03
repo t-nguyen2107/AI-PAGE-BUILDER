@@ -5,7 +5,7 @@ import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
 import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimizer';
 import * as aiMemory from '@/lib/ai/memory';
 import { parsePrompt } from '@/features/ai/prompt-parser';
-import { generateSection } from '@/features/ai/component-generator';
+import { generatePuckComponent } from '@/features/ai/component-generator';
 import type { AIGenerationResponse } from '@/types/ai';
 import type { BaseMessage } from '@langchain/core/messages';
 
@@ -33,11 +33,8 @@ export async function POST(request: NextRequest) {
   }
 
   const encoder = new TextEncoder();
-  const send = (event: Record<string, unknown>) => {
-    // We'll collect these and send from inside the stream
-  };
 
-  // --- Create pipeline stream (all work inside stream for status events) ---
+  // --- Create pipeline stream ---
   const pipelineStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (event: Record<string, unknown>) => {
@@ -60,11 +57,9 @@ export async function POST(request: NextRequest) {
         }
 
         let treeSummary: string | undefined;
-        let treeData: unknown = null;
         try {
           const page = await prisma.page.findUnique({ where: { id: pageId } });
           if (page?.treeData) {
-            treeData = page.treeData;
             treeSummary = buildTreeSummary(page.treeData);
           }
         } catch { /* non-fatal */ }
@@ -81,12 +76,11 @@ export async function POST(request: NextRequest) {
         // STEP 2: Optimize prompt
         send({ type: 'status', step: 'optimizing', label: 'Optimizing prompt...' });
         const { enrichedPrompt, nameRefs, intent, businessType } = optimizePrompt(prompt);
-        const resolvedTargetId = resolveNameToId(treeData, nameRefs);
 
         // Route: create_page → template mode, everything else → full AI mode
         const useTemplateMode = intent === 'create_page';
 
-        // STEP 3-6: Create AI stream (which emits its own status events + chunks)
+        // STEP 3-6: Create AI stream
         let aiStream: ReadableStream<Uint8Array>;
         try {
           aiStream = createAIStream(enrichedPrompt, {
@@ -101,16 +95,15 @@ export async function POST(request: NextRequest) {
           // Fallback to template-based generation
           console.error('Stream creation failed, using template fallback:', streamError);
 
-          const intent = parsePrompt(prompt);
-          const nodes = intent.componentCategory
-            ? [generateSection(intent.componentCategory as any, intent.properties)]
+          const parsedIntent = parsePrompt(prompt);
+          const components = parsedIntent.componentCategory
+            ? [generatePuckComponent(parsedIntent.componentCategory as never, parsedIntent.properties)]
             : [];
 
           const fallbackResponse: AIGenerationResponse = {
-            action: intent.action,
-            nodes,
-            targetNodeId: undefined,
-            position: 0,
+            action: parsedIntent.action,
+            components,
+            message: 'Generated from template fallback.',
           };
 
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', result: fallbackResponse })}\n\n`));
@@ -133,13 +126,6 @@ export async function POST(request: NextRequest) {
                 const event = JSON.parse(match[1]);
                 if (event.type === 'done') {
                   finalResult = event.result;
-                  // Merge server-side resolved @name → targetNodeId
-                  if (resolvedTargetId && finalResult && !finalResult.targetNodeId) {
-                    finalResult.targetNodeId = resolvedTargetId;
-                    const rewritten = encoder.encode(`data: ${JSON.stringify({ ...event, result: finalResult })}\n\n`);
-                    controller.enqueue(rewritten);
-                    continue;
-                  }
                 }
               } catch { /* ignore parse errors on intermediate chunks */ }
             }

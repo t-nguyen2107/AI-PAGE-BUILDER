@@ -1,8 +1,16 @@
-import { ComponentCategory, NodeType, SemanticTag, DisplayType, FlexDirection } from '@/types/enums';
-import { generateId } from '@/lib/id';
-import type { SectionNode, ComponentNode } from '@/types/dom-tree';
+/**
+ * Component Generator — generates Puck ComponentData from a category.
+ *
+ * Uses existing template generators to produce SectionNode trees,
+ * then converts them to Puck ComponentData via the adapter.
+ */
+
+import { ComponentCategory } from '@/types/enums';
+import type { ComponentData } from '@puckeditor/core';
+import { sectionToPuckComponent } from '@/lib/ai/puck-adapter';
+import type { SectionNode } from '@/types/dom-tree';
 import { generateHeroSection } from './templates/hero-section';
-import { generateHeroSplitSection } from './templates/hero-split';
+import { generateHeroSplitImage } from './templates/hero-split-image';
 import { generatePricingSection } from './templates/pricing-section';
 import { generateFeaturesGrid } from './templates/features-grid';
 import { generateTestimonialSection } from './templates/testimonial-section';
@@ -36,16 +44,31 @@ const SECTION_GENERATORS: Record<string, (props?: Record<string, unknown>) => Se
 };
 
 /**
+ * Generates a Puck ComponentData for a given component category.
+ * Uses the template generator + adapter conversion.
+ */
+export function generatePuckComponent(
+  category: ComponentCategory,
+  props?: Record<string, unknown>,
+): ComponentData {
+  const generator = SECTION_GENERATORS[category];
+  if (generator) {
+    const section = generator(props);
+    return sectionToPuckComponent(section);
+  }
+
+  // Fallback: generic hero
+  const section = generateHeroSection({ heading: category, ...props });
+  return sectionToPuckComponent(section);
+}
+
+/**
  * Generates a full SectionNode tree for a given component category.
- * Delegates to the appropriate template generator function.
- *
- * @param category - The component category to generate
- * @param props - Optional properties to customize the generated section
- * @returns A fully structured SectionNode
+ * @deprecated Use generatePuckComponent for Puck data.
  */
 export function generateSection(
   category: ComponentCategory,
-  props?: Record<string, unknown>
+  props?: Record<string, unknown>,
 ): SectionNode {
   const generator = SECTION_GENERATORS[category];
   if (generator) {
@@ -56,47 +79,5 @@ export function generateSection(
   return generateHeroSection({ heading: category, ...props });
 }
 
-/**
- * Generates a ComponentNode for a given category.
- * Extracts the first component node from the generated section.
- *
- * @param category - The component category to generate
- * @param props - Optional properties to customize the generated component
- * @returns A ComponentNode with proper structure
- */
-export function generateComponent(
-  category: ComponentCategory,
-  props?: Record<string, unknown>
-): ComponentNode {
-  const section = generateSection(category, props);
-
-  // Find the first ComponentNode in the generated section
-  for (const container of section.children) {
-    for (const child of container.children) {
-      if (child.type === NodeType.COMPONENT) {
-        return child as ComponentNode;
-      }
-    }
-  }
-
-  // Fallback: return a basic component
-  const now = new Date().toISOString();
-  return {
-    id: generateId(),
-    type: NodeType.COMPONENT,
-    tag: SemanticTag.DIV,
-    className: `component-${category}`,
-    category,
-    meta: { createdAt: now, updatedAt: now, aiGenerated: true },
-    children: [],
-    layout: {
-      display: DisplayType.FLEX,
-      flexDirection: FlexDirection.COLUMN,
-      gap: '1rem',
-      padding: '1.5rem',
-    },
-  };
-}
-
 // Export individual template generators for direct use
-export { generateHeroSplitSection };
+export { generateHeroSplitImage as generateHeroSplitSection };

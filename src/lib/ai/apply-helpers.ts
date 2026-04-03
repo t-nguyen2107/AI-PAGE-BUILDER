@@ -1,51 +1,92 @@
-import { NodeType, SemanticTag } from '@/types/enums';
-import type { AIDiff, AIGenerationResponse, DOMNode, PageNode } from '@/types';
+/**
+ * Apply Helpers — apply AI generation responses to Puck data.
+ *
+ * These helpers convert AIGenerationResponse actions into state updates
+ * that can be dispatched to the Puck editor.
+ */
+
+import type { AIGenerationResponse, AIDiff } from '@/types/ai';
+import type { ComponentData } from '@puckeditor/core';
+import { AIAction } from '@/types/enums';
 
 interface ApplyResponseParams {
   res: AIGenerationResponse;
-  tree: PageNode | null;
-  selectedNodeId: string | null;
+  currentComponents: ComponentData[];
+  selectedComponentId: string | null;
   applyAIDiff: (diff: AIDiff) => void;
 }
 
 /**
- * Apply an AI generation response to the DOM tree.
- * Shared by Canvas, AIChatPanel, and SelectionToolbar.
+ * Apply an AI generation response to Puck component data.
+ * Shared by editor components that consume AI output.
  */
 export function applyAIResponse({
   res,
-  tree,
-  selectedNodeId,
+  currentComponents,
+  selectedComponentId,
   applyAIDiff,
 }: ApplyResponseParams) {
-  if (res.action === 'full_page' && res.nodes.length > 0 && res.nodes[0].type !== NodeType.PAGE) {
-    const pageNode = {
-      id: tree?.id ?? `page_${Date.now()}`,
-      type: NodeType.PAGE,
-      tag: SemanticTag.MAIN,
-      className: '',
-      children: res.nodes,
-      meta: tree?.meta ?? {
-        title: 'Untitled Page',
-        slug: 'untitled',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      styleguideId: tree?.styleguideId ?? '',
-      globalSectionIds: tree?.globalSectionIds ?? [],
-    };
-    applyAIDiff({
-      action: res.action,
-      targetNodeId: tree?.id ?? '',
-      payload: pageNode as DOMNode,
-      position: res.position,
-    });
-  } else {
-    applyAIDiff({
-      action: res.action,
-      targetNodeId: res.targetNodeId ?? (selectedNodeId ?? tree?.id ?? ''),
-      payload: res.nodes.length === 1 ? res.nodes[0] : res.nodes,
-      position: res.position,
-    });
+  switch (res.action) {
+    case AIAction.FULL_PAGE: {
+      // Replace all content with AI-generated components
+      applyAIDiff({
+        action: AIAction.FULL_PAGE,
+        targetComponentId: '__root__',
+        payload: res.components,
+      });
+      break;
+    }
+
+    case AIAction.INSERT_COMPONENT: {
+      // Insert at end or at specific position
+      applyAIDiff({
+        action: AIAction.INSERT_COMPONENT,
+        targetComponentId: '__root__',
+        payload: res.components,
+        position: res.position ?? currentComponents.length,
+      });
+      break;
+    }
+
+    case AIAction.MODIFY_NODE: {
+      // Modify specific component props
+      const targetId = res.targetComponentId ?? selectedComponentId;
+      if (targetId && res.components.length > 0) {
+        applyAIDiff({
+          action: res.action,
+          targetComponentId: targetId,
+          payload: res.components[0],
+        });
+      }
+      break;
+    }
+
+    case AIAction.REPLACE_NODE: {
+      // Replace entire component
+      const targetId = res.targetComponentId ?? selectedComponentId;
+      if (targetId && res.components.length > 0) {
+        applyAIDiff({
+          action: res.action,
+          targetComponentId: targetId,
+          payload: res.components[0],
+        });
+      }
+      break;
+    }
+
+    case AIAction.DELETE_NODE: {
+      const targetId = res.targetComponentId ?? selectedComponentId;
+      if (targetId) {
+        applyAIDiff({
+          action: res.action,
+          targetComponentId: targetId,
+          payload: [],
+        });
+      }
+      break;
+    }
+
+    default:
+      console.warn('[applyAIResponse] Unknown action:', res.action);
   }
 }

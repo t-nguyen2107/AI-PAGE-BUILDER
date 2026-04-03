@@ -5,34 +5,18 @@
  * 1. AI returns { sections: [{ templateId, content }] }
  * 2. Assembler looks up each template in the registry
  * 3. Merges AI content with template defaults
- * 4. Calls each template's generator
- * 5. Auto-orders sections (header → hero → features → ... → footer)
- * 6. Returns AIGenerationResponse (same format as current AI pipeline)
+ * 4. Calls each template's generator (produces old SectionNode)
+ * 5. Converts SectionNode → Puck ComponentData via adapter
+ * 6. Auto-orders by section priority
+ * 7. Returns AIGenerationResponse with Puck ComponentData[]
  */
 
-import type { DOMNode } from '@/types/dom-tree';
 import type { AIGenerationResponse } from '@/types/ai';
 import { AIAction } from '@/types/enums';
 import { getTemplate } from './template-registry';
 import { initializeRegistry } from './registry-setup';
-
-// ─── Section ordering priority ────────────────────────────────────────────
-
-const SECTION_ORDER: Record<string, number> = {
-  'header-nav': 0,
-  'hero': 1,
-  'features': 2,
-  'stats': 3,
-  'logo-grid': 4,
-  'testimonial': 5,
-  'pricing': 6,
-  'faq': 7,
-  'blog': 8,
-  'gallery': 9,
-  'cta': 10,
-  'contact': 11,
-  'footer': 12,
-};
+import { sectionToPuckComponent, orderPuckComponents } from '@/lib/ai/puck-adapter';
+import type { ComponentData } from '@puckeditor/core';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -49,19 +33,20 @@ export interface TemplatePagePlan {
 
 /**
  * Assemble a full page from a template selection plan.
+ * Returns Puck ComponentData via the adapter.
  *
  * @param plan - AI's selection of templates + content
  * @param businessType - Optional business type for stock image fallback
- * @returns AIGenerationResponse compatible with the existing pipeline
+ * @returns AIGenerationResponse with Puck ComponentData
  */
-export function assemblePage(
+export function assemblePuckPage(
   plan: TemplatePagePlan,
   businessType?: string,
 ): AIGenerationResponse {
   // Ensure registry is populated
   initializeRegistry();
 
-  const nodes: DOMNode[] = [];
+  const components: ComponentData[] = [];
   const warnings: string[] = [];
 
   for (const selection of plan.sections) {
@@ -78,8 +63,10 @@ export function assemblePage(
     const mergedContent = { ...template.defaultContent, ...selection.content };
 
     try {
+      // Generate old SectionNode, then convert to Puck ComponentData
       const section = template.generate(mergedContent);
-      nodes.push(section);
+      const puckComponent = sectionToPuckComponent(section);
+      components.push(puckComponent);
     } catch (err) {
       const msg = `Template "${selection.templateId}" generation failed: ${err instanceof Error ? err.message : 'Unknown error'}`;
       warnings.push(msg);
@@ -87,25 +74,28 @@ export function assemblePage(
     }
   }
 
-  // Auto-order sections by category priority
-  const ordered = [...nodes].sort((a, b) => {
-    const catA = getCategoryFromNode(a);
-    const catB = getCategoryFromNode(b);
-    return (SECTION_ORDER[catA] ?? 99) - (SECTION_ORDER[catB] ?? 99);
-  });
+  // Auto-order by section priority
+  const ordered = orderPuckComponents(components);
 
   return {
     action: AIAction.FULL_PAGE,
-    nodes: ordered,
-    targetNodeId: undefined,
-    position: 0,
+    components: ordered,
     message: `Generated page with ${ordered.length} sections${warnings.length > 0 ? `. Warnings: ${warnings.join('; ')}` : ''}`,
   };
 }
 
 /**
+ * @deprecated Use assemblePuckPage instead. Kept for backward compat.
+ */
+export function assemblePage(
+  plan: TemplatePagePlan,
+  businessType?: string,
+): AIGenerationResponse {
+  return assemblePuckPage(plan, businessType);
+}
+
+/**
  * Parse a raw AI response into a TemplatePagePlan.
- * Handles both strict and loose formats.
  */
 export function parseTemplateResponse(raw: Record<string, unknown>): TemplatePagePlan | null {
   // Try strict format: { sections: [...] }
@@ -132,40 +122,4 @@ export function parseTemplateResponse(raw: Record<string, unknown>): TemplatePag
   }
 
   return null;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
-/** Extract category from a section node (via className or template registry) */
-function getCategoryFromNode(node: DOMNode): string {
-  if (node.type !== 'section') return 'unknown';
-
-  // Try to find the template that generated this node
-  const className = node.className ?? '';
-
-  // Map common class names to categories
-  const classMap: Record<string, string> = {
-    'hero-section': 'hero',
-    'features-section': 'features',
-    'pricing-section': 'pricing',
-    'hyperui-pricing-section': 'pricing',
-    'testimonial-section': 'testimonial',
-    'pb-section-gradient': 'cta',
-    'faq-section': 'faq',
-    'contact-section': 'contact',
-    'gallery-section': 'gallery',
-    'stats-section': 'stats',
-    'team-section': 'team',
-    'blog-section': 'blog',
-  };
-
-  for (const [cls, category] of Object.entries(classMap)) {
-    if (className.includes(cls)) return category;
-  }
-
-  // Check tag for header/footer
-  if (node.tag === 'header' || className.includes('nav')) return 'header-nav';
-  if (node.tag === 'footer') return 'footer';
-
-  return 'unknown';
 }

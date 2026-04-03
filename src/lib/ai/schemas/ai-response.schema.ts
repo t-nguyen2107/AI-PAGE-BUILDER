@@ -2,7 +2,7 @@
  * JSON Schema for LangChain's withStructuredOutput().
  *
  * NOT a Zod schema — raw JSON Schema avoids Zod 3/4 version conflict.
- * LangChain enforces this shape at generation time; Zod 4 post-validates after.
+ * Describes the Puck component format (flat ComponentData[]).
  */
 export const aiResponseJsonSchema = {
   type: 'object',
@@ -10,25 +10,23 @@ export const aiResponseJsonSchema = {
     action: {
       type: 'string',
       enum: [
-        'insert_section',
-        'insert_component',
-        'modify_node',
-        'delete_node',
-        'replace_node',
-        'reorder_children',
         'full_page',
+        'insert_component',
+        'modify_component',
+        'replace_component',
+        'delete_component',
         'clarify',
       ],
-      description: 'The action to perform on the DOM tree',
+      description: 'The action to perform',
     },
-    nodes: {
+    components: {
       type: 'array',
-      items: { $ref: '#/definitions/domNode' },
-      description: 'Array of DOM nodes matching the action',
+      items: { $ref: '#/definitions/componentData' },
+      description: 'Array of Puck component data objects',
     },
-    targetNodeId: {
+    targetComponentId: {
       type: 'string',
-      description: 'ID of the target node (optional for insert actions)',
+      description: 'ID of the target component for modify/replace/delete actions',
     },
     position: {
       type: 'number',
@@ -36,92 +34,50 @@ export const aiResponseJsonSchema = {
     },
     message: {
       type: 'string',
-      description: 'REQUIRED for "clarify" action — questions to ask the user. Optional for other actions — brief summary of what was generated.',
+      description: 'REQUIRED for "clarify" action — questions to ask the user. Optional for other actions — brief summary.',
     },
   },
   required: ['action'],
   additionalProperties: false,
 
   definitions: {
-    domNode: {
+    componentData: {
       type: 'object',
       properties: {
-        id: { type: 'string', description: 'Unique node ID (e.g. "n_" + random)' },
         type: {
           type: 'string',
-          enum: ['section', 'container', 'component', 'element', 'item'],
-          description: 'Node type in the hierarchy',
+          enum: [
+            'HeroSection',
+            'FeaturesGrid',
+            'PricingTable',
+            'TestimonialSection',
+            'CTASection',
+            'FAQSection',
+            'StatsSection',
+            'TeamSection',
+            'BlogSection',
+            'LogoGrid',
+            'ContactForm',
+            'HeaderNav',
+            'FooterSection',
+            'TextBlock',
+            'ImageBlock',
+            'Spacer',
+            'ColumnsLayout',
+          ],
+          description: 'Puck component type name (case-sensitive)',
         },
-        tag: {
-          type: 'string',
-          description: 'Semantic HTML tag (section, div, h1, p, img, a, button, etc.)',
-        },
-        className: { type: 'string', description: 'Tailwind CSS classes' },
-        inlineStyles: {
-          type: 'object',
-          additionalProperties: { type: 'string' },
-          description: 'Inline CSS styles',
-        },
-        meta: {
-          type: 'object',
-          properties: {
-            locked: { type: 'boolean' },
-            hidden: { type: 'boolean' },
-            aiGenerated: { type: 'boolean' },
-            sectionName: { type: 'string' },
-            createdAt: { type: 'string' },
-            updatedAt: { type: 'string' },
-          },
-        },
-        layout: {
+        props: {
           type: 'object',
           properties: {
-            display: { type: 'string', enum: ['block', 'flex', 'grid'] },
-            flexDirection: { type: 'string', enum: ['row', 'column'] },
-            justifyContent: { type: 'string' },
-            alignItems: { type: 'string' },
-            gap: { type: 'string' },
-            padding: { type: 'string' },
-            margin: { type: 'string' },
-            maxWidth: { type: 'string' },
-            width: { type: 'string' },
-            height: { type: 'string' },
-            borderRadius: { type: 'string' },
+            id: { type: 'string', description: 'Unique component ID (e.g. "comp_a3x9k2")' },
           },
-        },
-        background: {
-          type: 'object',
-          properties: {
-            color: { type: 'string' },
-            imageUrl: { type: 'string' },
-            gradient: { type: 'string' },
-          },
-        },
-        typography: {
-          type: 'object',
-          properties: {
-            fontFamily: { type: 'string' },
-            fontSize: { type: 'string' },
-            fontWeight: { type: 'string' },
-            lineHeight: { type: 'string' },
-            color: { type: 'string' },
-            textAlign: { type: 'string', enum: ['left', 'center', 'right'] },
-          },
-        },
-        content: { type: 'string', description: 'Text content for text elements' },
-        src: { type: 'string', description: 'Image source URL' },
-        href: { type: 'string', description: 'Link URL' },
-        category: {
-          type: 'string',
-          enum: ['hero', 'pricing', 'features', 'testimonial', 'cta', 'faq', 'gallery', 'contact', 'header-nav', 'footer', 'stats', 'team', 'logo-grid', 'blog', 'custom'],
-        },
-        children: {
-          type: 'array',
-          items: { $ref: '#/definitions/domNode' },
-          description: 'Child nodes (empty for item nodes)',
+          required: ['id'],
+          additionalProperties: true,
+          description: 'Component props — varies by type. See system prompt for full schema.',
         },
       },
-      required: ['id', 'type', 'tag'],
+      required: ['type', 'props'],
       additionalProperties: false,
     },
   },

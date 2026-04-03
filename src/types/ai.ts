@@ -1,29 +1,25 @@
-import type { NodeType } from './enums';
+import type { ComponentData } from '@puckeditor/core';
 import type { AIAction } from './enums';
-import type { DOMNode } from './dom-tree';
 
 export interface AIGenerationRequest {
   prompt: string;
   projectId: string;
   pageId: string;
-  targetNodeType?: NodeType;
-  targetNodeId?: string;
-  position?: number;
   styleguideId: string;
 }
 
 export interface AIGenerationResponse {
   action: AIAction;
-  nodes: DOMNode[];
-  targetNodeId?: string;
+  components: ComponentData[];
+  targetComponentId?: string;
   position?: number;
   message?: string;
 }
 
 export interface AIDiff {
   action: AIAction;
-  targetNodeId: string;
-  payload: Partial<DOMNode> | DOMNode | DOMNode[];
+  targetComponentId: string;
+  payload: Partial<ComponentData> | ComponentData | ComponentData[];
   position?: number;
 }
 

@@ -5,7 +5,7 @@ import { generateStatsSection } from '../templates/stats-section';
 import { generateTeamSection } from '../templates/team-section';
 import { generateLogoGridSection } from '../templates/logo-grid-section';
 import { generateBlogSection } from '../templates/blog-section';
-import { generateSection, generateComponent } from '../component-generator';
+import { generateSection, generatePuckComponent } from '../component-generator';
 
 // ============================================================
 // Helper: validate section node structure
@@ -284,16 +284,19 @@ describe('generateSection (component-generator)', () => {
   });
 });
 
-describe('generateComponent (component-generator)', () => {
-  it('generates a component node for STATS', () => {
-    const comp = generateComponent(ComponentCategory.STATS);
-    validateComponentNode(comp);
+describe('generatePuckComponent (component-generator)', () => {
+  it('generates a Puck component for STATS', () => {
+    const comp = generatePuckComponent(ComponentCategory.STATS);
+    expect(comp).toHaveProperty('type');
+    expect(comp).toHaveProperty('props');
+    expect(comp.props).toHaveProperty('id');
+    expect(typeof comp.type).toBe('string');
   });
 
-  it('generates a component node for BLOG', () => {
-    const comp = generateComponent(ComponentCategory.BLOG);
-    validateComponentNode(comp);
-    // Component extracted from section — category may not be set on all sub-components
-    expect(comp.type).toBe(NodeType.COMPONENT);
+  it('generates a Puck component for BLOG', () => {
+    const comp = generatePuckComponent(ComponentCategory.BLOG);
+    expect(comp).toHaveProperty('type');
+    expect(comp).toHaveProperty('props');
+    expect(comp.props).toHaveProperty('id');
   });
 });

@@ -5,15 +5,17 @@ import { buildTemplatePrompt } from './prompts/template-prompt';
 import { validateOutput } from './output';
 import { validateTemplateResponse } from './prompts/template-schema';
 import { sanitizeAIResponse } from './output-sanitizer';
-import { assemblePage } from '@/features/ai/template-assembler';
+import { convertAIResponseNodes, orderPuckComponents } from './puck-adapter';
+import { generateId } from '@/lib/id';
 import type { AIGenerationResponse } from '@/types/ai';
+import type { ComponentData } from '@puckeditor/core';
 
 interface StreamOptions {
   styleguideData?: { colors?: string; typography?: string };
   miniContext?: string;
   history?: BaseMessage[];
   treeSummary?: string;
-  /** 'template' = compact prompt, AI picks templates + fills content. 'full' = current full DOM pipeline. */
+  /** 'template' = compact prompt, AI picks templates + fills content. 'full' = current full AI pipeline. */
   mode?: 'full' | 'template';
   /** Business type for template assembler (stock image selection) */
   businessType?: string;
@@ -34,7 +36,7 @@ export interface SSEEvent {
  * Flow:
  * 1. Stream raw text chunks from the model (for "thinking" UX)
  * 2. Accumulate full text
- * 3. Parse + validate with Zod 4
+ * 3. Parse + validate with Puck component schema
  * 4. Emit final `done` event with structured result
  */
 export function createAIStream(input: string, options: StreamOptions = {}): ReadableStream<Uint8Array> {
@@ -67,14 +69,13 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
             });
 
         // Build messages manually for streaming (no withStructuredOutput)
-        // Note: input is already optimized by the route
         const messages = await prompt.formatMessages({
           input,
           history: options.history ?? [],
         });
 
         let accumulated = '';
-        const MAX_ACCUMULATED = 100_000; // ~25k tokens — abort if model runs away
+        const MAX_ACCUMULATED = 100_000;
         const stream = await model.stream(messages);
 
         for await (const chunk of stream) {
@@ -100,20 +101,43 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         }
 
         if (isTemplateMode) {
-          // Template mode: validate template selection + assemble page
-          send({ type: 'status', step: 'validating', label: 'Assembling page from templates...' });
+          // Template mode: validate Puck ComponentData response
+          send({ type: 'status', step: 'validating', label: 'Validating components...' });
           const { data: plan, error: planError } = validateTemplateResponse(parsed);
           if (planError || !plan) {
-            send({ type: 'error', message: planError ?? 'Template selection validation failed' });
+            send({ type: 'error', message: planError ?? 'Component validation failed' });
             controller.close();
             return;
           }
 
-          const assembled = assemblePage(plan, options.businessType);
-          send({ type: 'done', result: assembled });
+          // Build ComponentData with auto-generated IDs, then order by section priority
+          const components: ComponentData[] = plan.components.map((c) => ({
+            type: c.type,
+            props: {
+              id: generateId(),
+              ...c.props,
+            },
+          }));
+          const ordered = orderPuckComponents(components);
+
+          const result: AIGenerationResponse = {
+            action: 'full_page' as import('@/types/enums').AIAction,
+            components: ordered,
+            message: `Generated page with ${ordered.length} components`,
+          };
+          send({ type: 'done', result });
         } else {
-          // Full mode: sanitize + validate full DOM response
+          // Full mode: sanitize + validate Puck component response
           const sanitized = sanitizeAIResponse(parsed as Record<string, unknown>);
+
+          // Check if legacy "nodes" format — convert via adapter
+          if (sanitized._legacyNodes) {
+            const legacyNodes = sanitized.nodes as unknown[];
+            const components = convertAIResponseNodes(legacyNodes);
+            delete sanitized._legacyNodes;
+            delete sanitized.nodes;
+            sanitized.components = components;
+          }
 
           send({ type: 'status', step: 'validating', label: 'Validating output...' });
           const { data, error } = validateOutput(sanitized);
@@ -170,10 +194,8 @@ export function extractJSON(text: string): unknown {
   // Truncated JSON repair — output cut mid-stream by maxTokens
   if (first !== -1) {
     let truncated = cleaned.slice(first);
-    // Remove trailing incomplete string/value
     truncated = truncated.replace(/"[^"\\]*$/, '');
     truncated = truncated.replace(/,\s*$/, '');
-    // Count unclosed braces/brackets and close them
     let open = 0;
     for (const ch of truncated) {
       if (ch === '{' || ch === '[') open++;
@@ -185,7 +207,6 @@ export function extractJSON(text: string): unknown {
     console.error('[streaming/extractJSON] Truncated repair failed. Length:', truncated.length);
   }
 
-  // Log what we got for debugging
   console.error('[streaming/extractJSON] Failed to parse. Total length:', cleaned.length, 'First 300 chars:', cleaned.substring(0, 300));
   return null;
 }

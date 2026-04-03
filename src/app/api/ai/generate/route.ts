@@ -5,13 +5,16 @@ import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
 import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimizer';
 import * as aiMemory from '@/lib/ai/memory';
 import { parsePrompt } from '@/features/ai/prompt-parser';
-import { generateSection } from '@/features/ai/component-generator';
+import { generateSection, generatePuckComponent } from '@/features/ai/component-generator';
 import { successResponse, errorResponse } from '@/lib/api-response';
-import { assemblePage } from '@/features/ai/template-assembler';
 import { validateTemplateResponse } from '@/lib/ai/prompts/template-schema';
 import { buildTemplatePrompt } from '@/lib/ai/prompts/template-prompt';
 import { createModel } from '@/lib/ai/provider';
 import { extractJSON } from '@/lib/ai/streaming';
+import { orderPuckComponents } from '@/lib/ai/puck-adapter';
+import { generateId } from '@/lib/id';
+import type { ComponentData } from '@puckeditor/core';
+import { AIAction } from '@/types/enums';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,8 +122,8 @@ export async function POST(request: NextRequest) {
   if (intent === 'create_page') {
     try {
       const model = createModel();
-      const prompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData });
-      const messages = await prompt.formatMessages({ input: enrichedPrompt });
+      const tmplPrompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData });
+      const messages = await tmplPrompt.formatMessages({ input: enrichedPrompt });
       const response = await model.invoke(messages);
 
       const text = typeof response.content === 'string' ? response.content : '';
@@ -129,13 +132,22 @@ export async function POST(request: NextRequest) {
       if (parsed) {
         const { data: plan, error: planError } = validateTemplateResponse(parsed);
         if (plan && !planError) {
-          const assembled = assemblePage(plan, businessType ?? undefined);
+          // Build ComponentData with auto-generated IDs, order by section priority
+          const components: ComponentData[] = plan.components.map((c) => ({
+            type: c.type,
+            props: {
+              id: generateId(),
+              ...c.props,
+            },
+          }));
+          const ordered = orderPuckComponents(components);
+
           return successResponse({
-            action: assembled.action,
-            nodes: assembled.nodes,
-            targetNodeId: assembled.targetNodeId ?? resolvedTargetNodeId ?? null,
-            position: assembled.position ?? position ?? 0,
-            message: assembled.message ?? null,
+            action: AIAction.FULL_PAGE,
+            components: ordered,
+            targetComponentId: resolvedTargetNodeId ?? null,
+            position: position ?? 0,
+            message: `Generated page with ${ordered.length} components`,
           });
         }
       }
@@ -163,15 +175,15 @@ export async function POST(request: NextRequest) {
     // Fallback to template-based generation
     try {
       const intent = parsePrompt(prompt);
-      const nodes = intent.componentCategory
-        ? [generateSection(intent.componentCategory as any, intent.properties)]
+      const components = intent.componentCategory
+        ? [generatePuckComponent(intent.componentCategory as any, intent.properties)]
         : [];
 
-      if (nodes.length > 0) {
+      if (components.length > 0) {
         const fallbackResponse: import('@/types/ai').AIGenerationResponse = {
           action: intent.action,
-          nodes,
-          targetNodeId: targetNodeId ?? undefined,
+          components,
+          targetComponentId: targetNodeId ?? undefined,
           position: position ?? 0,
         };
 
@@ -197,8 +209,8 @@ export async function POST(request: NextRequest) {
   const finalData = responseData
     ? {
         action: responseData.action,
-        nodes: responseData.nodes,
-        targetNodeId: responseData.targetNodeId ?? resolvedTargetNodeId ?? null,
+        components: responseData.components,
+        targetComponentId: responseData.targetComponentId ?? resolvedTargetNodeId ?? null,
         position: responseData.position ?? position ?? 0,
         message: responseData.message ?? null,
       }
