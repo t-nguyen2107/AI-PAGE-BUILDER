@@ -7,8 +7,7 @@ export function FooterSection({ logo, description, linkGroups, copyright }: Foot
     <footer className="w-full bg-muted/50 border-t border-border text-foreground">
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div
-          className="grid gap-8"
-          style={{ gridTemplateColumns: `repeat(${Math.min(colCount, 4)}, minmax(0, 1fr))` }}
+          className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${colCount >= 3 ? "lg:grid-cols-3" : ""} ${colCount >= 4 ? "xl:grid-cols-4" : ""}`}
         >
           <div>
             {logo && <p className="font-bold text-xl mb-3">{logo}</p>}

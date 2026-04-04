@@ -41,6 +41,11 @@ export const apiClient = {
       method: 'PUT',
       body: JSON.stringify({ treeData }),
     }),
+  updatePage: (projectId: string, pageId: string, data: Partial<Page>) =>
+    request<Page>(`/projects/${projectId}/pages/${pageId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
   deletePage: (projectId: string, pageId: string) =>
     request<null>(`/projects/${projectId}/pages/${pageId}`, { method: 'DELETE' }),
 

@@ -13,8 +13,7 @@ export function PricingTable({ heading, subtext, plans }: PricingTableProps) {
           )}
         </div>
         <div
-          className="grid gap-6 items-start"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}
+          className="grid gap-6 items-start grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         >
           {plans.map((plan, i) => (
             <div

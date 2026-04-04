@@ -1,4 +1,23 @@
 export const categories = {
+  // ─── Atomic (composable) ────────────────────────────────────────────
+  atomic: {
+    title: "Building Blocks",
+    components: [
+      "HeadingBlock",
+      "TextBlock",
+      "RichTextBlock",
+      "ButtonBlock",
+      "CardBlock",
+      "ImageBlock",
+      "Blank",
+    ],
+  },
+  // ─── Layout ────────────────────────────────────────────────────────
+  layout: {
+    title: "Layout",
+    components: ["SectionBlock", "Flex", "Grid", "ColumnsLayout", "Spacer"],
+  },
+  // ─── Sections ────────────────────────────────────────────────────────
   sections: {
     title: "Sections",
     components: [
@@ -13,22 +32,26 @@ export const categories = {
       "BlogSection",
       "LogoGrid",
       "ContactForm",
+      "FeatureShowcase",
+      "ProductCards",
+      "ComparisonTable",
+      "Gallery",
     ],
   },
-  layout: {
-    title: "Layout",
-    components: ["ColumnsLayout", "Spacer"],
-  },
-  typography: {
-    title: "Typography",
-    components: ["TextBlock"],
-  },
-  media: {
-    title: "Media",
-    components: ["ImageBlock"],
-  },
+  // ─── Navigation ─────────────────────────────────────────────────────
   navigation: {
     title: "Navigation",
     components: ["HeaderNav", "FooterSection"],
+  },
+  // ─── Marketing ────────────────────────────────────────────────────────
+  marketing: {
+    title: "Marketing",
+    components: [
+      "NewsletterSignup",
+      "SocialProof",
+      "CountdownTimer",
+      "AnnouncementBar",
+      "Banner",
+    ],
   },
 };

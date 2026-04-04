@@ -45,16 +45,29 @@ export async function PUT(
   const { projectId } = await params;
   try {
     const body = await request.json();
-    const { name, description } = body as {
+    const {
+      name, description,
+      siteName, companyName, logo, favicon,
+      gaCode, headScripts, bodyScripts,
+    } = body as {
       name?: string;
       description?: string;
+      siteName?: string;
+      companyName?: string;
+      logo?: string;
+      favicon?: string;
+      gaCode?: string;
+      headScripts?: string;
+      bodyScripts?: string;
     };
 
     // Ensure at least one updatable field is provided
-    if (name === undefined && description === undefined) {
+    const hasUpdate = [name, description, siteName, companyName, logo, favicon, gaCode, headScripts, bodyScripts]
+      .some((v) => v !== undefined);
+    if (!hasUpdate) {
       return errorResponse(
         'VALIDATION_ERROR',
-        'Provide at least one field to update: name or description',
+        'Provide at least one field to update',
         422,
       );
     }
@@ -64,9 +77,16 @@ export async function PUT(
     }
 
     // Build update payload — only include fields that were provided
-    const data: { name?: string; description?: string | null } = {};
+    const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name.trim();
     if (description !== undefined) data.description = description?.trim() ?? null;
+    if (siteName !== undefined) data.siteName = siteName?.trim() || null;
+    if (companyName !== undefined) data.companyName = companyName?.trim() || null;
+    if (logo !== undefined) data.logo = logo?.trim() || null;
+    if (favicon !== undefined) data.favicon = favicon?.trim() || null;
+    if (gaCode !== undefined) data.gaCode = gaCode?.trim() || null;
+    if (headScripts !== undefined) data.headScripts = headScripts || null;
+    if (bodyScripts !== undefined) data.bodyScripts = bodyScripts || null;
 
     const updated = await prisma.project.update({
       where: { id: projectId },

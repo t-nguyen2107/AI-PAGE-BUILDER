@@ -8,6 +8,7 @@ import { sanitizeAIResponse } from './output-sanitizer';
 import { convertAIResponseNodes, orderPuckComponents } from './puck-adapter';
 import { generateId } from '@/lib/id';
 import type { AIGenerationResponse } from '@/types/ai';
+import { AIAction } from '@/types/enums';
 import type { ComponentData } from '@puckeditor/core';
 
 interface StreamOptions {
@@ -121,7 +122,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
           const ordered = orderPuckComponents(components);
 
           const result: AIGenerationResponse = {
-            action: 'full_page' as import('@/types/enums').AIAction,
+            action: AIAction.FULL_PAGE,
             components: ordered,
             message: `Generated page with ${ordered.length} components`,
           };

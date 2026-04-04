@@ -13,8 +13,7 @@ export function FeaturesGrid({ heading, subtext, columns, features }: FeaturesGr
           )}
         </div>
         <div
-          className="grid gap-6"
-          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+          className={`grid gap-6 grid-cols-1 md:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""}`}
         >
           {features.map((feature, i) => (
             <div

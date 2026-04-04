@@ -5,6 +5,13 @@ export interface Project {
   name: string;
   description?: string;
   thumbnailUrl?: string;
+  siteName?: string;
+  companyName?: string;
+  logo?: string;
+  favicon?: string;
+  gaCode?: string;
+  headScripts?: string;
+  bodyScripts?: string;
   styleguideId: string;
   globalSectionIds: string[];
   createdAt: string;

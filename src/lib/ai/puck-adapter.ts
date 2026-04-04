@@ -522,18 +522,27 @@ export function convertAIResponseNodes(nodes: unknown[]): ComponentData[] {
 // ─── Section ordering ────────────────────────────────────────────────────────
 
 const SECTION_ORDER: Record<string, number> = {
-  HeaderNav: 0,
-  HeroSection: 1,
-  FeaturesGrid: 2,
-  StatsSection: 3,
-  LogoGrid: 4,
+  AnnouncementBar: 0,
+  HeaderNav: 1,
+  HeroSection: 2,
+  FeaturesGrid: 3,
+  FeatureShowcase: 3,
+  StatsSection: 4,
+  SocialProof: 4,
+  LogoGrid: 5,
   TestimonialSection: 5,
   PricingTable: 6,
+  ComparisonTable: 6,
+  ProductCards: 7,
   FAQSection: 7,
   BlogSection: 8,
+  Gallery: 8,
   CTASection: 9,
+  CountdownTimer: 9,
+  NewsletterSignup: 10,
   ContactForm: 10,
-  FooterSection: 11,
+  Banner: 11,
+  FooterSection: 12,
 };
 
 /**

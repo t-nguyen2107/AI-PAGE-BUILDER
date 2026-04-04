@@ -1,4 +1,76 @@
-import type { RichText } from "@puckeditor/core";
+import type { RichText, Slot } from "@puckeditor/core";
+
+// ─── Layout helpers (re-exported from components) ──────────────────
+export type { LayoutFieldProps, WithLayout } from "./components/Layout";
+
+// ─── Atomic Blocks (composable) ────────────────────────────────────
+
+export type ButtonBlockProps = {
+  label: string;
+  href: string;
+  variant: "primary" | "secondary" | "outline";
+  size: "sm" | "md" | "lg";
+  fullWidth: boolean;
+  layout?: import("./components/Layout").LayoutFieldProps;
+};
+
+export type CardBlockProps = {
+  title: string;
+  description: string;
+  icon?: string;
+  imageUrl?: string;
+  href?: string;
+  mode: "card" | "flat";
+  layout?: import("./components/Layout").LayoutFieldProps;
+};
+
+export type HeadingBlockProps = {
+  text: string;
+  level: "h1" | "h2" | "h3" | "h4";
+  align: "left" | "center" | "right";
+  size: "sm" | "md" | "lg" | "xl";
+  layout?: import("./components/Layout").LayoutFieldProps;
+};
+
+export type TextBlockProps = {
+  text: string;
+  align: "left" | "center" | "right";
+  size: "sm" | "md" | "lg";
+  color: "default" | "muted";
+  maxWidth?: string;
+  layout?: import("./components/Layout").LayoutFieldProps;
+};
+
+export type BlankProps = {
+  children: Slot;
+};
+
+export type FlexProps = {
+  direction: "row" | "column";
+  justifyContent: "start" | "center" | "end" | "between" | "around";
+  alignItems: "start" | "center" | "end" | "stretch";
+  gap: number;
+  wrap: boolean;
+  items: Slot;
+};
+
+export type GridProps = {
+  numColumns: number;
+  gap: number;
+  items: Slot;
+};
+
+export type SectionBlockProps = {
+  paddingY: string;
+  paddingX: string;
+  maxWidth: string;
+  bgColor: string;
+  bgImageUrl: string;
+  bgOverlay: boolean;
+  content: Slot;
+};
+
+// ─── Section Blocks (keep existing) ────────────────────────────────
 
 // ─── Hero ───────────────────────────────────────────────────────────
 export type HeroSectionProps = {
@@ -158,8 +230,8 @@ export type FooterSectionProps = {
   copyright?: string;
 };
 
-// ─── Text Block ─────────────────────────────────────────────────────
-export type TextBlockProps = {
+// ─── RichText Block ────────────────────────────────────────────────
+export type RichTextBlockProps = {
   content: RichText;
   align: "left" | "center" | "right";
   maxWidth: "sm" | "md" | "lg" | "xl" | "full";
@@ -191,8 +263,136 @@ export type ColumnsLayoutProps = {
   col4?: SlotRender;
 };
 
+// ─── Newsletter Signup ────────────────────────────────────────────────
+export type NewsletterSignupProps = {
+  heading: string;
+  subtext?: string;
+  placeholder: string;
+  buttonText: string;
+  layout: "centered" | "split";
+  backgroundUrl?: string;
+};
+
+// ─── Gallery ─────────────────────────────────────────────────────────
+export type GalleryImage = {
+  src: string;
+  alt: string;
+  caption?: string;
+};
+export type GalleryProps = {
+  heading?: string;
+  columns: 2 | 3 | 4;
+  images: GalleryImage[];
+};
+
+// ─── Social Proof ────────────────────────────────────────────────────
+export type SocialProofStat = {
+  value: string;
+  label: string;
+};
+export type SocialProofLogo = {
+  name: string;
+  imageUrl: string;
+};
+export type SocialProofProps = {
+  heading?: string;
+  stats: SocialProofStat[];
+  logos: SocialProofLogo[];
+  showAvatars: boolean;
+  avatarCount: number;
+  testimonialText?: string;
+};
+
+// ─── Comparison Table ────────────────────────────────────────────────
+export type ComparisonPlan = {
+  name: string;
+  highlighted: boolean;
+};
+export type ComparisonFeature = {
+  name: string;
+  values: string[];
+};
+export type ComparisonTableProps = {
+  heading?: string;
+  plans: ComparisonPlan[];
+  features: ComparisonFeature[];
+};
+
+// ─── Product Cards ───────────────────────────────────────────────────
+export type ProductCard = {
+  name: string;
+  price: string;
+  originalPrice?: string;
+  imageUrl?: string;
+  description?: string;
+  badge?: string;
+  href: string;
+};
+export type ProductCardsProps = {
+  heading?: string;
+  columns: 2 | 3 | 4;
+  products: ProductCard[];
+};
+
+// ─── Feature Showcase ────────────────────────────────────────────────
+export type ShowcaseFeature = {
+  title: string;
+  description: string;
+};
+export type FeatureShowcaseProps = {
+  heading: string;
+  subtext?: string;
+  imageUrl: string;
+  features: ShowcaseFeature[];
+  imagePosition: "left" | "right";
+  ctaText?: string;
+  ctaHref?: string;
+};
+
+// ─── Countdown Timer ─────────────────────────────────────────────────
+export type CountdownTimerProps = {
+  heading: string;
+  subtext?: string;
+  endDate: string;
+  ctaText?: string;
+  ctaHref?: string;
+  showDays: boolean;
+  showHours: boolean;
+};
+
+// ─── Announcement Bar ────────────────────────────────────────────────
+export type AnnouncementBarProps = {
+  message: string;
+  ctaText?: string;
+  ctaHref?: string;
+  bgColor: "primary" | "dark" | "accent";
+  dismissible: boolean;
+};
+
+// ─── Banner ──────────────────────────────────────────────────────────
+export type BannerProps = {
+  heading: string;
+  subtext?: string;
+  ctaText: string;
+  ctaHref: string;
+  variant: "gradient" | "image" | "solid";
+  backgroundUrl?: string;
+  align: "left" | "center";
+};
+
 // ─── All component names (for Config generics) ──────────────────────
 export type ComponentProps = {
+  // Atomic (composable)
+  ButtonBlock: ButtonBlockProps;
+  CardBlock: CardBlockProps;
+  HeadingBlock: HeadingBlockProps;
+  TextBlock: TextBlockProps;
+  RichTextBlock: RichTextBlockProps;
+  Blank: BlankProps;
+  Flex: FlexProps;
+  Grid: GridProps;
+  SectionBlock: SectionBlockProps;
+  // Sections
   HeroSection: HeroSectionProps;
   FeaturesGrid: FeaturesGridProps;
   PricingTable: PricingTableProps;
@@ -206,8 +406,16 @@ export type ComponentProps = {
   ContactForm: ContactFormProps;
   HeaderNav: HeaderNavProps;
   FooterSection: FooterSectionProps;
-  TextBlock: TextBlockProps;
   ImageBlock: ImageBlockProps;
   Spacer: SpacerProps;
   ColumnsLayout: ColumnsLayoutProps;
+  NewsletterSignup: NewsletterSignupProps;
+  Gallery: GalleryProps;
+  SocialProof: SocialProofProps;
+  ComparisonTable: ComparisonTableProps;
+  ProductCards: ProductCardsProps;
+  FeatureShowcase: FeatureShowcaseProps;
+  CountdownTimer: CountdownTimerProps;
+  AnnouncementBar: AnnouncementBarProps;
+  Banner: BannerProps;
 };

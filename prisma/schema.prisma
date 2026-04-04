@@ -15,6 +15,13 @@ model Project {
   name         String
   description  String?
   thumbnailUrl String?
+  siteName     String?   // Display name for the website
+  companyName  String?   // Legal/company name
+  logo         String?   // Logo image URL
+  favicon      String?   // Favicon URL
+  gaCode       String?   // Google Analytics tracking ID
+  headScripts  String?   // Raw HTML for <head>
+  bodyScripts  String?   // Raw HTML for before-</body>
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

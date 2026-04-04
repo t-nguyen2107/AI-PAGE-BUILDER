@@ -10,8 +10,7 @@ export function StatsSection({ heading, stats, columns }: StatsSectionProps) {
           </h2>
         )}
         <div
-          className="grid gap-8"
-          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+          className={`grid gap-8 grid-cols-2 ${columns >= 3 ? "md:grid-cols-3" : ""} ${columns >= 4 ? "lg:grid-cols-4" : ""}`}
         >
           {stats.map((stat, i) => (
             <div key={i} className="text-center">

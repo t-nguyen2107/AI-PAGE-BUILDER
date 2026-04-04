@@ -3,11 +3,8 @@ import type { ColumnsLayoutProps } from "../types";
 export function ColumnsLayout({ columns, gap, col1, col2, col3, col4 }: ColumnsLayoutProps) {
   return (
     <div
-      className="grid w-full"
-      style={{
-        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-        gap: `${gap}px`,
-      }}
+      className={`grid w-full grid-cols-1 md:grid-cols-2 ${columns >= 3 ? "lg:grid-cols-3" : ""} ${columns >= 4 ? "xl:grid-cols-4" : ""}`}
+      style={{ gap: `${gap}px` }}
     >
       <div>{col1?.()}</div>
       <div>{col2?.()}</div>

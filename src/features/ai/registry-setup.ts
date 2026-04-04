@@ -21,7 +21,7 @@ import { generateFeaturesZigzag } from './templates/features-zigzag';
 import { generateFeaturesSimple2Col } from './templates/features-simple-2col';
 import { generatePricingSection } from './templates/pricing-section';
 import { generatePricingMinimal } from './templates/pricing-minimal';
-import { generateHyperUIPricingSection } from './templates/pricing-section-hyperui';
+
 import { generateTestimonialSection } from './templates/testimonial-section';
 import { generateTestimonialSingle } from './templates/testimonial-single';
 import { generateCtaSection } from './templates/cta-section';
@@ -396,21 +396,6 @@ export function initializeRegistry(): void {
       tiers: [
         { name: 'Starter', price: '$19', description: 'For individuals', features: ['5 Projects', '1GB Storage', 'Email Support'], highlighted: false },
         { name: 'Professional', price: '$49', description: 'For teams', features: ['Unlimited Projects', '50GB Storage', 'Priority Support', 'Custom Domains'], highlighted: true },
-      ],
-    },
-  });
-
-  registerTemplate<PricingContent>({
-    id: 'pricing_hyperui_3tier',
-    category: 'pricing',
-    label: 'HyperUI 3-Tier Pricing',
-    description: '3-tier pricing cards with highlighted Pro tier (indigo border), hover effects, and text checkmarks. Responsive grid layout.',
-    generate: (content) => generateHyperUIPricingSection(p(content)),
-    defaultContent: {
-      tiers: [
-        { name: 'Starter', price: '$20', period: '/month', features: ['10 users included', '2GB of storage', 'Email support', 'Help center access'], highlighted: false, ctaText: 'Get Started' },
-        { name: 'Pro', price: '$30', period: '/month', features: ['20 users included', '5GB of storage', 'Email support', 'Help center access', 'Phone support', 'Community access'], highlighted: true, ctaText: 'Get Started' },
-        { name: 'Enterprise', price: '$99', period: '/month', features: ['Unlimited users', '100GB of storage', 'Priority email support', 'Help center access', '24/7 Phone support', 'Community access', 'Custom integrations'], highlighted: false, ctaText: 'Contact Sales' },
       ],
     },
   });

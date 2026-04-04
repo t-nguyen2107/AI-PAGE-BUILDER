@@ -1,7 +1,11 @@
 /**
  * Template Assembler — builds a full page from AI's template selections.
  *
- * Flow:
+ * @deprecated This module is no longer used by the main pipeline.
+ * AI now outputs Puck ComponentData directly (see template-prompt.ts).
+ * Kept for potential future use or manual page assembly.
+ *
+ * Old flow (now bypassed):
  * 1. AI returns { sections: [{ templateId, content }] }
  * 2. Assembler looks up each template in the registry
  * 3. Merges AI content with template defaults
