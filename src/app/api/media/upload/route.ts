@@ -1,16 +1,39 @@
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import sharp from "sharp";
 import { successResponse, errorResponse } from "@/lib/api-response";
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_SIZE = 25 * 1024 * 1024; // 25 MB
+
 const ALLOWED_TYPES = new Set([
+  // Images
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
   "image/svg+xml",
+  "image/avif",
+  // Video
+  "video/mp4",
+  "video/webm",
+  // Audio
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/ogg",
+  // Documents
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/csv",
+]);
+
+const IMAGE_CONVERT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
   "image/avif",
 ]);
 
@@ -18,6 +41,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
+    const projectId = formData.get("projectId") as string | null;
 
     if (!file || !(file instanceof File)) {
       return errorResponse("NO_FILE", "No file provided", 400);
@@ -28,23 +52,38 @@ export async function POST(request: Request) {
     }
 
     if (file.size > MAX_SIZE) {
-      return errorResponse("FILE_TOO_LARGE", "Max file size is 5 MB", 400);
+      return errorResponse("FILE_TOO_LARGE", "Max file size is 25 MB", 400);
     }
 
-    // Ensure upload dir exists
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
+    // Determine upload directory
+    const subDir = projectId ? join(projectId) : "";
+    const uploadDir = join(process.cwd(), "public", "uploads", subDir);
+
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
     }
 
-    // Generate safe unique filename
-    const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+    let buffer: Buffer = Buffer.from(await file.arrayBuffer());
+    let ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+
+    // Convert raster images to webp
+    if (IMAGE_CONVERT_TYPES.has(file.type)) {
+      buffer = Buffer.from(await sharp(buffer).webp({ quality: 80 }).toBuffer());
+      ext = ".webp";
+    }
+
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-    const filePath = join(UPLOAD_DIR, safeName);
-
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const filePath = join(uploadDir, safeName);
     await writeFile(filePath, buffer);
 
-    return successResponse({ url: `/uploads/${safeName}`, name: file.name });
+    const url = projectId ? `/uploads/${projectId}/${safeName}` : `/uploads/${safeName}`;
+
+    return successResponse({
+      url,
+      name: file.name,
+      type: file.type,
+      size: buffer.length,
+    });
   } catch (e) {
     return errorResponse("UPLOAD_ERROR", "Failed to upload file", 500);
   }

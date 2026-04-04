@@ -27,6 +27,14 @@ export interface Page {
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string[];
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  robots?: string;
+  twitterCard?: string;
+  twitterImage?: string;
+  structuredData?: string;
   isHomePage: boolean;
   treeData: PageNode;
   createdAt: string;

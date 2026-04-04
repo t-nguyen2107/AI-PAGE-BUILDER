@@ -41,6 +41,14 @@ model Page {
   seoTitle       String?
   seoDescription String?
   seoKeywords    String?
+  ogTitle        String?
+  ogDescription  String?
+  ogImage        String?
+  canonicalUrl   String?
+  robots         String?   @default("index, follow")
+  twitterCard    String?   @default("summary")
+  twitterImage   String?
+  structuredData String?   @default("{}")
   isHomePage     Boolean  @default(false)
   treeData       String   // JSON string — serialized PageNode tree
 

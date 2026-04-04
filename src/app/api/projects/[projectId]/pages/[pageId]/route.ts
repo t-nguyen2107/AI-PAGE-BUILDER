@@ -55,6 +55,14 @@ export async function PUT(
       seoTitle,
       seoDescription,
       seoKeywords,
+      ogTitle,
+      ogDescription,
+      ogImage,
+      canonicalUrl,
+      robots,
+      twitterCard,
+      twitterImage,
+      structuredData,
       isHomePage,
       treeData,
     } = body as {
@@ -64,6 +72,14 @@ export async function PUT(
       seoTitle?: string;
       seoDescription?: string;
       seoKeywords?: string;
+      ogTitle?: string;
+      ogDescription?: string;
+      ogImage?: string;
+      canonicalUrl?: string;
+      robots?: string;
+      twitterCard?: string;
+      twitterImage?: string;
+      structuredData?: string;
       isHomePage?: boolean;
       treeData?: unknown;
     };
@@ -84,6 +100,14 @@ export async function PUT(
     if (seoTitle !== undefined) data.seoTitle = seoTitle;
     if (seoDescription !== undefined) data.seoDescription = seoDescription;
     if (seoKeywords !== undefined) data.seoKeywords = seoKeywords;
+    if (ogTitle !== undefined) data.ogTitle = ogTitle;
+    if (ogDescription !== undefined) data.ogDescription = ogDescription;
+    if (ogImage !== undefined) data.ogImage = ogImage;
+    if (canonicalUrl !== undefined) data.canonicalUrl = canonicalUrl;
+    if (robots !== undefined) data.robots = robots;
+    if (twitterCard !== undefined) data.twitterCard = twitterCard;
+    if (twitterImage !== undefined) data.twitterImage = twitterImage;
+    if (structuredData !== undefined) data.structuredData = structuredData;
     if (isHomePage !== undefined) data.isHomePage = isHomePage;
     if (treeData !== undefined) data.treeData = JSON.stringify(treeData);
 

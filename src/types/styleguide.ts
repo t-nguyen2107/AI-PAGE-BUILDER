@@ -19,6 +19,8 @@ export interface TypographySystem {
   monoFont: string;
   fontSizes: Record<string, string>;
   fontWeights: Record<string, string>;
+  lineHeights?: Record<string, string>;
+  letterSpacings?: Record<string, string>;
 }
 
 export interface SpacingScale {

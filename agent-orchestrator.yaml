@@ -1,0 +1,77 @@
+port: 3001
+defaults:
+  runtime: tmux
+  agent: claude-code
+  workspace: worktree
+  notifiers:
+    - desktop
+projects:
+  pageBuilder:
+    name: pageBuilder
+    sessionPrefix: pag
+    repo: t-nguyen2107/AI-PAGE-BUILDER
+    path: F:\web_source\pageBuilder
+    defaultBranch: main
+    agentRules: >-
+      Always run tests before pushing.
+
+      Use conventional commits (feat:, fix:, chore:, docs:, refactor:, test:).
+
+      Link issue numbers in commit messages.
+
+      Write clear commit messages that explain WHY, not just WHAT.
+
+
+      Use TypeScript strict mode.
+
+      Use ESM modules with .js extensions in imports (e.g., import { foo } from
+      "./bar.js").
+
+      Use node: prefix for built-in modules (e.g., import { readFile } from
+      "node:fs").
+
+      Prefer const over let, never use var.
+
+      Use type imports for type-only imports: import type { Foo } from
+      "./bar.js".
+
+      No any types - use unknown with type guards instead.
+
+
+      Use React best practices:
+
+
+      - Use functional components with hooks, not class components
+
+      - Keep components small and focused (single responsibility)
+
+      - Use composition over inheritance
+
+      - Lift state up when multiple components need it
+
+      - Use TypeScript for prop types (if using TypeScript)
+
+      - Follow hooks rules (no conditionals, no loops, no nested functions)
+
+
+      Follow Next.js best practices:
+
+
+      - Use App Router (not Pages Router) for new features
+
+      - Use Server Components by default, Client Components only when needed
+
+      - Use proper data fetching patterns (async Server Components)
+
+      - Optimize images with next/image
+
+      - Use proper caching strategies
+
+
+      Before pushing, run these commands:
+
+      - npm run typecheck
+
+      - npm run lint
+
+      - npm test

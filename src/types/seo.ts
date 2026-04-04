@@ -48,6 +48,10 @@ export interface SEOMeta {
   ogDescription?: string;
   ogImage?: string;
   canonical?: string;
+  robots?: string;
+  twitterCard?: string;
+  twitterImage?: string;
+  structuredData?: string;
 }
 
 /**
