@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { DEFAULT_COLORS } from "@/lib/constants";
+import { CardSection } from "@/components/ui/card-section";
 
 interface StyleGuideData {
   colors: Record<string, string>;
@@ -96,20 +98,6 @@ const COLOR_GROUPS = [
     ],
   },
 ];
-
-const DEFAULT_COLORS: Record<string, string> = {
-  primary: "#6366f1",
-  secondary: "#8b5cf6",
-  accent: "#f59e0b",
-  background: "#ffffff",
-  surface: "#f9fafb",
-  text: "#111827",
-  textMuted: "#6b7280",
-  border: "#e5e7eb",
-  error: "#ef4444",
-  success: "#22c55e",
-  warning: "#f97316",
-};
 
 const GOOGLE_FONTS = [
   "Inter", "Plus Jakarta Sans", "Space Grotesk", "Work Sans", "Geist",

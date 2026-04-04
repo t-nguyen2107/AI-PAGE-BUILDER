@@ -51,6 +51,7 @@ Thumbs.db
 
 # AI / Agent tools
 .claude/
+!.claude/agents/
 .omc/
 .trae/
 .agents/

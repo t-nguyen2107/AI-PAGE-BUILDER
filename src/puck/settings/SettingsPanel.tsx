@@ -10,6 +10,7 @@ import { GeneralTab } from "./tabs/GeneralTab";
 import { StyleGuideTab } from "./tabs/StyleGuideTab";
 import { PageSettingsTab } from "./tabs/PageSettingsTab";
 import { SeoTab } from "./tabs/SeoTab";
+import { DEFAULT_COLORS } from "@/lib/constants";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -80,19 +81,6 @@ type StyleGuideData = {
   buttons?: { primary?: ButtonStyle; secondary?: ButtonStyle };
 };
 
-const DEFAULT_COLORS: Record<string, string> = {
-  primary: "#6366f1",
-  secondary: "#8b5cf6",
-  accent: "#f59e0b",
-  background: "#ffffff",
-  surface: "#f9fafb",
-  text: "#111827",
-  textMuted: "#6b7280",
-  border: "#e5e7eb",
-  error: "#ef4444",
-  success: "#22c55e",
-  warning: "#f97316",
-};
 
 function generateCssVariables(styleGuide: StyleGuideData): Record<string, string> {
   const vars: Record<string, string> = {};
