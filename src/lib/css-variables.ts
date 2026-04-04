@@ -75,7 +75,7 @@ export function generateCssVariables(styleGuide: StyleGuideData): Record<string,
     });
   }
 
-  Object.entries(styleGuide.spacing.values).forEach(([k, v]) => {
+  Object.entries(styleGuide.spacing?.values ?? {}).forEach(([k, v]) => {
     vars[`--spacing-${k}`] = v;
   });
 

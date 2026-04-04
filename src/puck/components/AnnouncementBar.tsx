@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { AnnouncementBarProps } from "../types";
+import type { AnnouncementBarProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
 const bgStyles: Record<AnnouncementBarProps["bgColor"], string> = {
   primary: "bg-primary text-primary-foreground",
@@ -9,19 +10,22 @@ const bgStyles: Record<AnnouncementBarProps["bgColor"], string> = {
   accent: "bg-yellow-500 text-gray-900",
 };
 
-export function AnnouncementBar({
-  message,
-  ctaText,
-  ctaHref,
-  bgColor = "primary",
-  dismissible = false,
-}: AnnouncementBarProps) {
+export function AnnouncementBar(props: AnnouncementBarProps & ComponentMeta) {
+  const {
+    message,
+    ctaText,
+    ctaHref,
+    bgColor = "primary",
+    dismissible = false,
+    className,
+    ...metaRest
+  } = props;
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return <div />;
 
   return (
-    <div className={`w-full py-2 px-4 ${bgStyles[bgColor]}`}>
+    <div className={`w-full py-2 px-4 ${bgStyles[bgColor]} ${className ?? ""}`} style={extractStyleProps(metaRest)}>
       <div className="flex items-center justify-center gap-4 max-w-7xl mx-auto relative">
         <p className="text-sm font-medium">{message}</p>
         {ctaText && ctaHref && (

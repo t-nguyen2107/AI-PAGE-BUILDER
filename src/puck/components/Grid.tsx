@@ -1,4 +1,6 @@
 import type { ComponentConfig, Slot } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withStyles } from "../fields/withStyles";
 import { Section } from "./Section";
 
@@ -29,9 +31,10 @@ const GridInner: ComponentConfig<GridProps> = {
     gap: 24,
     items: [],
   },
-  render: ({ gap, numColumns, items: Items }) => {
+  render: (props: any) => {
+    const { gap, numColumns, items: Items, className, ...metaRest } = props;
     return (
-      <Section>
+      <Section className={className} style={extractStyleProps(metaRest)}>
         <Items
           className="grid"
           style={{

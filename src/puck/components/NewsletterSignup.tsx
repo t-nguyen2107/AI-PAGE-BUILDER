@@ -1,13 +1,17 @@
-import type { NewsletterSignupProps } from "../types";
+import type { NewsletterSignupProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function NewsletterSignup({
-  heading,
-  subtext,
-  placeholder,
-  buttonText,
-  layout,
-  backgroundUrl,
-}: NewsletterSignupProps) {
+export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
+  const {
+    heading,
+    subtext,
+    placeholder,
+    buttonText,
+    layout,
+    backgroundUrl,
+    className,
+    ...metaRest
+  } = props;
   const hasBg = !!backgroundUrl;
 
   const sectionStyle: React.CSSProperties = hasBg
@@ -15,8 +19,9 @@ export function NewsletterSignup({
         backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        ...extractStyleProps(metaRest),
       }
-    : {};
+    : { ...extractStyleProps(metaRest) };
 
   const textClass = hasBg ? "text-white" : "text-primary-foreground";
   const inputClass = `w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary`;
@@ -42,7 +47,7 @@ export function NewsletterSignup({
   if (layout === "split") {
     return (
       <section
-        className={`w-full py-20 px-6 ${hasBg ? "" : "bg-primary"} ${textClass}`}
+        className={`w-full py-20 px-6 ${hasBg ? "" : "bg-primary"} ${textClass} ${className ?? ""}`}
         style={sectionStyle}
       >
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
@@ -60,7 +65,7 @@ export function NewsletterSignup({
 
   return (
     <section
-      className={`w-full py-20 px-6 ${hasBg ? "" : "bg-primary"} ${textClass}`}
+      className={`w-full py-20 px-6 ${hasBg ? "" : "bg-primary"} ${textClass} ${className ?? ""}`}
       style={sectionStyle}
     >
       <div className="max-w-3xl mx-auto text-center">

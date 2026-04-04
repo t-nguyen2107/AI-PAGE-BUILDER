@@ -1,4 +1,6 @@
 import type { ComponentConfig, Slot } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
 export type SectionBlockProps = {
   paddingY: string;
@@ -75,15 +77,17 @@ export const SectionBlockConfig: ComponentConfig<SectionBlockProps> = {
     bgOverlay: false,
     content: [],
   },
-  render: ({ paddingY, paddingX, maxWidth, bgColor, bgImageUrl, bgOverlay, content: Content }) => {
+  render: (props: any) => {
+    const { paddingY, paddingX, maxWidth, bgColor, bgImageUrl, bgOverlay, content: Content, className, ...metaRest } = props;
     const hasBg = !!bgImageUrl;
 
     return (
       <div
-        className="w-full relative"
+        className={`w-full relative ${className ?? ""}`}
         style={{
           padding: `${paddingY} ${paddingX}`,
           backgroundColor: bgColor || undefined,
+          ...extractStyleProps(metaRest),
         }}
       >
         {hasBg && (

@@ -25,23 +25,22 @@ export function PageSettingsTab({
         description="Basic page information"
       >
         <div className="space-y-4">
-          <Field label="Page Title">
-            <input
-              type="text"
-              value={value.title}
-              onChange={(e) => update("title", e.target.value)}
-              placeholder="Page title"
-            />
-          </Field>
-          <Field label="Slug" monospace>
-            <input
-              type="text"
+          <Field
+            label="Page Title"
+            value={value.title}
+            onChange={(v) => update("title", v)}
+            placeholder="Page title"
+          />
+          <div>
+            <Field
+              label="Slug"
               value={value.slug}
-              onChange={(e) => onChange({ ...value, slug: e.target.value })}
+              onChange={(v) => onChange({ ...value, slug: v })}
               placeholder="page-slug"
+              monospace
             />
             <div className="text-[11px] mt-1 text-on-surface-outline">URL: /{value.slug || "page-slug"}</div>
-          </Field>
+          </div>
         </div>
       </CardSection>
     </div>

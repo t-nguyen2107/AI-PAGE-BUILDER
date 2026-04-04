@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
             // Strip <think/> tags if present
             const cleaned = text.replace(/<think[\s\S]*?<\/think>/g, "").trim();
             parsed = JSON.parse(cleaned) as WinnieResponse;
-          } catch {
-            // Fallback: treat entire text as reply
+          } catch (parseErr) {
+            console.warn("[wizard/chat] JSON parse failed, using fallback:", parseErr instanceof Error ? parseErr.message : parseErr);
             parsed = {
               reply: text.replace(/<think[\s\S]*?<\/think>/g, "").trim(),
               collectedInfo: null,
@@ -82,11 +82,14 @@ export async function POST(request: NextRequest) {
           send({ type: "done", extractedInfo: parsed });
           controller.close();
         } catch (err) {
-          send({
-            type: "error",
-            message: err instanceof Error ? err.message : "Chat error",
-          });
-          controller.close();
+          try {
+            send({
+              type: "error",
+              message: err instanceof Error ? err.message : "Chat error",
+            });
+          } finally {
+            controller.close();
+          }
         }
       },
     });

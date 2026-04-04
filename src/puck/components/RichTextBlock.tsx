@@ -1,4 +1,5 @@
-import type { RichTextBlockProps } from "../types";
+import type { ComponentMeta, RichTextBlockProps } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
 const maxWidthMap: Record<RichTextBlockProps["maxWidth"], string> = {
   sm: "max-w-sm",
@@ -14,12 +15,14 @@ const alignMap: Record<RichTextBlockProps["align"], string> = {
   right: "text-right",
 };
 
-export function RichTextBlock({ content, align, maxWidth }: RichTextBlockProps) {
+export function RichTextBlock(props: RichTextBlockProps & ComponentMeta) {
+  const { content, align, maxWidth, className, ...metaRest } = props;
   const isString = typeof content === "string";
 
   return (
     <div
-      className={`${maxWidthMap[maxWidth] || "max-w-full"} ${alignMap[align] || "text-left"} mx-auto space-y-4 text-foreground`}
+      className={`${maxWidthMap[maxWidth] || "max-w-full"} ${alignMap[align] || "text-left"} mx-auto space-y-4 text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
     >
       {isString ? (
         <div dangerouslySetInnerHTML={{ __html: content }} />

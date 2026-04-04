@@ -1,10 +1,11 @@
 import path from 'node:path';
-import { defineConfig } from 'prisma/config';
+import "dotenv/config";
+import { defineConfig, env} from 'prisma/config';
 
 export default defineConfig({
-  earlyAccess: true,
   schema: path.join(__dirname, 'schema.prisma'),
   datasource: {
-    url: process.env.DATABASE_URL ?? 'postgresql://localhost:5432/pagedb',
+    // Use direct URL for schema operations (migrations/push), Accelerate for queries
+    url: env("DATABASE_URL") || env("DATABASE_DIRECT_URL"),
   },
 });

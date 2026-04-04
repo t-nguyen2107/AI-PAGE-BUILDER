@@ -1,4 +1,5 @@
-import type { ComparisonTableProps } from "../types";
+import type { ComparisonTableProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
 function formatCellValue(value: string): string {
   const lower = value.toLowerCase().trim();
@@ -7,9 +8,10 @@ function formatCellValue(value: string): string {
   return value;
 }
 
-export function ComparisonTable({ heading, plans, features }: ComparisonTableProps) {
+export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
+  const { heading, plans, features, className, ...metaRest } = props;
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`} style={extractStyleProps(metaRest)}>
       <div className="max-w-6xl mx-auto">
         {heading && (
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">

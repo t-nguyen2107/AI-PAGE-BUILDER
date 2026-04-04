@@ -1,10 +1,15 @@
-import type { FooterSectionProps } from "../types";
+import type { FooterSectionProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function FooterSection({ logo, description, linkGroups, copyright }: FooterSectionProps) {
+export function FooterSection(props: FooterSectionProps & ComponentMeta) {
+  const { logo, description, linkGroups, copyright, className, ...metaRest } = props;
   const colCount = 1 + linkGroups.length;
 
   return (
-    <footer className="w-full bg-muted/50 border-t border-border text-foreground">
+    <footer
+      className={`w-full bg-muted/50 border-t border-border text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div
           className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${colCount >= 3 ? "lg:grid-cols-3" : ""} ${colCount >= 4 ? "xl:grid-cols-4" : ""}`}

@@ -46,6 +46,22 @@ ComponentData = {
 ### AI Pipeline
 - `src/lib/ai/` — Streaming (Ollama → LangChain → SSE), output validation, sanitizing, puck-adapter
 - `src/lib/ai/prompts/` — System prompt (Puck-aware), template prompt, template schema
+
+### AI Memory System (pgvector-powered)
+- `src/lib/ai/embeddings.ts` — Provider-agnostic embedding service (Ollama nomic-embed-text / OpenAI text-embedding-3-small)
+- `src/lib/ai/vector-store.ts` — Low-level vector CRUD + pgvector cosine similarity search via raw SQL
+- `src/lib/ai/memory-manager.ts` — High-level memory operations (profile CRUD + vector recall)
+- `src/lib/ai/session-analyzer.ts` — Rule-based insight extraction from chat sessions (zero LLM cost)
+- `src/lib/ai/profile-updater.ts` — Merges session insights into ProjectAIProfile (fire-and-forget)
+- `src/lib/ai/profile-serializer.ts` — Converts profile + memories to compact prompt text (<800 chars)
+- `src/app/api/ai/profile/route.ts` — GET/PUT/DELETE for project AI profile
+- `src/app/api/ai/profile/memories/route.ts` — GET/DELETE for vector memory entries
+- `src/puck/plugins/components/AIProfileSummary.tsx` — Compact badge in AI chat header
+- `src/puck/plugins/components/AIProfileEditor.tsx` — Profile editor + memories list modal
+
+**Flow:** Each AI generation → loads project profile → injects into system prompt → after response, fire-and-forget analyzes session → stores insights as pgvector memories → merges into structured profile → next generation uses updated profile.
+
+**Embedding config:** `EMBEDDING_PROVIDER` (ollama|openai), `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` (default: ollama/nomic-embed-text/768)
 - `src/features/ai/templates/` — 25+ template generators (still output old SectionNode format, converted via adapter)
 - `src/features/ai/template-registry.ts` — Template registration and lookup
 - `src/features/ai/component-generator.ts` — Generates Puck ComponentData from category
@@ -71,14 +87,29 @@ ComponentData = {
 - `src/lib/tree-utils.ts`, `src/lib/json-patch.ts`, `src/lib/node-utils.ts` — Replaced by Puck's state management
 - `src/schemas/dom-node.schema.ts`, `src/schemas/ai-diff.schema.ts` — No longer needed
 
-## Database Models
-- **Project** → has many Pages, one Styleguide, many GlobalSections
+## Database
+- **Provider:** Prisma Postgres (managed PostgreSQL with pgvector support)
+- **Connection:** Prisma Accelerate for app runtime (`prisma+postgres://`), direct URL for CLI operations (`postgres://`)
+- **Env:** `DATABASE_URL` = Accelerate URL (app runtime), `DATABASE_DIRECT_URL` = direct URL (CLI: db push, migrate)
+- **Config:** `prisma.config.ts` uses `DATABASE_DIRECT_URL` with `DATABASE_URL` fallback
+- **Client:** `src/lib/prisma.ts` creates `PrismaClient` with `accelerateUrl` + `withAccelerate()` extension
+
+### Database Models
+- **Project** → has many Pages, one Styleguide, many GlobalSections, one ProjectAIProfile, many VectorEmbeddings
 - **Page** → has treeData (Json, Puck Data format), many Revisions
 - **Styleguide** → colors, typography, spacing, cssVariables (all Json)
 - **GlobalSection** → sectionType, treeData (Json) — for header/footer inheritance
 - **Revision** → snapshot (Json), optional diff (Json)
 - **UserLibrary** → saved components, nodeData (Json)
 - **AIPromptLog** → AI interaction logging
+- **AISession** → per-page session with miniContext (action log), has many AISessionMessage
+- **ProjectAIProfile** → structured project insights (business type, tone, style, language, component preferences)
+- **VectorEmbedding** → unified vector storage for all RAG features (scope: user/project/global, pgvector for similarity search)
+
+### Prisma CLI Commands
+- Schema push: `DATABASE_URL="$DATABASE_DIRECT_URL" npx prisma db push`
+- Generate client: `npx prisma generate`
+- Studio: `npx prisma studio`
 
 ## API Pattern
 All API responses use: `ApiResponse<T> { success, data?, error?, meta }`

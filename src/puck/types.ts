@@ -380,8 +380,34 @@ export type BannerProps = {
   align: "left" | "center";
 };
 
+// ─── Component meta (shared across all components) ──────────────────
+export interface ComponentMeta {
+  /** Human-readable name for AI targeting & outline display (e.g. "hero_main") */
+  name?: string;
+  /** Style overrides — applied to the component's outermost element */
+  bgColor?: string;
+  textColor?: string;
+  /** CSS padding value (e.g. "24px", "1rem 2rem") */
+  padding?: string;
+  /** CSS margin value */
+  margin?: string;
+  /** CSS border-radius value (e.g. "8px", "50%") */
+  borderRadius?: string;
+  /** CSS max-width value (e.g. "800px", "100%") */
+  maxWidth?: string;
+  /** CSS opacity 0–1 */
+  opacity?: number;
+  /** Extra CSS class names */
+  className?: string;
+}
+
 // ─── All component names (for Config generics) ──────────────────────
 export type ComponentProps = {
+  [K in keyof RawComponentProps]: RawComponentProps[K] & ComponentMeta;
+};
+
+/** Internal: raw component props before meta is applied */
+type RawComponentProps = {
   // Atomic (composable)
   ButtonBlock: ButtonBlockProps;
   CardBlock: CardBlockProps;

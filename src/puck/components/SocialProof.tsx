@@ -1,15 +1,19 @@
-import type { SocialProofProps } from "../types";
+import type { SocialProofProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function SocialProof({
-  heading,
-  stats,
-  logos,
-  showAvatars,
-  avatarCount = 5,
-  testimonialText,
-}: SocialProofProps) {
+export function SocialProof(props: SocialProofProps & ComponentMeta) {
+  const {
+    heading,
+    stats,
+    logos,
+    showAvatars,
+    avatarCount = 5,
+    testimonialText,
+    className,
+    ...metaRest
+  } = props;
   return (
-    <section className="w-full py-16 px-6 bg-background text-foreground">
+    <section className={`w-full py-16 px-6 bg-background text-foreground ${className ?? ""}`} style={extractStyleProps(metaRest)}>
       <div className="max-w-6xl mx-auto">
         {heading && (
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">

@@ -6,7 +6,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const base = new PrismaClient();
+  const base = new PrismaClient({
+    accelerateUrl: process.env.DATABASE_URL,
+  });
+  
   return base.$extends(withAccelerate()) as unknown as PrismaClient;
 }
 

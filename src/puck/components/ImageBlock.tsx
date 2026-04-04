@@ -1,4 +1,5 @@
-import type { ImageBlockProps } from "../types";
+import type { ImageBlockProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
 const radiusMap: Record<NonNullable<ImageBlockProps["borderRadius"]>, string> = {
   none: "rounded-none",
@@ -8,11 +9,12 @@ const radiusMap: Record<NonNullable<ImageBlockProps["borderRadius"]>, string> = 
   full: "rounded-full",
 };
 
-export function ImageBlock({ src, alt, width, borderRadius }: ImageBlockProps) {
+export function ImageBlock(props: ImageBlockProps & ComponentMeta) {
+  const { src, alt, width, borderRadius, className, ...metaRest } = props;
   const radius = borderRadius || "none";
 
   return (
-    <div className="flex justify-center w-full">
+    <div className={`flex justify-center w-full ${className ?? ""}`} style={extractStyleProps(metaRest)}>
       <img
         src={src}
         alt={alt}

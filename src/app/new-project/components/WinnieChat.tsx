@@ -65,8 +65,9 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       setInput("");
       setIsStreaming(true);
 
+      const msgId = crypto.randomUUID();
       const userMsg: DisplayMessage = {
-        id: `user-${Date.now()}`,
+        id: `user-${msgId}`,
         role: "user",
         content: text,
         timestamp: Date.now(),
@@ -74,7 +75,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       };
       setMessages((prev) => [...prev, userMsg]);
 
-      const assistantMsgId = `assistant-${Date.now()}`;
+      const assistantMsgId = `assistant-${msgId}`;
       setMessages((prev) => [
         ...prev,
         { id: assistantMsgId, role: "assistant", content: "", timestamp: Date.now(), status: "streaming" },

@@ -1,35 +1,46 @@
-import type { HeroSectionProps } from "../types";
+import type { HeroSectionProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function HeroSection({
-  heading,
-  subtext,
-  badge,
-  ctaText,
-  ctaHref,
-  ctaSecondaryText,
-  ctaSecondaryHref,
-  align,
-  backgroundUrl,
-  backgroundOverlay,
-  padding,
-}: HeroSectionProps) {
+export function HeroSection(props: HeroSectionProps & ComponentMeta) {
+  const {
+    heading,
+    subtext,
+    badge,
+    ctaText,
+    ctaHref,
+    ctaSecondaryText,
+    ctaSecondaryHref,
+    align,
+    backgroundUrl,
+    backgroundOverlay,
+    padding,
+    className,
+    ...metaRest
+  } = props;
+
   const paddingValue = padding || "96px";
   const isCenter = align === "center";
 
-  const sectionStyle: React.CSSProperties = backgroundUrl
-    ? {
-        backgroundImage: backgroundOverlay
-          ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`
-          : `url(${backgroundUrl})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }
-    : {};
+  const sectionStyle: React.CSSProperties = {
+    ...(backgroundUrl
+      ? {
+          backgroundImage: backgroundOverlay
+            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`
+            : `url(${backgroundUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }
+      : {}),
+    padding: `${paddingValue} 24px`,
+    ...extractStyleProps(metaRest),
+  };
+
+  const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;
 
   return (
     <section
-      className={`${backgroundUrl ? "text-white" : "bg-background text-foreground"} w-full`}
-      style={{ ...sectionStyle, padding: `${paddingValue} 24px` }}
+      className={`${backgroundUrl && !hasBgOverride ? "text-white" : !hasBgOverride ? "bg-background text-foreground" : ""} w-full ${className ?? ""}`}
+      style={sectionStyle}
     >
       <div
         className={`max-w-4xl mx-auto ${isCenter ? "text-center" : "text-left"}`}

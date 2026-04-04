@@ -1064,46 +1064,80 @@ const Banner: ComponentConfig<BannerProps> = {
 
 // ─── Config ────────────────────────────────────────────────────────────
 
+// Inject `name` field + style override fields into every component config.
+// Name: human-readable slug for AI targeting (e.g., @hero_main).
+// Style overrides: per-component visual customization.
+const NAME_FIELD = {
+  name: {
+    type: "text" as const,
+    label: "Name",
+    placeholder: "e.g. hero_main, pricing_pro",
+  },
+};
+
+const STYLE_FIELDS: Record<string, unknown> = {
+  bgColor: { type: "text" as const, label: "Background Color" },
+  textColor: { type: "text" as const, label: "Text Color" },
+  padding: { type: "text" as const, label: "Padding" },
+  margin: { type: "text" as const, label: "Margin" },
+  borderRadius: { type: "text" as const, label: "Border Radius" },
+  maxWidth: { type: "text" as const, label: "Max Width" },
+  opacity: { type: "number" as const, label: "Opacity", min: 0, max: 1, step: 0.1 },
+  className: { type: "text" as const, label: "Extra CSS Classes" },
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function withMetaFields<T extends Record<string, any>>(comp: T): T {
+  return {
+    ...comp,
+    fields: {
+      name: NAME_FIELD.name,
+      ...(comp.fields ?? {}),
+      ...STYLE_FIELDS,
+    },
+  };
+}
+
 export const config: Config<{ components: ComponentProps }> = {
   root: Root,
   categories: categories as Config<{ components: ComponentProps }>["categories"],
   components: {
     // Atomic (composable)
-    ButtonBlock: Button,
-    CardBlock: Card,
-    HeadingBlock: Heading,
-    TextBlock: Text,
-    RichTextBlock,
-    Blank,
-    Flex,
-    Grid,
-    SectionBlock: SectionBlockConfig,
+    ButtonBlock: withMetaFields(Button),
+    CardBlock: withMetaFields(Card),
+    HeadingBlock: withMetaFields(Heading),
+    TextBlock: withMetaFields(Text),
+    RichTextBlock: withMetaFields(RichTextBlock),
+    Blank: withMetaFields(Blank),
+    Flex: withMetaFields(Flex),
+    Grid: withMetaFields(Grid),
+    SectionBlock: withMetaFields(SectionBlockConfig),
     // Sections
-    HeroSection,
-    FeaturesGrid,
-    PricingTable,
-    TestimonialSection,
-    CTASection,
-    FAQSection,
-    StatsSection,
-    TeamSection,
-    BlogSection,
-    LogoGrid,
-    ContactForm,
-    HeaderNav,
-    FooterSection,
-    ImageBlock,
-    Spacer,
-    ColumnsLayout,
-    NewsletterSignup,
-    Gallery,
-    SocialProof,
-    ComparisonTable,
-    ProductCards,
-    FeatureShowcase,
-    CountdownTimer,
-    AnnouncementBar,
-    Banner,
+    HeroSection: withMetaFields(HeroSection),
+    FeaturesGrid: withMetaFields(FeaturesGrid),
+    PricingTable: withMetaFields(PricingTable),
+    TestimonialSection: withMetaFields(TestimonialSection),
+    CTASection: withMetaFields(CTASection),
+    FAQSection: withMetaFields(FAQSection),
+    StatsSection: withMetaFields(StatsSection),
+    TeamSection: withMetaFields(TeamSection),
+    BlogSection: withMetaFields(BlogSection),
+    LogoGrid: withMetaFields(LogoGrid),
+    ContactForm: withMetaFields(ContactForm),
+    HeaderNav: withMetaFields(HeaderNav),
+    FooterSection: withMetaFields(FooterSection),
+    ImageBlock: withMetaFields(ImageBlock),
+    Spacer: withMetaFields(Spacer),
+    ColumnsLayout: withMetaFields(ColumnsLayout),
+    NewsletterSignup: withMetaFields(NewsletterSignup),
+    Gallery: withMetaFields(Gallery),
+    SocialProof: withMetaFields(SocialProof),
+    ComparisonTable: withMetaFields(ComparisonTable),
+    ProductCards: withMetaFields(ProductCards),
+    FeatureShowcase: withMetaFields(FeatureShowcase),
+    CountdownTimer: withMetaFields(CountdownTimer),
+    AnnouncementBar: withMetaFields(AnnouncementBar),
+    Banner: withMetaFields(Banner),
   },
 };
 

@@ -1,4 +1,6 @@
 import type { ComponentConfig } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withLayout, type WithLayout } from "./Layout";
 import { withStyles, type WithStyles } from "../fields/withStyles";
 import { Section } from "./Section";
@@ -61,9 +63,10 @@ const ButtonInner: ComponentConfig<ButtonProps> = {
     size: "md",
     fullWidth: false,
   },
-  render: ({ label, href, variant, size, fullWidth }) => {
+  render: (props: any) => {
+    const { label, href, variant, size, fullWidth, className, ...metaRest } = props as ButtonProps & ComponentMeta;
     return (
-      <Section padding="0px">
+      <Section padding="0px" className={className} style={extractStyleProps(metaRest)}>
         <a
           href={href}
           className={`

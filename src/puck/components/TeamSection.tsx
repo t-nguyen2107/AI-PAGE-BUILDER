@@ -1,8 +1,13 @@
-import type { TeamSectionProps } from "../types";
+import type { TeamSectionProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function TeamSection({ heading, subtext, members }: TeamSectionProps) {
+export function TeamSection(props: TeamSectionProps & ComponentMeta) {
+  const { heading, subtext, members, className, ...metaRest } = props;
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section
+      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>

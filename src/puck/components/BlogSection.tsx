@@ -1,8 +1,13 @@
-import type { BlogSectionProps } from "../types";
+import type { BlogSectionProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function BlogSection({ heading, posts, columns }: BlogSectionProps) {
+export function BlogSection(props: BlogSectionProps & ComponentMeta) {
+  const { heading, posts, columns, className, ...metaRest } = props;
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section
+      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
           {heading}

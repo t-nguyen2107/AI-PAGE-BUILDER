@@ -1,5 +1,7 @@
 import React from "react";
 import type { ComponentConfig } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withLayout, type WithLayout } from "./Layout";
 import { withStyles, type WithStyles } from "../fields/withStyles";
 import { Section } from "./Section";
@@ -106,7 +108,8 @@ const CardInner: ComponentConfig<CardProps> = {
     icon: "",
     mode: "card",
   },
-  render: ({ title, description, icon, imageUrl, href, mode }) => {
+  render: (props: any) => {
+    const { title, description, icon, imageUrl, href, mode, className, ...metaRest } = props as CardProps & ComponentMeta;
     const Wrapper = href ? "a" : "div";
     const wrapperProps = href ? { href } : {};
 
@@ -128,7 +131,7 @@ const CardInner: ComponentConfig<CardProps> = {
     );
 
     return (
-      <Section padding="0px">
+      <Section padding="0px" className={className} style={extractStyleProps(metaRest)}>
         <Wrapper
           {...wrapperProps}
           className={`

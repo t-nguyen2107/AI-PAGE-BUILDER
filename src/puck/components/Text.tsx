@@ -1,4 +1,6 @@
 import type { ComponentConfig } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withLayout, type WithLayout } from "./Layout";
 import { withStyles, type WithStyles } from "../fields/withStyles";
 import { Section } from "./Section";
@@ -51,11 +53,12 @@ const TextInner: ComponentConfig<TextProps> = {
     size: "md",
     color: "default",
   },
-  render: ({ text, align, size, color, maxWidth }) => {
+  render: (props: any) => {
+    const { text, align, size, color, maxWidth, className, ...metaRest } = props as TextProps & ComponentMeta;
     const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
 
     return (
-      <Section padding="0px" maxWidth={maxWidth}>
+      <Section padding="0px" maxWidth={maxWidth} className={className} style={extractStyleProps(metaRest)}>
         <p
           className={`
             ${sizeMap[size]}

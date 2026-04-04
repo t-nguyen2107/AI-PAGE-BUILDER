@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import type { HeaderNavProps } from "../types";
+import type { HeaderNavProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function HeaderNav({ logo, links, ctaText, ctaHref, sticky }: HeaderNavProps) {
+export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
+  const { logo, links, ctaText, ctaHref, sticky, className, ...metaRest } = props;
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <nav
       className={`flex items-center justify-between px-6 py-4 border-b border-border bg-background ${
         sticky ? "sticky top-0 z-50" : ""
-      }`}
+      } ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
     >
       <div className="font-bold text-xl text-foreground">{logo}</div>
 

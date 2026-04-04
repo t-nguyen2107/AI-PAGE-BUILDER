@@ -1,8 +1,13 @@
-import type { StatsSectionProps } from "../types";
+import type { StatsSectionProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function StatsSection({ heading, stats, columns }: StatsSectionProps) {
+export function StatsSection(props: StatsSectionProps & ComponentMeta) {
+  const { heading, stats, columns, className, ...metaRest } = props;
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section
+      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto">
         {heading && (
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">

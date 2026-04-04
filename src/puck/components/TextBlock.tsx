@@ -1,4 +1,5 @@
-import type { TextBlockProps } from "../types";
+import type { ComponentMeta, TextBlockProps } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { Section } from "./Section";
 
 const sizeMap: Record<string, string> = {
@@ -7,11 +8,12 @@ const sizeMap: Record<string, string> = {
   lg: "text-lg md:text-xl",
 };
 
-export function TextBlock({ text, align, size, color, maxWidth }: TextBlockProps) {
+export function TextBlock(props: TextBlockProps & ComponentMeta) {
+  const { text, align, size, color, maxWidth, className, ...metaRest } = props;
   const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
 
   return (
-    <Section padding="0px" maxWidth={maxWidth}>
+    <Section padding="0px" maxWidth={maxWidth} className={className} style={extractStyleProps(metaRest)}>
       <p
         className={`
           ${sizeMap[size] || sizeMap.md}

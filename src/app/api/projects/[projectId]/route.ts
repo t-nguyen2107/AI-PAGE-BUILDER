@@ -48,7 +48,8 @@ export async function PUT(
     const {
       name, description,
       siteName, companyName, logo, favicon,
-      gaCode, headScripts, bodyScripts,
+      thumbnailUrl, language, gaCode, headScripts, bodyScripts,
+      socialLinks, contactInfo, metaVerification, defaultOgImage,
     } = body as {
       name?: string;
       description?: string;
@@ -56,13 +57,19 @@ export async function PUT(
       companyName?: string;
       logo?: string;
       favicon?: string;
+      thumbnailUrl?: string;
+      language?: string;
       gaCode?: string;
       headScripts?: string;
       bodyScripts?: string;
+      socialLinks?: string;
+      contactInfo?: string;
+      metaVerification?: string;
+      defaultOgImage?: string;
     };
 
     // Ensure at least one updatable field is provided
-    const hasUpdate = [name, description, siteName, companyName, logo, favicon, gaCode, headScripts, bodyScripts]
+    const hasUpdate = [name, description, siteName, companyName, logo, favicon, thumbnailUrl, language, gaCode, headScripts, bodyScripts, socialLinks, contactInfo, metaVerification, defaultOgImage]
       .some((v) => v !== undefined);
     if (!hasUpdate) {
       return errorResponse(
@@ -84,9 +91,15 @@ export async function PUT(
     if (companyName !== undefined) data.companyName = companyName?.trim() || null;
     if (logo !== undefined) data.logo = logo?.trim() || null;
     if (favicon !== undefined) data.favicon = favicon?.trim() || null;
+    if (thumbnailUrl !== undefined) data.thumbnailUrl = thumbnailUrl?.trim() || null;
+    if (language !== undefined) data.language = language?.trim() || null;
     if (gaCode !== undefined) data.gaCode = gaCode?.trim() || null;
     if (headScripts !== undefined) data.headScripts = headScripts || null;
     if (bodyScripts !== undefined) data.bodyScripts = bodyScripts || null;
+    if (socialLinks !== undefined) data.socialLinks = socialLinks || null;
+    if (contactInfo !== undefined) data.contactInfo = contactInfo || null;
+    if (metaVerification !== undefined) data.metaVerification = metaVerification || null;
+    if (defaultOgImage !== undefined) data.defaultOgImage = defaultOgImage?.trim() || null;
 
     const updated = await prisma.project.update({
       where: { id: projectId },

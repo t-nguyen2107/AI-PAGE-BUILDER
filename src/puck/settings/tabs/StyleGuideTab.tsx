@@ -24,6 +24,9 @@ interface StyleGuideData {
     primary?: ButtonStyle;
     secondary?: ButtonStyle;
   };
+  shadows?: ShadowTokens;
+  borderRadius?: BorderRadiusTokens;
+  links?: LinkStyle;
 }
 
 interface HeadingStyle {
@@ -45,6 +48,27 @@ interface BodyStyle {
   letterSpacing?: string;
   marginBottom?: string;
   color?: string;
+}
+
+interface ShadowTokens {
+  sm?: string;
+  md?: string;
+  lg?: string;
+  xl?: string;
+}
+
+interface BorderRadiusTokens {
+  sm?: string;
+  md?: string;
+  lg?: string;
+  full?: string;
+}
+
+interface LinkStyle {
+  color?: string;
+  hoverColor?: string;
+  underline?: boolean;
+  fontWeight?: string;
 }
 
 interface ButtonStyle {
@@ -140,6 +164,27 @@ const DEFAULT_SPACING: Record<string, string> = {
   "16": "4rem", "20": "5rem", "24": "6rem",
 };
 
+const DEFAULT_SHADOWS: ShadowTokens = {
+  sm: "0 1px 2px 0 rgba(0,0,0,0.05)",
+  md: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)",
+  lg: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+  xl: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
+};
+
+const DEFAULT_RADIUS: BorderRadiusTokens = {
+  sm: "0.25rem",
+  md: "0.375rem",
+  lg: "0.75rem",
+  full: "9999px",
+};
+
+const DEFAULT_LINKS: LinkStyle = {
+  color: "#4f46e5",
+  hoverColor: "#3730a3",
+  underline: true,
+  fontWeight: "500",
+};
+
 export function StyleGuideTab({
   value,
   onChange,
@@ -155,6 +200,9 @@ export function StyleGuideTab({
   const buttons = value.buttons || {};
   const primaryBtn = buttons.primary || {};
   const secondaryBtn = buttons.secondary || {};
+  const shadows = { ...DEFAULT_SHADOWS, ...value.shadows };
+  const borderRadius = { ...DEFAULT_RADIUS, ...value.borderRadius };
+  const links = { ...DEFAULT_LINKS, ...value.links };
 
   const [openSection, setOpenSection] = useState<string>("colors");
   const [fontSearch, setFontSearch] = useState("");
@@ -190,6 +238,18 @@ export function StyleGuideTab({
     onChange({ ...value, spacing: { values: { ...spacing, [key]: val } } });
   };
 
+  const updateShadow = (key: keyof ShadowTokens, val: string) => {
+    onChange({ ...value, shadows: { ...shadows, [key]: val || undefined } });
+  };
+
+  const updateRadius = (key: keyof BorderRadiusTokens, val: string) => {
+    onChange({ ...value, borderRadius: { ...borderRadius, [key]: val || undefined } });
+  };
+
+  const updateLinks = (field: keyof LinkStyle, val: string | boolean) => {
+    onChange({ ...value, links: { ...links, [field]: val || undefined } });
+  };
+
   const filteredFonts = fontSearch
     ? GOOGLE_FONTS.filter((f) => f.toLowerCase().includes(fontSearch.toLowerCase()))
     : GOOGLE_FONTS;
@@ -200,21 +260,21 @@ export function StyleGuideTab({
   return (
     <div className="space-y-4 max-w-3xl">
       {/* Style Preview Bar */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
-        <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Live Preview</div>
+      <div className="bg-surface-lowest rounded-lg border border-outline-variant shadow-sm p-5">
+        <div className="text-[11px] font-semibold text-on-surface-outline uppercase tracking-wider mb-4">Live Preview</div>
         <div className="space-y-3">
           {/* Color Palette */}
           <div>
-            <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-2">Color Palette</div>
+            <div className="text-[10px] font-medium text-on-surface-outline uppercase tracking-wider mb-2">Color Palette</div>
             <div className="flex items-center gap-1.5">
               {(["primary", "secondary", "accent", "background", "surface", "text", "textMuted", "border", "error", "success", "warning"] as const).map((key) => (
                 <div key={key} className="group relative">
                   <div
-                    className="w-7 h-7 rounded border border-gray-200 cursor-pointer transition-transform hover:scale-125 hover:z-10 hover:shadow-lg"
+                    className="w-7 h-7 rounded border border-outline-variant cursor-pointer transition-transform hover:scale-125 hover:z-10 hover:shadow-lg"
                     style={{ backgroundColor: colors[key] }}
                     title={`${key}: ${colors[key]}`}
                   />
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-800 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-on-surface text-surface-lowest text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
                     {key}
                   </div>
                 </div>
@@ -222,7 +282,7 @@ export function StyleGuideTab({
             </div>
           </div>
 
-          <div className="border-t border-gray-100 pt-3 space-y-2">
+          <div className="border-t border-outline-variant/50 pt-3 space-y-2">
             <h1 className="text-2xl font-bold leading-tight" style={{ fontFamily: headingFont, color: colors.text }}>
               Heading 1 — The quick brown fox
             </h1>
@@ -237,7 +297,7 @@ export function StyleGuideTab({
             </p>
           </div>
 
-          <div className="flex items-center gap-3 pt-1 border-t border-gray-100 pt-3">
+          <div className="flex items-center gap-3 pt-3 border-t border-outline-variant/50">
             <HoverableButton type="primary" btn={primaryBtn} colors={colors} />
             <HoverableButton type="secondary" btn={secondaryBtn} colors={colors} />
           </div>
@@ -245,11 +305,11 @@ export function StyleGuideTab({
       </div>
 
       {/* Colors */}
-      <Card title="Colors" description="Define your brand and UI color palette" open={openSection === "colors"} onToggle={() => toggle("colors")}>
+      <CollapsibleCardSection title="Colors" description="Define your brand and UI color palette" open={openSection === "colors"} onToggle={() => toggle("colors")}>
         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
           {COLOR_GROUPS.map((group) => (
             <div key={group.label}>
-              <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{group.label}</div>
+              <div className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">{group.label}</div>
               <div className="space-y-2">
                 {group.colors.map(({ key, label }) => (
                   <div key={key} className="flex items-center gap-2.5">
@@ -260,12 +320,12 @@ export function StyleGuideTab({
                       className="w-6 h-6 rounded cursor-pointer shrink-0 border-0 p-0"
                       style={{ appearance: "auto" }}
                     />
-                    <span className="text-sm text-gray-600 w-16 shrink-0">{label}</span>
+                    <span className="text-sm text-on-surface-variant w-16 shrink-0">{label}</span>
                     <input
                       type="text"
                       value={colors[key] || ""}
                       onChange={(e) => updateColor(key, e.target.value)}
-                      className="flex-1 text-sm border border-gray-200 rounded px-2.5 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 bg-white"
+                      className="flex-1 text-sm border border-outline-variant rounded px-2.5 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 bg-surface-lowest"
                     />
                   </div>
                 ))}
@@ -273,31 +333,31 @@ export function StyleGuideTab({
             </div>
           ))}
         </div>
-      </Card>
+      </CollapsibleCardSection>
 
       {/* Typography — Headings & Body */}
-      <Card title="Typography" description="Fonts, heading levels, and body text styles" open={openSection === "typography"} onToggle={() => toggle("typography")}>
+      <CollapsibleCardSection title="Typography" description="Fonts, heading levels, and body text styles" open={openSection === "typography"} onToggle={() => toggle("typography")}>
         <div className="space-y-6">
           {/* Font Families */}
           <div>
-            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Font Families</div>
+            <div className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">Font Families</div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-600 block mb-1">Heading Font</label>
+                <label className="text-sm text-on-surface-variant block mb-1">Heading Font</label>
                 <FontPicker value={typography.headingFont || ""} onChange={(v) => updateTypography("headingFont", v)} search={fontSearch} onSearchChange={setFontSearch} filteredFonts={filteredFonts} />
               </div>
               <div>
-                <label className="text-sm text-gray-600 block mb-1">Body Font</label>
+                <label className="text-sm text-on-surface-variant block mb-1">Body Font</label>
                 <FontPicker value={typography.bodyFont || ""} onChange={(v) => updateTypography("bodyFont", v)} search={fontSearch} onSearchChange={setFontSearch} filteredFonts={filteredFonts} />
               </div>
             </div>
             <div>
-              <label className="text-sm text-gray-600 block mb-1 mt-3">Mono Font</label>
+              <label className="text-sm text-on-surface-variant block mb-1 mt-3">Mono Font</label>
               <input
                 type="text"
                 value={typography.monoFont || ""}
                 onChange={(e) => updateTypography("monoFont", e.target.value)}
-                className="w-full text-sm border border-gray-200 rounded px-2.5 py-1.5 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 bg-white"
+                className="w-full text-sm border border-outline-variant rounded px-2.5 py-1.5 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 bg-surface-lowest"
                 placeholder="ui-monospace, 'Cascadia Code', monospace"
               />
             </div>
@@ -305,15 +365,15 @@ export function StyleGuideTab({
 
           {/* Heading Styles H1-H6 */}
           <div>
-            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Heading Styles</div>
+            <div className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">Heading Styles</div>
             <div className="space-y-3">
               {(["h1", "h2", "h3", "h4", "h5", "h6"] as const).map((level) => {
                 const s = headingStyles[level] || {};
                 return (
-                  <div key={level} className="border border-gray-100 rounded p-3 bg-gray-50/50">
+                  <div key={level} className="border border-outline-variant/50 rounded p-3 bg-surface-low/50">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-bold text-gray-700 uppercase w-8">{level}</span>
-                      <span className="text-xs text-gray-400" style={{ fontFamily: headingFont, fontSize: s.size, fontWeight: s.weight }}>
+                      <span className="text-sm font-bold text-on-surface-variant uppercase w-8">{level}</span>
+                      <span className="text-xs text-on-surface-outline" style={{ fontFamily: headingFont, fontSize: s.size, fontWeight: s.weight }}>
                         Preview {level.toUpperCase()}
                       </span>
                     </div>
@@ -332,15 +392,15 @@ export function StyleGuideTab({
 
           {/* Body Text Styles */}
           <div>
-            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Body Text Styles</div>
+            <div className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">Body Text Styles</div>
             <div className="space-y-3">
               {(["p", "lead", "small", "caption"] as const).map((el) => {
                 const s = bodyStyles[el] || {};
                 return (
-                  <div key={el} className="border border-gray-100 rounded p-3 bg-gray-50/50">
+                  <div key={el} className="border border-outline-variant/50 rounded p-3 bg-surface-low/50">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-bold text-gray-700 w-14">&lt;{el}&gt;</span>
-                      <span className="text-xs text-gray-400" style={{ fontFamily: bodyFont, fontSize: s.size }}>
+                      <span className="text-sm font-bold text-on-surface-variant w-14">&lt;{el}&gt;</span>
+                      <span className="text-xs text-on-surface-outline" style={{ fontFamily: bodyFont, fontSize: s.size }}>
                         Body text preview
                       </span>
                     </div>
@@ -357,81 +417,166 @@ export function StyleGuideTab({
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleCardSection>
 
       {/* Buttons */}
-      <Card title="Buttons" description="Primary and secondary button styles" open={openSection === "buttons"} onToggle={() => toggle("buttons")}>
+      <CollapsibleCardSection title="Buttons" description="Primary and secondary button styles" open={openSection === "buttons"} onToggle={() => toggle("buttons")}>
         <div className="grid grid-cols-2 gap-6">
           {/* Primary */}
           <div>
-            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Primary Button</div>
+            <div className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">Primary Button</div>
             <div className="space-y-2">
-              <div className="text-[9px] font-semibold text-gray-300 uppercase tracking-wider mt-1">Default State</div>
+              <div className="text-[9px] font-semibold text-on-surface-outline uppercase tracking-wider mt-1">Default State</div>
               <ColorField label="Background" value={primaryBtn.bg || colors.primary} onChange={(v) => updateButton("primary", "bg", v)} />
               <ColorField label="Text Color" value={primaryBtn.text || "#ffffff"} onChange={(v) => updateButton("primary", "text", v)} />
               <InlineField label="Radius" value={primaryBtn.borderRadius || "0.375rem"} onChange={(v) => updateButton("primary", "borderRadius", v)} />
               <InlineField label="Padding X" value={primaryBtn.paddingX || "1rem"} onChange={(v) => updateButton("primary", "paddingX", v)} />
               <InlineField label="Padding Y" value={primaryBtn.paddingY || "0.5rem"} onChange={(v) => updateButton("primary", "paddingY", v)} />
               <InlineField label="Font Size" value={primaryBtn.fontSize || "0.875rem"} onChange={(v) => updateButton("primary", "fontSize", v)} />
-              <div className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wider mt-3">Hover State</div>
+              <div className="text-[9px] font-semibold text-primary/60 uppercase tracking-wider mt-3">Hover State</div>
               <ColorField label="Hover BG" value={primaryBtn.hoverBg || ""} onChange={(v) => updateButton("primary", "hoverBg", v)} />
               <ColorField label="Hover Text" value={primaryBtn.hoverText || ""} onChange={(v) => updateButton("primary", "hoverText", v)} />
               <InlineField label="Shadow" value={primaryBtn.hoverShadow || ""} onChange={(v) => updateButton("primary", "hoverShadow", v)} placeholder="0 4px 14px rgba(99,102,241,0.4)" />
               <InlineField label="Scale" value={primaryBtn.hoverScale || ""} onChange={(v) => updateButton("primary", "hoverScale", v)} placeholder="1.03" />
             </div>
-            <div className="mt-3 p-3 bg-gray-50 rounded flex items-center justify-center">
+            <div className="mt-3 p-3 bg-surface-low rounded flex items-center justify-center">
               <HoverableButton type="primary" btn={primaryBtn} colors={colors} />
             </div>
           </div>
 
           {/* Secondary */}
           <div>
-            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Secondary Button</div>
+            <div className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">Secondary Button</div>
             <div className="space-y-2">
-              <div className="text-[9px] font-semibold text-gray-300 uppercase tracking-wider mt-1">Default State</div>
+              <div className="text-[9px] font-semibold text-on-surface-outline uppercase tracking-wider mt-1">Default State</div>
               <ColorField label="Background" value={secondaryBtn.bg || "transparent"} onChange={(v) => updateButton("secondary", "bg", v)} />
               <ColorField label="Text Color" value={secondaryBtn.text || colors.primary} onChange={(v) => updateButton("secondary", "text", v)} />
               <ColorField label="Border" value={secondaryBtn.border || colors.primary} onChange={(v) => updateButton("secondary", "border", v)} />
               <InlineField label="Radius" value={secondaryBtn.borderRadius || "0.375rem"} onChange={(v) => updateButton("secondary", "borderRadius", v)} />
               <InlineField label="Padding X" value={secondaryBtn.paddingX || "1rem"} onChange={(v) => updateButton("secondary", "paddingX", v)} />
               <InlineField label="Padding Y" value={secondaryBtn.paddingY || "0.5rem"} onChange={(v) => updateButton("secondary", "paddingY", v)} />
-              <div className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wider mt-3">Hover State</div>
+              <div className="text-[9px] font-semibold text-primary/60 uppercase tracking-wider mt-3">Hover State</div>
               <ColorField label="Hover BG" value={secondaryBtn.hoverBg || ""} onChange={(v) => updateButton("secondary", "hoverBg", v)} />
               <ColorField label="Hover Text" value={secondaryBtn.hoverText || ""} onChange={(v) => updateButton("secondary", "hoverText", v)} />
               <ColorField label="Hover Border" value={secondaryBtn.hoverBorder || ""} onChange={(v) => updateButton("secondary", "hoverBorder", v)} />
               <InlineField label="Shadow" value={secondaryBtn.hoverShadow || ""} onChange={(v) => updateButton("secondary", "hoverShadow", v)} placeholder="0 4px 14px rgba(99,102,241,0.2)" />
               <InlineField label="Scale" value={secondaryBtn.hoverScale || ""} onChange={(v) => updateButton("secondary", "hoverScale", v)} placeholder="1.03" />
             </div>
-            <div className="mt-3 p-3 bg-gray-50 rounded flex items-center justify-center">
+            <div className="mt-3 p-3 bg-surface-low rounded flex items-center justify-center">
               <HoverableButton type="secondary" btn={secondaryBtn} colors={colors} />
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleCardSection>
 
       {/* Spacing Scale */}
-      <Card title="Spacing Scale" description="Used for margins, paddings, and gaps in generated pages (e.g. p-4 → 1rem)" open={openSection === "spacing"} onToggle={() => toggle("spacing")}>
+      <CollapsibleCardSection title="Spacing Scale" description="Used for margins, paddings, and gaps in generated pages (e.g. p-4 → 1rem)" open={openSection === "spacing"} onToggle={() => toggle("spacing")}>
         <div className="space-y-1.5">
           {Object.entries(spacing).map(([key, val]) => {
             const remNum = parseFloat(val);
             const barWidth = Math.min(remNum * 16, 100);
             return (
               <div key={key} className="flex items-center gap-2.5">
-                <span className="text-sm font-mono text-gray-400 w-6 text-right shrink-0">{key}</span>
+                <span className="text-sm font-mono text-on-surface-outline w-6 text-right shrink-0">{key}</span>
                 <input
                   type="text"
                   value={val}
                   onChange={(e) => updateSpacing(key, e.target.value)}
-                  className="w-20 text-sm border border-gray-200 rounded px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 bg-white shrink-0"
+                  className="w-20 text-sm border border-outline-variant rounded px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 bg-surface-lowest shrink-0"
                 />
-                <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-400/30 rounded-full transition-all" style={{ width: `${barWidth}%` }} />
+                <div className="flex-1 h-3 bg-surface-low rounded-full overflow-hidden">
+                  <div className="h-full bg-primary/30 rounded-full transition-all" style={{ width: `${barWidth}%` }} />
                 </div>
               </div>
             );
           })}
         </div>
-      </Card>
+      </CollapsibleCardSection>
+
+      {/* Shadows */}
+      <CollapsibleCardSection title="Shadows" description="Box-shadow tokens used by cards, dropdowns, and overlays" open={openSection === "shadows"} onToggle={() => toggle("shadows")}>
+        <div className="grid grid-cols-2 gap-4">
+          {(["sm", "md", "lg", "xl"] as const).map((key) => {
+            const shadowVal = shadows[key] || "";
+            return (
+              <div key={key} className="border border-outline-variant/50 rounded-lg p-3 bg-surface-low/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-on-surface-variant uppercase">{key}</span>
+                </div>
+                <div className="flex items-center justify-center h-16 mb-2">
+                  <div
+                    className="w-20 h-10 bg-surface-lowest rounded border border-outline-variant/30"
+                    style={{ boxShadow: shadowVal }}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={shadowVal}
+                  onChange={(e) => updateShadow(key, e.target.value)}
+                  className="w-full text-xs border border-outline-variant rounded px-2 py-1.5 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 bg-surface-lowest"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleCardSection>
+
+      {/* Border Radius */}
+      <CollapsibleCardSection title="Border Radius" description="Rounding tokens for buttons, cards, inputs, and containers" open={openSection === "radius"} onToggle={() => toggle("radius")}>
+        <div className="grid grid-cols-4 gap-4">
+          {(["sm", "md", "lg", "full"] as const).map((key) => {
+            const radiusVal = borderRadius[key] || "0";
+            return (
+              <div key={key} className="border border-outline-variant/50 rounded-lg p-3 bg-surface-low/50 text-center">
+                <span className="text-sm font-semibold text-on-surface-variant uppercase block mb-2">{key}</span>
+                <div className="flex items-center justify-center h-16 mb-2">
+                  <div
+                    className="w-12 h-12 bg-primary/20 border-2 border-primary/40"
+                    style={{ borderRadius: radiusVal }}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={radiusVal}
+                  onChange={(e) => updateRadius(key, e.target.value)}
+                  className="w-full text-xs border border-outline-variant rounded px-2 py-1.5 font-mono text-center focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 bg-surface-lowest"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </CollapsibleCardSection>
+
+      {/* Link Styles */}
+      <CollapsibleCardSection title="Link Styles" description="Default appearance for text links across the site" open={openSection === "links"} onToggle={() => toggle("links")}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <ColorField label="Color" value={links.color || ""} onChange={(v) => updateLinks("color", v)} />
+            <ColorField label="Hover Color" value={links.hoverColor || ""} onChange={(v) => updateLinks("hoverColor", v)} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <InlineField label="Font Weight" value={links.fontWeight || ""} onChange={(v) => updateLinks("fontWeight", v)} placeholder="500" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-on-surface-outline w-20 shrink-0">Underline</span>
+              <button
+                type="button"
+                onClick={() => updateLinks("underline", !links.underline)}
+                className={`relative w-9 h-5 rounded-full transition-colors ${links.underline !== false ? "bg-primary" : "bg-outline-variant"}`}
+              >
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${links.underline !== false ? "left-4.5" : "left-0.5"}`} />
+              </button>
+            </div>
+          </div>
+          <div className="mt-2 p-3 bg-surface-low rounded flex items-center gap-4">
+            <span className="text-sm" style={{ color: links.color, fontWeight: links.fontWeight, textDecoration: links.underline !== false ? "underline" : "none" }}>
+              This is a sample link
+            </span>
+            <span className="text-sm" style={{ color: links.hoverColor, fontWeight: links.fontWeight, textDecoration: links.underline !== false ? "underline" : "none" }}>
+              Hovered link
+            </span>
+          </div>
+        </div>
+      </CollapsibleCardSection>
     </div>
   );
 }
@@ -490,19 +635,19 @@ function FontPicker({ value, onChange, search, onSearchChange, filteredFonts }: 
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full text-sm border border-gray-200 rounded px-2.5 py-2 text-left bg-white hover:border-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none flex items-center justify-between"
+        className="w-full text-sm border border-outline-variant rounded px-2.5 py-2 text-left bg-surface-lowest hover:border-outline-variant focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:outline-none flex items-center justify-between"
       >
         <span style={{ fontFamily: value || "inherit" }}>{value ? value.split(",")[0].replace(/'/g, "") : "Inherit"}</span>
-        <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+        <svg className="w-3.5 h-3.5 text-on-surface-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-50 mt-1 w-full bg-surface-lowest border border-outline-variant rounded shadow-lg max-h-48 overflow-hidden">
+          <div className="p-2 border-b border-outline-variant/50">
             <input
               type="text"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
+              className="w-full text-sm border border-outline-variant rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/40 bg-surface-lowest"
               placeholder="Search Google Fonts..."
               autoFocus
             />
@@ -511,7 +656,7 @@ function FontPicker({ value, onChange, search, onSearchChange, filteredFonts }: 
             <button
               type="button"
               onClick={() => { onChange(""); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-sm hover:bg-indigo-50 ${!value ? "bg-indigo-50 text-indigo-700" : "text-gray-700"}`}
+              className={`w-full text-left px-3 py-1.5 text-sm hover:bg-primary/5 ${!value ? "bg-primary/5 text-primary" : "text-on-surface-variant"}`}
             >
               Inherit (default)
             </button>
@@ -520,7 +665,7 @@ function FontPicker({ value, onChange, search, onSearchChange, filteredFonts }: 
                 key={font}
                 type="button"
                 onClick={() => { onChange(`'${font}', sans-serif`); setOpen(false); }}
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-indigo-50 ${value.includes(font) ? "bg-indigo-50 text-indigo-700" : "text-gray-700"}`}
+                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-primary/5 ${value.includes(font) ? "bg-primary/5 text-primary" : "text-on-surface-variant"}`}
                 style={{ fontFamily: `'${font}', sans-serif` }}
               >
                 {font}
@@ -540,12 +685,12 @@ function MiniField({ label, value, onChange, placeholder, type, options }: {
 }) {
   return (
     <div>
-      <label className="text-[10px] text-gray-400 block mb-0.5">{label}</label>
+      <label className="text-[10px] text-on-surface-outline block mb-0.5">{label}</label>
       {type === "select" && options ? (
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          className="w-full text-xs border border-outline-variant rounded px-1.5 py-1 bg-surface-lowest focus:outline-none focus:ring-1 focus:ring-primary/40"
         >
           {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -554,7 +699,7 @@ function MiniField({ label, value, onChange, placeholder, type, options }: {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 font-mono bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          className="w-full text-xs border border-outline-variant rounded px-1.5 py-1 font-mono bg-surface-lowest focus:outline-none focus:ring-1 focus:ring-primary/40"
           placeholder={placeholder}
         />
       )}
@@ -566,9 +711,9 @@ function MiniField({ label, value, onChange, placeholder, type, options }: {
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-500 w-20 shrink-0">{label}</span>
+      <span className="text-sm text-on-surface-outline w-20 shrink-0">{label}</span>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-6 h-6 rounded cursor-pointer shrink-0 border-0 p-0" style={{ appearance: "auto" }} />
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 text-sm border border-gray-200 rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white" />
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 text-sm border border-outline-variant rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 bg-surface-lowest" />
     </div>
   );
 }
@@ -577,34 +722,34 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 function InlineField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-500 w-20 shrink-0">{label}</span>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 text-sm border border-gray-200 rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white" placeholder={placeholder} />
+      <span className="text-sm text-on-surface-outline w-20 shrink-0">{label}</span>
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 text-sm border border-outline-variant rounded px-2 py-1 font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 bg-surface-lowest" placeholder={placeholder} />
     </div>
   );
 }
 
-/* ── Collapsible Card ── */
-function Card({ title, description, open, onToggle, children }: {
+/* ── Collapsible Card Section ── */
+function CollapsibleCardSection({ title, description, open, onToggle, children }: {
   title: string; description?: string; open: boolean; onToggle: () => void; children: React.ReactNode;
 }) {
   return (
-    <div className={`bg-white rounded-lg border shadow-sm transition-all ${open ? "border-indigo-200 shadow-indigo-100/50" : "border-gray-200"}`}>
+    <div className={`bg-surface-lowest rounded-lg border shadow-sm transition-all ${open ? "border-primary/40 shadow-primary/10" : "border-outline-variant"}`}>
       <button
         type="button"
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-5 py-3.5 text-left"
       >
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
+          <h3 className="text-sm font-semibold text-on-surface">{title}</h3>
+          {description && <p className="text-xs text-on-surface-outline mt-0.5">{description}</p>}
         </div>
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${open ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400"}`}>
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${open ? "bg-primary/10 text-primary" : "bg-surface-low text-on-surface-outline"}`}>
           <svg className="w-3.5 h-3.5 transition-transform duration-200" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
       </button>
-      {open && <div className="px-5 pb-4 pt-1 border-t border-gray-100">{children}</div>}
+      {open && <div className="px-5 pb-4 pt-1 border-t border-outline-variant/50">{children}</div>}
     </div>
   );
 }

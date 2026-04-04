@@ -21,6 +21,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate slug uniqueness
+    if (projectInfo.pages && projectInfo.pages.length > 0) {
+      const slugs = new Set<string>();
+      for (const page of projectInfo.pages) {
+        if (slugs.has(page.slug)) {
+          return Response.json(
+            { success: false, error: { code: "VALIDATION_ERROR", message: `Duplicate page slug: "${page.slug}"` } },
+            { status: 422 },
+          );
+        }
+        slugs.add(page.slug);
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create project
       const project = await tx.project.create({
@@ -67,7 +81,7 @@ export async function POST(request: NextRequest) {
           seoTitle: settings?.seo?.seoTitle || null,
           seoDescription: settings?.seo?.seoDescription || null,
           seoKeywords: settings?.seo?.seoKeywords
-            ? JSON.stringify(settings.seo.seoKeywords.split(",").map((k: string) => k.trim()).filter(Boolean))
+            ? JSON.stringify((settings.seo.seoKeywords ?? "").split(",").map((k: string) => k.trim()).filter(Boolean))
             : null,
           ogTitle: settings?.seo?.ogTitle || null,
           ogDescription: settings?.seo?.ogDescription || null,
@@ -100,9 +114,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 5. Populate ProjectAIProfile
-      await tx.projectAIProfile.upsert({
-        where: { projectId: project.id },
+      return {
+        projectId: project.id,
+        homePageId: homePage.id,
+        styleguideId: styleguide.id,
+        pages: createdPages,
+      };
+    });
+
+    // 5. Populate ProjectAIProfile (outside transaction — non-critical)
+    try {
+      await prisma.projectAIProfile.upsert({
+        where: { projectId: result.projectId },
         update: {
           businessName: projectInfo.name,
           businessType: projectInfo.idea?.slice(0, 100) || "",
@@ -115,7 +138,7 @@ export async function POST(request: NextRequest) {
           lastAnalysisAt: new Date(),
         },
         create: {
-          projectId: project.id,
+          projectId: result.projectId,
           businessName: projectInfo.name,
           businessType: projectInfo.idea?.slice(0, 100) || "",
           industry: projectInfo.idea?.slice(0, 100) || "",
@@ -127,14 +150,10 @@ export async function POST(request: NextRequest) {
           lastAnalysisAt: new Date(),
         },
       });
-
-      return {
-        projectId: project.id,
-        homePageId: homePage.id,
-        styleguideId: styleguide.id,
-        pages: createdPages,
-      };
-    });
+    } catch (profileErr) {
+      // Non-critical — table may not exist yet after schema migration
+      console.warn("[wizard/finalize] AI profile upsert skipped:", profileErr instanceof Error ? profileErr.message : profileErr);
+    }
 
     return Response.json({
       success: true,

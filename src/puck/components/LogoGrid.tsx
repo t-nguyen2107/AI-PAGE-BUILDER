@@ -1,8 +1,13 @@
-import type { LogoGridProps } from "../types";
+import type { LogoGridProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function LogoGrid({ heading, logos }: LogoGridProps) {
+export function LogoGrid(props: LogoGridProps & ComponentMeta) {
+  const { heading, logos, className, ...metaRest } = props;
   return (
-    <section className="w-full py-16 px-6 bg-background text-foreground">
+    <section
+      className={`w-full py-16 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto">
         {heading && (
           <h2 className="text-2xl font-semibold text-center mb-10">{heading}</h2>

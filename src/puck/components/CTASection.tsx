@@ -1,6 +1,8 @@
-import type { CTASectionProps } from "../types";
+import type { CTASectionProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function CTASection({ heading, subtext, ctaText, ctaHref, backgroundUrl }: CTASectionProps) {
+export function CTASection(props: CTASectionProps & ComponentMeta) {
+  const { heading, subtext, ctaText, ctaHref, backgroundUrl, className, ...metaRest } = props;
   const hasBg = !!backgroundUrl;
 
   const sectionStyle: React.CSSProperties = hasBg
@@ -8,12 +10,13 @@ export function CTASection({ heading, subtext, ctaText, ctaHref, backgroundUrl }
         backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        ...extractStyleProps(metaRest),
       }
-    : {};
+    : { ...extractStyleProps(metaRest) };
 
   return (
     <section
-      className={`w-full py-20 px-6 ${hasBg ? "text-white" : "bg-primary text-primary-foreground"}`}
+      className={`w-full py-20 px-6 ${hasBg ? "text-white" : "bg-primary text-primary-foreground"} ${className ?? ""}`}
       style={sectionStyle}
     >
       <div className="max-w-3xl mx-auto text-center">

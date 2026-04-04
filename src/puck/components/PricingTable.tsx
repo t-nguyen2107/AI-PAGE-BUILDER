@@ -1,8 +1,13 @@
-import type { PricingTableProps } from "../types";
+import type { PricingTableProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function PricingTable({ heading, subtext, plans }: PricingTableProps) {
+export function PricingTable(props: PricingTableProps & ComponentMeta) {
+  const { heading, subtext, plans, className, ...metaRest } = props;
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section
+      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>

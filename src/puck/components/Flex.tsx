@@ -1,4 +1,6 @@
 import type { ComponentConfig, Slot } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withStyles } from "../fields/withStyles";
 import { Section } from "./Section";
 
@@ -81,14 +83,17 @@ const FlexInner: ComponentConfig<FlexProps> = {
     wrap: true,
     items: [],
   },
-  render: ({ direction, justifyContent, alignItems, gap, wrap, items: Items }) => {
+  render: (props: any) => {
+    const { direction, justifyContent, alignItems, gap, wrap, items: Items, className, ...metaRest } = props;
+    const justify = justifyMap[justifyContent as keyof typeof justifyMap];
+    const align = alignMap[alignItems as keyof typeof alignMap];
     return (
-      <Section padding="0px">
+      <Section padding="0px" className={className} style={extractStyleProps(metaRest)}>
         <Items
           className={`
             flex ${direction === "column" ? "flex-col" : "flex-row"}
-            ${justifyMap[justifyContent]}
-            ${alignMap[alignItems]}
+            ${justify}
+            ${align}
             ${wrap ? "flex-wrap" : "flex-nowrap"}
           `}
           style={{ gap }}

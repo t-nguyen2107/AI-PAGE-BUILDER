@@ -1,5 +1,7 @@
 import { createElement } from "react";
 import type { ComponentConfig } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withLayout, type WithLayout } from "./Layout";
 import { withStyles, type WithStyles } from "../fields/withStyles";
 import { Section } from "./Section";
@@ -54,11 +56,12 @@ const HeadingInner: ComponentConfig<HeadingProps> = {
     align: "left",
     size: "lg",
   },
-  render: ({ text, level, align, size }) => {
+  render: (props: any) => {
+    const { text, level, align, size, className, ...metaRest } = props as HeadingProps & ComponentMeta;
     const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
 
     return (
-      <Section padding="0px">
+      <Section padding="0px" className={className} style={extractStyleProps(metaRest)}>
         {createElement(level, {
           className: `${sizeStyles[size]} text-foreground ${alignClass}`,
         }, text)}

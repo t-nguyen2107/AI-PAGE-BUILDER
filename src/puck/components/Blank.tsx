@@ -1,4 +1,6 @@
 import type { ComponentConfig, Slot } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 import { withStyles } from "../fields/withStyles";
 import { Section } from "./Section";
 
@@ -13,9 +15,10 @@ const BlankInner: ComponentConfig<BlankProps> = {
   defaultProps: {
     children: [],
   },
-  render: ({ children: Children }) => {
+  render: (props: any) => {
+    const { children: Children, className, ...metaRest } = props;
     return (
-      <Section padding="0px">
+      <Section padding="0px" className={className} style={extractStyleProps(metaRest)}>
         <Children />
       </Section>
     );

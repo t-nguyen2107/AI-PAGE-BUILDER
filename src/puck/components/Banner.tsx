@@ -1,14 +1,18 @@
-import type { BannerProps } from "../types";
+import type { BannerProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function Banner({
-  heading,
-  subtext,
-  ctaText,
-  ctaHref,
-  variant = "gradient",
-  backgroundUrl,
-  align = "center",
-}: BannerProps) {
+export function Banner(props: BannerProps & ComponentMeta) {
+  const {
+    heading,
+    subtext,
+    ctaText,
+    ctaHref,
+    variant = "gradient",
+    backgroundUrl,
+    align = "center",
+    className,
+    ...metaRest
+  } = props;
   const isCenter = align === "center";
 
   // ── Variant classes ──────────────────────────────────────────────
@@ -25,12 +29,13 @@ export function Banner({
           backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          ...extractStyleProps(metaRest),
         }
-      : {};
+      : { ...extractStyleProps(metaRest) };
 
   return (
     <section
-      className={`w-full py-12 px-6 ${variantClasses[variant] || variantClasses.gradient}`}
+      className={`w-full py-12 px-6 ${variantClasses[variant] || variantClasses.gradient} ${className ?? ""}`}
       style={sectionStyle}
     >
       <div

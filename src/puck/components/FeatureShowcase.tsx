@@ -1,18 +1,22 @@
-import type { FeatureShowcaseProps } from "../types";
+import type { FeatureShowcaseProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function FeatureShowcase({
-  heading,
-  subtext,
-  imageUrl,
-  features,
-  imagePosition = "right",
-  ctaText,
-  ctaHref,
-}: FeatureShowcaseProps) {
+export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
+  const {
+    heading,
+    subtext,
+    imageUrl,
+    features,
+    imagePosition = "right",
+    ctaText,
+    ctaHref,
+    className,
+    ...metaRest
+  } = props;
   const imageFirst = imagePosition === "left";
 
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`} style={extractStyleProps(metaRest)}>
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
         {/* Image side */}
         <div

@@ -1,14 +1,21 @@
-import type { ContactFormProps } from "../types";
+import type { ContactFormProps, ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
-export function ContactForm({
-  heading,
-  subtext,
-  showPhone,
-  showCompany,
-  buttonText,
-}: ContactFormProps) {
+export function ContactForm(props: ContactFormProps & ComponentMeta) {
+  const {
+    heading,
+    subtext,
+    showPhone,
+    showCompany,
+    buttonText,
+    className,
+    ...metaRest
+  } = props;
   return (
-    <section className="w-full py-20 px-6 bg-background text-foreground">
+    <section
+      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>

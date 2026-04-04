@@ -1,5 +1,7 @@
 import { forwardRef, type CSSProperties, type ReactNode } from "react";
 import type { ComponentConfig, ObjectField } from "@puckeditor/core";
+import type { ComponentMeta } from "../types";
+import { extractStyleProps } from "../lib/style-override";
 
 // ─── Layout field props ────────────────────────────────────────────────
 
@@ -62,14 +64,15 @@ type LayoutProps = WithLayout<{
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
-}>;
+}> & Partial<ComponentMeta>;
 
 const Layout = forwardRef<HTMLDivElement, LayoutProps>(
-  ({ children, className, layout, style }, ref) => {
+  ({ children, className, layout, style, ...metaRest }, ref) => {
     return (
       <div
         className={className}
         style={{
+          ...extractStyleProps(metaRest),
           gridColumn: layout?.spanCol
             ? `span ${Math.max(Math.min(layout.spanCol, 12), 1)}`
             : undefined,
@@ -152,13 +155,17 @@ export function withLayout<C extends ComponentConfig<any>>(config: C): C {
         },
       };
     },
-    render: (props: any) => (
-      <Layout
-        layout={props.layout as LayoutFieldProps}
-        ref={props.puck?.dragRef}
-      >
-        {config.render(props)}
-      </Layout>
-    ),
+    render: (props: any) => {
+      const { className, ...metaRest } = props;
+      return (
+        <Layout
+          layout={props.layout as LayoutFieldProps}
+          className={className}
+          ref={props.puck?.dragRef}
+        >
+          {config.render(props)}
+        </Layout>
+      );
+    },
   };
 }
