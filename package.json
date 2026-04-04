@@ -23,6 +23,7 @@
     "@langchain/ollama": "^1.2.6",
     "@langchain/openai": "^1.4.1",
     "@prisma/client": "^7.6.0",
+    "@prisma/extension-accelerate": "^3.0.1",
     "@puckeditor/core": "^0.21.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
