@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import type { ComponentMeta, RichTextBlockProps } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 
@@ -18,14 +19,15 @@ const alignMap: Record<RichTextBlockProps["align"], string> = {
 export function RichTextBlock(props: RichTextBlockProps & ComponentMeta) {
   const { content, align, maxWidth, className, ...metaRest } = props;
   const isString = typeof content === "string";
+  const sanitizedContent = isString ? DOMPurify.sanitize(content) : null;
 
   return (
     <div
       className={`${maxWidthMap[maxWidth] || "max-w-full"} ${alignMap[align] || "text-left"} mx-auto space-y-4 text-foreground ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      {isString ? (
-        <div dangerouslySetInnerHTML={{ __html: content }} />
+      {isString && sanitizedContent ? (
+        <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       ) : (
         <div>{content}</div>
       )}

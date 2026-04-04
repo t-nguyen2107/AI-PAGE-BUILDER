@@ -44,6 +44,7 @@ const TYPE_PREFIXES: Record<string, string> = {
   Flex: "flex",
   Grid: "grid",
   SectionBlock: "section",
+  CustomSection: "custom",
 };
 
 /** Props to extract content hints from, in priority order */

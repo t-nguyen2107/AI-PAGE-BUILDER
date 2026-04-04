@@ -87,6 +87,32 @@ export async function appendMiniContext(
 }
 
 // ---------------------------------------------------------------------------
+// Seed session from wizard context (called once when builder first opens)
+// ---------------------------------------------------------------------------
+
+export async function seedSessionFromWizard(
+  sessionId: string,
+  projectInfo: { name?: string; idea?: string; style?: string; targetAudience?: string; tone?: string; pages?: Array<{ title: string }> },
+): Promise<void> {
+  // Check if session already has messages (don't re-seed)
+  const existing = await prisma.aISessionMessage.count({ where: { sessionId } });
+  if (existing > 0) return;
+
+  const parts: string[] = ['[Project Setup Context]'];
+  if (projectInfo.name) parts.push(`Project: ${projectInfo.name}`);
+  if (projectInfo.idea) parts.push(`Business: ${projectInfo.idea}`);
+  if (projectInfo.style) parts.push(`Style: ${projectInfo.style}`);
+  if (projectInfo.targetAudience) parts.push(`Audience: ${projectInfo.targetAudience}`);
+  if (projectInfo.tone) parts.push(`Tone: ${projectInfo.tone}`);
+  if (projectInfo.pages?.length) parts.push(`Pages: ${projectInfo.pages.map(p => p.title).join(', ')}`);
+
+  const summary = parts.join('. ');
+
+  await appendAssistantMessage(sessionId, summary, 'wizard_context');
+  await appendMiniContext(sessionId, 'wizard_context', `Project created via wizard: ${projectInfo.name || 'Untitled'}`);
+}
+
+// ---------------------------------------------------------------------------
 // Clear session
 // ---------------------------------------------------------------------------
 

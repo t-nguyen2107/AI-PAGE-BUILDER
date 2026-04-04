@@ -153,6 +153,12 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   Blank: {},
   Flex: { direction: 'row', justifyContent: 'start', alignItems: 'start', gap: 16, wrap: false },
   Grid: { numColumns: 3, gap: 24, items: [] as unknown },
+  CustomSection: {
+    html: '<div class="p-8 text-center text-muted-foreground"><p>Custom section — edit HTML in sidebar</p></div>',
+    css: '',
+    preview: 'Custom section',
+    minHeight: '200px',
+  },
 };
 
 // ─── Emoji stripping ─────────────────────────────────────────────────────────

@@ -39,6 +39,7 @@ const VALID_COMPONENT_TYPES = new Set([
   'ImageBlock',
   'Spacer',
   'ColumnsLayout',
+  'CustomSection',
 ]);
 
 /** Validated component from AI response */

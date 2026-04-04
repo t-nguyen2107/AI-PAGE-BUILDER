@@ -40,6 +40,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [collectedInfo, setCollectedInfo] = useState<Partial<WizardProjectInfo> | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [completeMessageId, setCompleteMessageId] = useState<string | null>(null);
 
   const chatHistory = useRef<WizardChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -138,6 +139,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
                 }
                 if (info.isComplete) {
                   setIsComplete(true);
+                  setCompleteMessageId(assistantMsgId);
                 }
               } else if (event.type === "error") {
                 throw new Error(event.message ?? "Chat error");
@@ -226,12 +228,24 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
               )}
             >
               {msg.content ? (
-                <span className="whitespace-pre-wrap">
-                  {msg.content}
-                  {msg.status === "streaming" && (
-                    <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 align-middle animate-ai-pulse" />
+                <>
+                  <span className="whitespace-pre-wrap">
+                    {msg.content}
+                    {msg.status === "streaming" && (
+                      <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 align-middle animate-ai-pulse" />
+                    )}
+                  </span>
+                  {msg.role === "assistant" && msg.id === completeMessageId && msg.status === "done" && (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
+                    >
+                      Let&apos;s customize your project
+                      <span className="material-symbols-outlined text-base">arrow_forward</span>
+                    </button>
                   )}
-                </span>
+                </>
               ) : (
                 <div className="flex items-center gap-1.5 py-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: "0ms" }} />

@@ -36,6 +36,7 @@ export const categories = {
       "ProductCards",
       "ComparisonTable",
       "Gallery",
+      "CustomSection",
     ],
   },
   // ─── Navigation ─────────────────────────────────────────────────────

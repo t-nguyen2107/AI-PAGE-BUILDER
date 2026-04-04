@@ -122,8 +122,20 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // 5. Populate ProjectAIProfile (outside transaction — non-critical)
+    // 5. Populate ProjectAIProfile with rich wizard context (outside transaction — non-critical)
     try {
+      // Build a compact wizard summary for builder AI context
+      const wizardParts: string[] = [];
+      if (projectInfo.name) wizardParts.push(`Project: ${projectInfo.name}`);
+      if (projectInfo.idea) wizardParts.push(`Business: ${projectInfo.idea}`);
+      if (projectInfo.style) wizardParts.push(`Design style: ${projectInfo.style}`);
+      if (projectInfo.targetAudience) wizardParts.push(`Target audience: ${projectInfo.targetAudience}`);
+      if (projectInfo.tone) wizardParts.push(`Content tone: ${projectInfo.tone}`);
+      if (projectInfo.pages && projectInfo.pages.length > 0) {
+        wizardParts.push(`Planned pages: ${projectInfo.pages.map(p => p.title).join(', ')}`);
+      }
+      const wizardSummary = JSON.stringify(wizardParts);
+
       await prisma.projectAIProfile.upsert({
         where: { projectId: result.projectId },
         update: {
@@ -134,6 +146,7 @@ export async function POST(request: NextRequest) {
           tone: projectInfo.tone || "",
           preferredStyle: projectInfo.style || "",
           language: projectInfo.language || "en",
+          contentThemes: wizardSummary,
           totalSessions: 1,
           lastAnalysisAt: new Date(),
         },
@@ -146,6 +159,7 @@ export async function POST(request: NextRequest) {
           tone: projectInfo.tone || "",
           preferredStyle: projectInfo.style || "",
           language: projectInfo.language || "en",
+          contentThemes: wizardSummary,
           totalSessions: 1,
           lastAnalysisAt: new Date(),
         },

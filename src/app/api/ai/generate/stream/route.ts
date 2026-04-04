@@ -78,6 +78,45 @@ export async function POST(request: NextRequest) {
           (async () => {
             const session = await aiMemory.getOrCreateSession(projectId, pageId);
             capturedSessionId = session.id;
+
+            // Seed session from wizard/project context (idempotent — checks internally for existing messages)
+            try {
+              const profile = await prisma.projectAIProfile.findUnique({
+                where: { projectId },
+                select: {
+                  businessName: true,
+                  businessType: true,
+                  preferredStyle: true,
+                  targetAudience: true,
+                  tone: true,
+                },
+              });
+
+              if (profile) {
+                await aiMemory.seedSessionFromWizard(session.id, {
+                  name: profile.businessName || undefined,
+                  idea: profile.businessType || undefined,
+                  style: profile.preferredStyle || undefined,
+                  targetAudience: profile.targetAudience || undefined,
+                  tone: profile.tone || undefined,
+                });
+              } else {
+                // Fallback: seed from basic project info when no AI profile exists
+                const project = await prisma.project.findUnique({
+                  where: { id: projectId },
+                  select: { name: true, description: true },
+                });
+                if (project) {
+                  await aiMemory.seedSessionFromWizard(session.id, {
+                    name: project.name || undefined,
+                    idea: project.description || undefined,
+                  });
+                }
+              }
+            } catch (seedErr) {
+              console.warn('[ai-stream] Wizard seed failed (non-critical):', seedErr);
+            }
+
             miniContext = await aiMemory.getMiniContext(session.id);
             history = await aiMemory.getSessionHistory(session.id);
           })(),

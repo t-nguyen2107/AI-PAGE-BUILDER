@@ -44,6 +44,8 @@ const VALID_COMPONENT_TYPES = new Set([
   'Blank',
   'Flex',
   'Grid',
+  // Custom
+  'CustomSection',
 ]);
 
 /**

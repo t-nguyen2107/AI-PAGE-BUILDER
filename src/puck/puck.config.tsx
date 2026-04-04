@@ -31,6 +31,7 @@ import { FeatureShowcase as FeatureShowcaseRender } from "./components/FeatureSh
 import { CountdownTimer as CountdownTimerRender } from "./components/CountdownTimer";
 import { AnnouncementBar as AnnouncementBarRender } from "./components/AnnouncementBar";
 import { Banner as BannerRender } from "./components/Banner";
+import { CustomSection as CustomSectionRender } from "./components/CustomSection";
 // Atomic (composable) — self-contained ComponentConfig exports
 import { Button } from "./components/Button";
 import { Card } from "./components/Card";
@@ -69,6 +70,7 @@ import type {
   CountdownTimerProps,
   AnnouncementBarProps,
   BannerProps,
+  CustomSectionProps,
   ButtonBlockProps,
   CardBlockProps,
   HeadingBlockProps,
@@ -1062,6 +1064,20 @@ const Banner: ComponentConfig<BannerProps> = {
   render: BannerRender,
 };
 
+const CustomSection: ComponentConfig<CustomSectionProps> = {
+  fields: {
+    html: { type: "textarea", label: "HTML Code" },
+    css: { type: "textarea", label: "Custom CSS (optional)" },
+    preview: { type: "text", label: "Description" },
+    minHeight: { type: "text", label: "Min Height" },
+  },
+  defaultProps: {
+    html: "",
+    minHeight: "200px",
+  },
+  render: CustomSectionRender,
+};
+
 // ─── Config ────────────────────────────────────────────────────────────
 
 // Inject `name` field + style override fields into every component config.
@@ -1138,6 +1154,7 @@ export const config: Config<{ components: ComponentProps }> = {
     CountdownTimer: withMetaFields(CountdownTimer),
     AnnouncementBar: withMetaFields(AnnouncementBar),
     Banner: withMetaFields(Banner),
+    CustomSection: withMetaFields(CustomSection),
   },
 };
 

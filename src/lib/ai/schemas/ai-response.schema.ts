@@ -87,6 +87,8 @@ export const aiResponseJsonSchema = {
             'Blank',
             'Flex',
             'Grid',
+            // Custom
+            'CustomSection',
           ],
           description: 'Puck component type name (case-sensitive)',
         },
