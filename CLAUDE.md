@@ -87,6 +87,14 @@ All API responses use: `ApiResponse<T> { success, data?, error?, meta }`
 - Preview pages use `export const revalidate = 60` for ISR
 - Page save API calls `revalidatePath()` to bust cache on publish
 
+## Workflow Rules
+- **Push before big tasks:** Before starting any large, complex, or multi-file task, commit and push all current changes first. This ensures a clean checkpoint in case the task needs to be reverted.
+- **Commit often:** Break work into logical commits. Don't let uncommitted changes accumulate across unrelated features.
+
+## Working Rules
+- **Push before starting large tasks:** Before beginning any complex or multi-file task (refactors, migrations, new features), commit and push all pending changes first. This ensures a clean checkpoint to revert to if things go wrong.
+- **Commit often:** Break work into logical commits. Don't let uncommitted changes accumulate across unrelated features.
+
 ## Coding Conventions
 - Use `@/` path alias for imports
 - Strict TypeScript — no `any` types
