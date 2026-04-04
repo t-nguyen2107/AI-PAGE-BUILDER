@@ -122,6 +122,8 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
 
   if (!data) return null;
 
+  const aiPlugin = createAIPlugin({ projectId, pageId });
+
   return (
     <>
       <div className="h-screen w-screen">
@@ -135,6 +137,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
             { width: 768, label: "Tablet" },
             { width: 375, label: "Mobile" },
           ]}
+          plugins={[aiPlugin]}
           overrides={{
             headerActions: ({ children }) => (
               <>
