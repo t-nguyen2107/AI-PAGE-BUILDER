@@ -166,7 +166,8 @@
       "Bash(node -e \"const p = require\\('@puckeditor/core'\\); console.log\\(typeof p.SlotComponent\\)\")",
       "Bash(xxd)",
       "Bash(python scripts/search.py \"SaaS tool page builder editor professional minimal modern\" --design-system -p \"PageBuilder\")",
-      "Bash(python \"C:\\\\Users\\\\MR THIEN\\\\.claude\\\\plugins\\\\marketplaces\\\\ui-ux-pro-max-skill\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"SaaS tool page builder editor professional minimal modern\" --design-system -p \"PageBuilder\")"
+      "Bash(python \"C:\\\\Users\\\\MR THIEN\\\\.claude\\\\plugins\\\\marketplaces\\\\ui-ux-pro-max-skill\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"SaaS tool page builder editor professional minimal modern\" --design-system -p \"PageBuilder\")",
+      "Bash(DATABASE_URL=\"postgres://41f920c3c6b28580efad478c15d672963784852020f2406412b08cb5da1b21e7:sk_DWvKv80rG4UaYqSeI5dG8@db.prisma.io:5432/postgres?sslmode=require\" npx prisma db push --config prisma/prisma.config.ts)"
     ],
     "additionalDirectories": [
       "C:\\Users\\MR THIEN\\.claude\\hud",

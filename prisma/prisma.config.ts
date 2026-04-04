@@ -5,6 +5,6 @@ export default defineConfig({
   earlyAccess: true,
   schema: path.join(__dirname, 'schema.prisma'),
   datasource: {
-    url: process.env.DATABASE_URL ?? 'file:./dev.db',
+    url: process.env.DATABASE_URL ?? 'postgresql://localhost:5432/pagedb',
   },
 });

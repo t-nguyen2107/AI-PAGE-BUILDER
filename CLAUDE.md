@@ -8,7 +8,7 @@ AI Website Builder là một modular subsystem thiết kế để tích hợp v�
 - **Editor:** @puckeditor/core v0.21.x (visual drag-drop, inline editing, viewport preview, undo/redo)
 - **Styling:** Tailwind CSS 4 + CSS Variables (dynamic styleguide injection)
 - **State:** Zustand 5 (toast store; Puck manages its own editor state)
-- **Database:** SQLite via Prisma 7 (better-sqlite3 adapter)
+- **Database:** PostgreSQL via Prisma 7 (Prisma Postgres)
 - **Validation:** Zod 4 schemas
 - **AI:** Ollama (qwen3.5) cho prompt-to-JSON generation
 - **IDs:** nanoid

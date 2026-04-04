@@ -1,14 +1,29 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Puck } from "@puckeditor/core";
+import { Puck, createUsePuck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
 import { apiClient } from "@/lib/api-client";
 import type { Data } from "@puckeditor/core";
 import { useToastStore } from "@/store/toast-store";
 import { SettingsPanel } from "./settings/SettingsPanel";
+import { PreviewPanel } from "./PreviewPanel";
 import { createAIPlugin } from "./plugins/ai-plugin";
+
+// Puck data sync hook — reads live data from Puck context
+const usePuckData = createUsePuck();
+
+function DataSync({ onSync }: { onSync: (d: Data) => void }) {
+  const appState = usePuckData((s) => s.appState);
+
+  useEffect(() => {
+    const d = appState?.data as Data | undefined;
+    if (d) onSync(d);
+  }, [appState, onSync]);
+
+  return null;
+}
 
 interface PuckEditorProps {
   projectId: string;
@@ -21,7 +36,13 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const [isHomePage, setIsHomePage] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<Data | null>(null);
   const addToast = useToastStore((s) => s.addToast);
+
+  const handleDataSync = useCallback((d: Data) => {
+    setPreviewData(d);
+  }, []);
 
   // Load page data
   useEffect(() => {
@@ -142,6 +163,18 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
             headerActions: ({ children }) => (
               <>
                 {children}
+                <DataSync onSync={handleDataSync} />
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(true)}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  title="Preview"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
                 <button
                   type="button"
                   onClick={() => setSettingsOpen(true)}
@@ -164,6 +197,13 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
         projectId={projectId}
         pageId={pageId}
         isHomePage={isHomePage}
+      />
+      <PreviewPanel
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        data={previewData || data}
+        projectId={projectId}
+        pageId={pageId}
       />
     </>
   );

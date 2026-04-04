@@ -4,7 +4,7 @@
 # prisma/
 
 ## Purpose
-Database schema definition and seed data for the AI Website Builder. Uses SQLite via Prisma 7 with better-sqlite3 adapter. Agent 1 owns this directory.
+Database schema definition and seed data for the AI Website Builder. Uses PostgreSQL via Prisma 7 (Prisma Postgres). Agent 1 owns this directory.
 
 ## Key Files
 | File | Description |

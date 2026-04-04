@@ -35,7 +35,7 @@ Built as a modular subsystem designed to integrate into a larger AI CMS platform
 - **Revision History** -- Full page snapshots with diff support
 - **Component Library** -- Save and reuse custom components across projects
 - **ISR Preview** -- Incremental Static Regeneration for published pages
-- **SQLite + Prisma 7** -- Zero-config database with better-sqlite3 adapter
+- **PostgreSQL + Prisma 7** -- Managed database with Prisma Postgres
 
 ---
 
@@ -47,7 +47,7 @@ Built as a modular subsystem designed to integrate into a larger AI CMS platform
 | UI | React 19, Tailwind CSS 4 |
 | Editor | @puckeditor/core v0.21 |
 | State | Zustand 5, Puck internal state |
-| Database | SQLite via Prisma 7 (better-sqlite3) |
+| Database | PostgreSQL via Prisma 7 (Prisma Postgres) |
 | Validation | Zod 4 |
 | AI | LangChain + Ollama / OpenAI / Anthropic |
 | IDs | nanoid |

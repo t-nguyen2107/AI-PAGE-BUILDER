@@ -3,7 +3,7 @@
 # AI Website Builder
 
 ## Purpose
-AI-powered visual website builder — modular subsystem for an AI CMS. Users create websites through a visual drag-drop editor + AI prompt generation. Built with Next.js 16, React 19, Prisma 7 (SQLite), Zustand 5, and Ollama (qwen3.5).
+AI-powered visual website builder — modular subsystem for an AI CMS. Users create websites through a visual drag-drop editor + AI prompt generation. Built with Next.js 16, React 19, Prisma 7 (PostgreSQL), Zustand 5, and Ollama (qwen3.5).
 
 ## Key Files
 | File | Description |
@@ -12,7 +12,7 @@ AI-powered visual website builder — modular subsystem for an AI CMS. Users cre
 | `package.json` | Dependencies and scripts (Next.js 16, React 19, Prisma 7, Zustand 5) |
 | `tsconfig.json` | TypeScript config with `@/` path alias |
 | `vitest.config.ts` | Vitest test runner (jsdom environment) |
-| `prisma.config.ts` | Prisma 7 config with better-sqlite3 adapter |
+| `prisma.config.ts` | Prisma 7 config with PostgreSQL adapter |
 | `next.config.ts` | Next.js configuration |
 
 ## Subdirectories
@@ -46,7 +46,7 @@ AI-powered visual website builder — modular subsystem for an AI CMS. Users cre
 ### External
 - Next.js 16 — App Router framework
 - React 19 — UI library
-- Prisma 7 — ORM with better-sqlite3 adapter
+- Prisma 7 — ORM with PostgreSQL (Prisma Postgres)
 - Zustand 5 — State management with temporal middleware
 - @dnd-kit — Drag and drop
 - Zod 4 — Runtime validation

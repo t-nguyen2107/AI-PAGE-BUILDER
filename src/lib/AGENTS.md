@@ -9,7 +9,7 @@ Shared utilities used across the application. Agent 3 owns this directory. Conta
 ## Key Files
 | File | Description |
 |------|-------------|
-| `prisma.ts` | Prisma client singleton with Proxy pattern + better-sqlite3 adapter + dev caching |
+| `prisma.ts` | Prisma client singleton with Proxy pattern + PostgreSQL connection |
 | `api-client.ts` | Typed fetch wrapper — methods for projects, pages, styleguide, global-sections, revisions, library, AI |
 | `tree-utils.ts` | Immutable tree operations — findNode, addChild, removeNode, updateNode, moveNode, reorder, flatten, count, getPath |
 | `json-patch.ts` | RFC 6901 JSON Patch — add, remove, replace, move, copy, test operations |

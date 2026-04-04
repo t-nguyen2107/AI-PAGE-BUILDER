@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { useToastStore } from '@/store/toast-store';
 
 const typeConfig = {
@@ -14,30 +15,51 @@ const typeConfig = {
   },
   info: {
     icon: 'info',
-    color: 'var(--primary-container)',
+    color: 'var(--info)',
+  },
+  warning: {
+    icon: 'warning',
+    color: 'var(--warning)',
   },
 };
 
+/**
+ * Toast notification container with aria-live for screen reader support.
+ * Shows max 3 toasts, newest at top.
+ */
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 
-  // Show max 3 toasts, newest at top
   const visibleToasts = toasts.slice(-3).reverse();
 
   return (
-    <div className="fixed bottom-24 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div
+      className="fixed bottom-24 right-4 z-toast flex flex-col gap-2 pointer-events-none"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {visibleToasts.map((toast) => {
-        const config = typeConfig[toast.type];
+        const config = typeConfig[toast.type] || typeConfig.info;
 
         return (
           <div
             key={toast.id}
-            className="pointer-events-auto animate-slide-in-right relative overflow-hidden rounded-xl shadow-lg bg-surface-container/90 backdrop-blur-xl min-w-[300px] max-w-md"
+            className={cn(
+              'pointer-events-auto animate-slide-in-right',
+              'relative overflow-hidden rounded-xl shadow-lg',
+              'bg-surface-container/90 backdrop-blur-xl',
+              'min-w-75 max-w-md'
+            )}
             style={{ borderLeft: `3px solid ${config.color}` }}
+            role="status"
           >
             <div className="flex items-center gap-3 p-4">
               {/* Icon */}
-              <span className="material-symbols-outlined text-lg flex-shrink-0" style={{ color: config.color }}>
+              <span
+                className="material-symbols-outlined text-lg flex-shrink-0"
+                style={{ color: config.color }}
+                aria-hidden="true"
+              >
                 {config.icon}
               </span>
 
@@ -47,7 +69,10 @@ export function ToastContainer() {
               {/* Close button */}
               <button
                 onClick={() => removeToast(toast.id)}
-                className="flex-shrink-0 p-1 rounded-md hover:bg-surface-high transition-colors"
+                className={cn(
+                  'shrink-0 p-1 rounded-md',
+                  'hover:bg-surface-high transition-colors'
+                )}
                 aria-label="Close toast"
               >
                 <span className="material-symbols-outlined text-lg text-on-surface-variant">
