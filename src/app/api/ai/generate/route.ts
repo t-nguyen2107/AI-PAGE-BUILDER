@@ -4,17 +4,21 @@ import { invokeAIChain } from '@/lib/ai/chain';
 import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
 import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimizer';
 import * as aiMemory from '@/lib/ai/memory';
+import { getProjectProfileText } from '@/lib/ai/memory-manager';
+import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
 import { parsePrompt } from '@/features/ai/prompt-parser';
-import { generateSection, generatePuckComponent } from '@/features/ai/component-generator';
+import { generatePuckComponent } from '@/features/ai/component-generator';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { validateTemplateResponse } from '@/lib/ai/prompts/template-schema';
 import { buildTemplatePrompt } from '@/lib/ai/prompts/template-prompt';
-import { createModel } from '@/lib/ai/provider';
+import { createModelBundle } from '@/lib/ai/provider';
 import { extractJSON } from '@/lib/ai/streaming';
 import { orderPuckComponents } from '@/lib/ai/puck-adapter';
 import { generateId } from '@/lib/id';
 import type { ComponentData } from '@puckeditor/core';
 import { AIAction } from '@/types/enums';
+import type { AIGenerationResponse } from '@/types/ai';
+import type { BaseMessage } from '@langchain/core/messages';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +48,9 @@ export async function POST(request: NextRequest) {
   if (!prompt || typeof prompt !== 'string') {
     return errorResponse('VALIDATION_ERROR', '"prompt" is required and must be a string', 422);
   }
+  if (prompt.length > 5000) {
+    return errorResponse('VALIDATION_ERROR', 'Prompt too long (max 5000 characters)', 422);
+  }
   if (!projectId || typeof projectId !== 'string') {
     return errorResponse('VALIDATION_ERROR', '"projectId" is required', 422);
   }
@@ -51,58 +58,37 @@ export async function POST(request: NextRequest) {
     return errorResponse('VALIDATION_ERROR', '"pageId" is required', 422);
   }
 
-  // --- Fetch styleguide data if provided ---
+  // --- Load context in parallel ---
   let styleguideData: { colors?: string; typography?: string } | undefined;
-
-  if (styleguideId) {
-    try {
-      const styleguide = await prisma.styleguide.findUnique({
-        where: { id: styleguideId },
-      });
-      if (styleguide) {
-        styleguideData = {
-          colors: styleguide.colors,
-          typography: styleguide.typography,
-        };
-      }
-    } catch (err) {
-      console.error('Failed to fetch styleguide:', err);
-    }
-  }
-
-  // --- Load session memory ---
   let miniContext = '';
   let sessionId = '';
-
-  try {
-    const session = await aiMemory.getOrCreateSession(projectId, pageId);
-    sessionId = session.id;
-    miniContext = await aiMemory.getMiniContext(session.id);
-  } catch (err) {
-    console.error('Failed to load session memory:', err);
-    // Non-fatal — continue without memory
-  }
-
-  // --- Load conversation history ---
-  let history: import('@langchain/core/messages').BaseMessage[] = [];
-  if (sessionId) {
-    try {
-      history = await aiMemory.getSessionHistory(sessionId);
-    } catch (err) {
-      console.error('Failed to load session history:', err);
-    }
-  }
-
-  // --- Build tree context from current page ---
+  let history: BaseMessage[] = [];
   let treeSummary: string | undefined;
-  try {
-    const page = await prisma.page.findUnique({ where: { id: pageId } });
-    if (page?.treeData) {
-      treeSummary = buildTreeSummary(page.treeData);
-    }
-  } catch (err) {
-    console.error('Failed to build tree context:', err);
-  }
+  let projectProfile = '';
+
+  await Promise.allSettled([
+    (async () => {
+      if (styleguideId) {
+        const styleguide = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
+        if (styleguide) {
+          styleguideData = { colors: styleguide.colors, typography: styleguide.typography };
+        }
+      }
+    })(),
+    (async () => {
+      const session = await aiMemory.getOrCreateSession(projectId, pageId);
+      sessionId = session.id;
+      miniContext = await aiMemory.getMiniContext(session.id);
+      history = await aiMemory.getSessionHistory(session.id);
+    })(),
+    (async () => {
+      const page = await prisma.page.findUnique({ where: { id: pageId } });
+      if (page?.treeData) {
+        treeSummary = buildTreeSummary(page.treeData);
+      }
+    })(),
+    getProjectProfileText(projectId, prompt).then((t) => { projectProfile = t ?? ''; }),
+  ]);
 
   // --- Optimize prompt with context ---
   const { enrichedPrompt, nameRefs, intent, businessType } = optimizePrompt(prompt);
@@ -121,10 +107,10 @@ export async function POST(request: NextRequest) {
   // --- Template mode for full-page generation ---
   if (intent === 'create_page') {
     try {
-      const model = createModel();
+      const { model, jsonCallOptions } = createModelBundle();
       const tmplPrompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData });
       const messages = await tmplPrompt.formatMessages({ input: enrichedPrompt });
-      const response = await model.invoke(messages);
+      const response = await model.invoke(messages, jsonCallOptions);
 
       const text = typeof response.content === 'string' ? response.content : '';
       const parsed = extractJSON(text);
@@ -159,7 +145,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Invoke LangChain (full mode or template fallback) ---
-  let chainResult: { data: import('@/types/ai').AIGenerationResponse | null; error: string | null; raw: unknown };
+  let chainResult: { data: AIGenerationResponse | null; error: string | null; raw: unknown };
   let chainError: string | null = null;
 
   try {
@@ -168,6 +154,7 @@ export async function POST(request: NextRequest) {
       miniContext: miniContext || undefined,
       history,
       treeSummary,
+      projectProfile: projectProfile || undefined,
     });
   } catch (err) {
     chainError = err instanceof Error ? err.message : 'Unknown error from AI chain';
@@ -180,7 +167,7 @@ export async function POST(request: NextRequest) {
         : [];
 
       if (components.length > 0) {
-        const fallbackResponse: import('@/types/ai').AIGenerationResponse = {
+        const fallbackResponse: AIGenerationResponse = {
           action: intent.action,
           components,
           targetComponentId: targetNodeId ?? undefined,
@@ -255,6 +242,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (logErr) {
     console.error('Failed to log AI prompt interaction:', logErr);
+  }
+
+  // --- Fire-and-forget: analyze session and update project AI profile ---
+  if (sessionId) {
+    analyzeAndUpdateProfile(projectId, sessionId).catch((err) => {
+      console.error('[ai-profile] Background analysis failed:', err);
+    });
   }
 
   // --- Return error or success ---

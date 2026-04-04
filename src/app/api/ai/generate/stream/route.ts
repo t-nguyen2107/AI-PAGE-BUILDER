@@ -1,11 +1,13 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { createAIStream } from '@/lib/ai/streaming';
+import { optimizePrompt, selectRelevantComponents } from '@/lib/ai/prompts/prompt-optimizer';
 import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
-import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimizer';
 import * as aiMemory from '@/lib/ai/memory';
+import { getProjectProfileText } from '@/lib/ai/memory-manager';
+import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generatePuckComponent } from '@/features/ai/component-generator';
+import { prisma } from '@/lib/prisma';
 import type { AIGenerationResponse } from '@/types/ai';
 import type { BaseMessage } from '@langchain/core/messages';
 
@@ -32,13 +34,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (typeof prompt === 'string' && prompt.length > 5000) {
+    return Response.json(
+      { success: false, error: { code: 'VALIDATION_ERROR', message: 'Prompt too long (max 5000 characters)' } },
+      { status: 422 },
+    );
+  }
+
   const encoder = new TextEncoder();
 
   // --- Create pipeline stream ---
   const pipelineStream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      let closed = false;
       const send = (event: Record<string, unknown>) => {
+        if (closed) return;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try { controller.close(); } catch { /* already closed */ }
       };
 
       let finalResult: AIGenerationResponse | null = null;
@@ -49,33 +65,41 @@ export async function POST(request: NextRequest) {
         send({ type: 'status', step: 'loading_context', label: 'Loading page context...' });
 
         let styleguideData: { colors?: string; typography?: string } | undefined;
-        if (styleguideId) {
-          try {
-            const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
-            if (sg) styleguideData = { colors: sg.colors, typography: sg.typography };
-          } catch { /* non-fatal */ }
-        }
-
         let treeSummary: string | undefined;
-        try {
-          const page = await prisma.page.findUnique({ where: { id: pageId } });
-          if (page?.treeData) {
-            treeSummary = buildTreeSummary(page.treeData);
-          }
-        } catch { /* non-fatal */ }
-
         let miniContext = '';
         let history: BaseMessage[] = [];
-        try {
-          const session = await aiMemory.getOrCreateSession(projectId, pageId);
-          capturedSessionId = session.id;
-          miniContext = await aiMemory.getMiniContext(session.id);
-          history = await aiMemory.getSessionHistory(session.id);
-        } catch { /* non-fatal */ }
+        let projectProfile = '';
+
+        const [, , , profileResult] = await Promise.allSettled([
+          (async () => {
+            const page = await prisma.page.findUnique({ where: { id: pageId } });
+            if (page?.treeData) treeSummary = buildTreeSummary(page.treeData);
+          })(),
+          (async () => {
+            const session = await aiMemory.getOrCreateSession(projectId, pageId);
+            capturedSessionId = session.id;
+            miniContext = await aiMemory.getMiniContext(session.id);
+            history = await aiMemory.getSessionHistory(session.id);
+          })(),
+          (async () => {
+            if (styleguideId) {
+              const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
+              if (sg) styleguideData = { colors: sg.colors, typography: sg.typography };
+            }
+          })(),
+          getProjectProfileText(projectId, prompt).then((t) => { projectProfile = t ?? ''; }),
+        ]);
+
+        if (profileResult.status === 'rejected') {
+          console.error('[ai-profile] Failed to load project profile:', profileResult.reason);
+        }
 
         // STEP 2: Optimize prompt
         send({ type: 'status', step: 'optimizing', label: 'Optimizing prompt...' });
-        const { enrichedPrompt, nameRefs, intent, businessType } = optimizePrompt(prompt);
+        const { enrichedPrompt, intent, businessType } = optimizePrompt(prompt);
+
+        // Select component catalog tiers based on intent + business type
+        const componentTiers = selectRelevantComponents(intent, businessType, treeSummary);
 
         // Route: create_page → template mode, everything else → full AI mode
         const useTemplateMode = intent === 'create_page';
@@ -88,8 +112,11 @@ export async function POST(request: NextRequest) {
             miniContext: miniContext || undefined,
             treeSummary,
             history,
+            projectProfile: projectProfile || undefined,
             mode: useTemplateMode ? 'template' : 'full',
             businessType: businessType ?? undefined,
+            componentTiers,
+            signal: request.signal,
           });
         } catch (streamError) {
           // Fallback to template-based generation
@@ -106,38 +133,45 @@ export async function POST(request: NextRequest) {
             message: 'Generated from template fallback.',
           };
 
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', result: fallbackResponse })}\n\n`));
+          send({ type: 'done', result: fallbackResponse });
           finalResult = fallbackResponse;
-          controller.close();
-          return;
+          return; // finally will close
         }
 
         // Pipe AI stream events, capture final result
+        // Buffer-based SSE parsing: handles events split across reads or merged in one read
         const reader = aiStream.getReader();
+        const decoder = new TextDecoder();
+        let sseBuffer = '';
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const text = new TextDecoder().decode(value);
-            const match = text.match(/^data: ([\s\S]+)\n\n$/);
-            if (match) {
+            controller.enqueue(value);
+
+            // Parse SSE events from buffer
+            sseBuffer += decoder.decode(value, { stream: true });
+            const parts = sseBuffer.split('\n\n');
+            // Keep last (potentially incomplete) part in buffer
+            sseBuffer = parts.pop() ?? '';
+            for (const part of parts) {
+              const line = part.trim();
+              if (!line.startsWith('data: ')) continue;
               try {
-                const event = JSON.parse(match[1]);
+                const event = JSON.parse(line.slice(6));
                 if (event.type === 'done') {
                   finalResult = event.result;
                 }
               } catch { /* ignore parse errors on intermediate chunks */ }
             }
-
-            controller.enqueue(value);
           }
         } finally {
           reader.releaseLock();
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown pipeline error';
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: msg })}\n\n`));
+        send({ type: 'error', message: msg });
       } finally {
         // Persist messages after stream completes
         if (capturedSessionId && finalResult) {
@@ -167,9 +201,16 @@ export async function POST(request: NextRequest) {
               },
             });
           } catch { /* non-fatal */ }
+
+          // Fire-and-forget: analyze session and update project AI profile
+          if (capturedSessionId) {
+            analyzeAndUpdateProfile(projectId, capturedSessionId).catch((err) => {
+              console.error('[ai-profile] Background analysis failed:', err);
+            });
+          }
         }
 
-        controller.close();
+        close();
       }
     },
   });

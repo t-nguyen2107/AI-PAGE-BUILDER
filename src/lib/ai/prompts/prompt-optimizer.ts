@@ -216,16 +216,35 @@ function collectNodeNames(node: unknown, acc: Map<string, string>): void {
   if (!node || typeof node !== 'object') return;
   const n = node as Record<string, unknown>;
 
+  // Puck ComponentData: { type, props: { id, name } }
+  const props = typeof n.props === 'object' && n.props !== null ? n.props as Record<string, unknown> : null;
+  if (props) {
+    const name = typeof props.name === 'string' ? props.name : '';
+    const id = typeof props.id === 'string' ? props.id : '';
+    if (name && id) {
+      acc.set(name, id);
+    }
+  }
+
+  // Legacy format: node.name + node.id
   if (typeof n.name === 'string' && typeof n.id === 'string') {
     acc.set(n.name, n.id);
   }
 
-  // Recurse into children
+  // Recurse into content array (Puck flat list)
+  if (Array.isArray(n.content)) {
+    for (const child of n.content) {
+      collectNodeNames(child, acc);
+    }
+  }
+
+  // Recurse into children (legacy tree)
   if (Array.isArray(n.children)) {
     for (const child of n.children) {
       collectNodeNames(child, acc);
     }
   }
+
   // Also check treeData if it's a page-like root
   if (n.treeData && typeof n.treeData === 'object') {
     collectNodeNames(n.treeData, acc);
@@ -256,4 +275,130 @@ export function resolveNameToId(
   }
 
   return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic Component Catalog — Tier Selection
+// ---------------------------------------------------------------------------
+
+/** Component names that are always included with full detail (structural + atomic) */
+const STRUCTURAL_COMPONENTS = [
+  'SectionBlock', 'Flex', 'Grid', 'ColumnsLayout', 'Spacer', 'Blank',
+  'HeadingBlock', 'TextBlock', 'ButtonBlock', 'ImageBlock', 'CardBlock', 'RichTextBlock',
+  'HeaderNav', 'FooterSection',
+];
+
+/** All content section component names */
+const CONTENT_COMPONENTS = [
+  'HeroSection', 'FeaturesGrid', 'PricingTable', 'TestimonialSection',
+  'CTASection', 'FAQSection', 'StatsSection', 'TeamSection', 'BlogSection', 'LogoGrid',
+  'ContactForm', 'NewsletterSignup', 'Gallery', 'SocialProof', 'ComparisonTable',
+  'ProductCards', 'FeatureShowcase', 'CountdownTimer', 'AnnouncementBar', 'Banner',
+];
+
+/**
+ * Maps detected business type → most relevant content components.
+ * Components listed here get Tier 1 (full detail) for create_page intent.
+ */
+const BUSINESS_COMPONENT_RELEVANCE: Record<string, string[]> = {
+  'bakery/pastry shop':        ['HeroSection', 'Gallery', 'TestimonialSection', 'CTASection', 'FAQSection', 'ContactForm'],
+  'restaurant/dining':         ['HeroSection', 'Gallery', 'TestimonialSection', 'CTASection', 'FAQSection', 'ContactForm', 'AnnouncementBar'],
+  'coffee shop/cafe':          ['HeroSection', 'Gallery', 'TestimonialSection', 'CTASection', 'FAQSection', 'ContactForm', 'AnnouncementBar'],
+  'SaaS/technology':           ['HeroSection', 'FeaturesGrid', 'PricingTable', 'TestimonialSection', 'FAQSection', 'StatsSection', 'LogoGrid', 'CTASection', 'ComparisonTable', 'FeatureShowcase'],
+  'personal portfolio':        ['HeroSection', 'Gallery', 'TestimonialSection', 'CTASection', 'ContactForm', 'FeatureShowcase'],
+  'creative agency':           ['HeroSection', 'FeaturesGrid', 'Gallery', 'TestimonialSection', 'LogoGrid', 'CTASection', 'TeamSection', 'ContactForm'],
+  'e-commerce/store':          ['HeroSection', 'ProductCards', 'TestimonialSection', 'NewsletterSignup', 'FAQSection', 'CTASection', 'AnnouncementBar', 'SocialProof'],
+  'blog/media':                ['HeroSection', 'BlogSection', 'NewsletterSignup', 'CTASection'],
+  'spa/wellness':              ['HeroSection', 'Gallery', 'TestimonialSection', 'PricingTable', 'CTASection', 'FAQSection', 'ContactForm'],
+  'fitness/gym':               ['HeroSection', 'FeaturesGrid', 'PricingTable', 'TestimonialSection', 'StatsSection', 'CTASection', 'Gallery'],
+  'real estate':               ['HeroSection', 'Gallery', 'TestimonialSection', 'CTASection', 'ContactForm', 'FeatureShowcase', 'StatsSection'],
+  'education/training':        ['HeroSection', 'FeaturesGrid', 'TestimonialSection', 'PricingTable', 'FAQSection', 'CTASection', 'TeamSection'],
+  'healthcare/medical':        ['HeroSection', 'FeaturesGrid', 'TestimonialSection', 'FAQSection', 'CTASection', 'ContactForm', 'TeamSection'],
+  'fashion/clothing':          ['HeroSection', 'ProductCards', 'Gallery', 'TestimonialSection', 'NewsletterSignup', 'CTASection', 'AnnouncementBar'],
+  'travel/hospitality':        ['HeroSection', 'Gallery', 'TestimonialSection', 'CTASection', 'FAQSection', 'ContactForm', 'FeatureShowcase', 'PricingTable'],
+  'law firm/legal':            ['HeroSection', 'FeaturesGrid', 'TestimonialSection', 'TeamSection', 'CTASection', 'FAQSection', 'ContactForm'],
+  'construction/architecture': ['HeroSection', 'FeaturesGrid', 'Gallery', 'TestimonialSection', 'CTASection', 'ContactForm', 'StatsSection'],
+  'nonprofit/charity':         ['HeroSection', 'FeaturesGrid', 'StatsSection', 'TestimonialSection', 'CTASection', 'FAQSection', 'ContactForm'],
+  'event/conference':          ['HeroSection', 'FeaturesGrid', 'CountdownTimer', 'TestimonialSection', 'CTASection', 'FAQSection', 'Banner', 'AnnouncementBar'],
+  'crypto/web3':               ['HeroSection', 'FeaturesGrid', 'StatsSection', 'FAQSection', 'CTASection', 'CountdownTimer', 'ComparisonTable'],
+};
+
+export interface ComponentTierPlan {
+  /** Components with full prop documentation */
+  fullDetail: string[];
+  /** Components with name + short description */
+  summary: string[];
+  /** Components listed by name only */
+  nameOnly: string[];
+}
+
+/** Default set when no business type detected */
+const DEFAULT_PAGE_COMPONENTS = [
+  'HeroSection', 'FeaturesGrid', 'TestimonialSection',
+  'PricingTable', 'FAQSection', 'CTASection', 'ContactForm',
+];
+
+/**
+ * Select which components get which detail tier based on intent, business type, and current page.
+ */
+export function selectRelevantComponents(
+  intent: Intent,
+  businessType: string | null,
+  treeSummary?: string,
+): ComponentTierPlan {
+  // --- create_page: full detail for structural + relevant content, summary for rest ---
+  if (intent === 'create_page') {
+    const businessRelevant = businessType
+      ? (BUSINESS_COMPONENT_RELEVANCE[businessType] ?? [])
+      : [];
+    const primary = businessRelevant.length > 0 ? businessRelevant : DEFAULT_PAGE_COMPONENTS;
+
+    const fullDetail = [...new Set([...STRUCTURAL_COMPONENTS, ...primary])];
+    return {
+      fullDetail,
+      summary: CONTENT_COMPONENTS.filter(c => !fullDetail.includes(c)),
+      nameOnly: [],
+    };
+  }
+
+  // --- add_section: structural full, all content as summary ---
+  if (intent === 'add_section') {
+    return {
+      fullDetail: [...STRUCTURAL_COMPONENTS],
+      summary: [...CONTENT_COMPONENTS],
+      nameOnly: [],
+    };
+  }
+
+  // --- modify/delete: structural + components on page get full detail ---
+  if (intent === 'modify' || intent === 'delete') {
+    const onPageComponents = extractComponentTypesFromTree(treeSummary);
+    const fullDetail = [...new Set([...STRUCTURAL_COMPONENTS, ...onPageComponents])];
+    return {
+      fullDetail,
+      summary: CONTENT_COMPONENTS.filter(c => !fullDetail.includes(c)),
+      nameOnly: [],
+    };
+  }
+
+  // --- unknown/clarify: minimal prompt ---
+  return {
+    fullDetail: [...STRUCTURAL_COMPONENTS],
+    summary: [],
+    nameOnly: [...CONTENT_COMPONENTS],
+  };
+}
+
+/**
+ * Parse component type names from treeSummary string.
+ * Format: "1. HeroSection (id: \"comp_abc\") ..."
+ */
+function extractComponentTypesFromTree(treeSummary?: string): string[] {
+  if (!treeSummary) return [];
+  const types: string[] = [];
+  for (const line of treeSummary.split('\n')) {
+    const match = line.match(/\d+\.\s+(\w+)/);
+    if (match) types.push(match[1]);
+  }
+  return [...new Set(types)];
 }

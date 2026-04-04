@@ -7,29 +7,16 @@ import { AIChatPanel } from "./AIChatPanel";
 interface AIPluginOptions {
   projectId: string;
   pageId: string;
+  styleguideId?: string;
 }
 
-export function createAIPlugin({ projectId, pageId }: AIPluginOptions): Plugin {
+export function createAIPlugin({ projectId, pageId, styleguideId }: AIPluginOptions): Plugin {
   return {
     name: "ai",
     label: "AI",
     icon: (
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
     ),
-    render: () => <AIChatPanel projectId={projectId} pageId={pageId} />,
+    render: () => <AIChatPanel projectId={projectId} pageId={pageId} styleguideId={styleguideId ?? ""} />,
   };
 }

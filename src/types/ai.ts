@@ -30,3 +30,14 @@ export interface ParsedIntent {
   targetDescription?: string;
   count?: number;
 }
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+  status?: "sending" | "streaming" | "done" | "error";
+  error?: string;
+  action?: string;
+  streamingText?: string;
+}

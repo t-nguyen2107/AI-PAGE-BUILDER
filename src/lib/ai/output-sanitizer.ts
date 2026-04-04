@@ -9,6 +9,7 @@
  */
 
 import type { ComponentData } from '@puckeditor/core';
+import { autoNameComponent } from '@/puck/lib/auto-name';
 
 // ─── Default props per component type ────────────────────────────────────────
 
@@ -97,6 +98,61 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   Spacer: { height: 32 },
   ColumnsLayout: { columns: 2, gap: 24 },
+  // ─── New section components ─────────────────────────────────────
+  NewsletterSignup: {
+    heading: 'Stay Updated',
+    subtext: 'Subscribe to our newsletter.',
+    buttonText: 'Subscribe',
+    placeholder: 'Enter your email',
+  },
+  Gallery: {
+    heading: 'Gallery',
+    images: [{ src: '/stock/hero/gradient-purple.webp', alt: 'Image' }],
+    columns: 3,
+  },
+  SocialProof: {
+    heading: 'Trusted by Thousands',
+    stats: [{ value: '10K+', label: 'Users' }],
+  },
+  ComparisonTable: {
+    heading: 'Compare Plans',
+    plans: [{ name: 'Basic', features: [{ value: 'Yes' }] }],
+  },
+  ProductCards: {
+    heading: 'Our Products',
+    products: [{ title: 'Product', price: '$29', imageUrl: '/stock/hero/gradient-purple.webp', href: '#' }],
+    columns: 3,
+  },
+  FeatureShowcase: {
+    heading: 'Why Choose Us',
+    description: 'Discover what makes us different.',
+    imageUrl: '/stock/hero/gradient-purple.webp',
+    features: [{ title: 'Feature', description: 'Description' }],
+  },
+  CountdownTimer: {
+    heading: 'Limited Time Offer',
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  },
+  AnnouncementBar: {
+    message: 'Special offer! Get 20% off today.',
+    ctaText: 'Learn More',
+    ctaHref: '#',
+    variant: 'primary',
+  },
+  Banner: {
+    heading: 'Important Update',
+    subtext: 'Check out our latest features.',
+    ctaText: 'Learn More',
+    ctaHref: '#',
+    variant: 'info',
+  },
+  HeadingBlock: { text: 'Heading', level: 'h2', align: 'left', size: 'md' },
+  ButtonBlock: { label: 'Click me', href: '#', variant: 'primary', size: 'md', fullWidth: false },
+  CardBlock: { title: 'Card Title', description: 'Card description' },
+  SectionBlock: { paddingY: '64px', paddingX: '24px', maxWidth: '1280px', bgColor: '', bgImageUrl: '', bgOverlay: false },
+  Blank: {},
+  Flex: { direction: 'row', justifyContent: 'start', alignItems: 'start', gap: 16, wrap: false },
+  Grid: { numColumns: 3, gap: 24, items: [] as unknown },
 };
 
 // ─── Emoji stripping ─────────────────────────────────────────────────────────
@@ -125,7 +181,7 @@ function ensureUniqueId(props: Record<string, unknown>, usedIds: Set<string>, in
 
 function sanitizeComponent(comp: Record<string, unknown>, index: number, usedIds: Set<string>): ComponentData {
   const type = typeof comp.type === 'string' ? comp.type : 'TextBlock';
-  let props = { ...(comp.props as Record<string, unknown> ?? {}) };
+  const props = { ...(comp.props as Record<string, unknown> ?? {}) };
 
   // Ensure unique ID
   props.id = ensureUniqueId(props, usedIds, index);
@@ -162,6 +218,11 @@ function sanitizeComponent(comp: Record<string, unknown>, index: number, usedIds
   }
   if (type === 'BlogSection' && typeof props.columns === 'string') {
     props.columns = parseInt(props.columns as string, 10) || 3;
+  }
+
+  // Auto-generate human-readable name if missing
+  if (!props.name || typeof props.name !== 'string' || props.name.trim() === '') {
+    props.name = autoNameComponent(type, props, index);
   }
 
   return { type, props } as ComponentData;

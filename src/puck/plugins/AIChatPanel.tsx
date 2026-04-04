@@ -6,6 +6,9 @@ import type { Data, PuckAction } from "@puckeditor/core";
 import { apiClient } from "@/lib/api-client";
 import type { AIGenerationResponse } from "@/types/ai";
 import { AIAction } from "@/types/enums";
+import { generateId } from "@/lib/id";
+import { AIProfileSummary } from "./components/AIProfileSummary";
+import { AIProfileEditor } from "./components/AIProfileEditor";
 
 // ─── Typed Puck selector (module-level to avoid re-creating per render) ──
 const usePuckSelector = createUsePuck();
@@ -13,13 +16,42 @@ const usePuckSelector = createUsePuck();
 // ─── Types ──────────────────────────────────────────────────────────────
 
 interface ChatMessage {
+  id: string;
   role: "user" | "assistant";
   content: string;
+  status: "success" | "error" | "pending";
+  action?: string;
+  createdAt: number;
 }
 
 interface AIChatPanelProps {
   projectId: string;
   pageId: string;
+  styleguideId?: string;
+}
+
+// ─── Slash commands ─────────────────────────────────────────────────────
+
+const SLASH_COMMANDS = [
+  { label: "/OPTIMIZE", icon: "auto_fix_high", prompt: "Optimize the current layout for better visual hierarchy and spacing" },
+  { label: "/LAYOUT", icon: "view_quilt", prompt: "Generate a new section layout" },
+  { label: "/COLORS", icon: "palette", prompt: "Suggest a color scheme update for the current page" },
+];
+
+// ─── ThinkingDots ───────────────────────────────────────────────────────
+
+function ThinkingDots() {
+  return (
+    <div className="flex items-center gap-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-primary"
+          style={{ animation: `thinkingBounce 1.4s ease-in-out ${i * 0.16}s infinite` }}
+        />
+      ))}
+    </div>
+  );
 }
 
 // ─── Apply AI response to Puck ──────────────────────────────────────────
@@ -168,142 +200,232 @@ function liveRenderToPuck(
 
 // ─── AIChatPanel Component ─────────────────────────────────────────────
 
-export function AIChatPanel({ projectId, pageId }: AIChatPanelProps) {
+export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [pipelineSteps, setPipelineSteps] = useState<
+    Array<{ step: string; label: string; status: "active" | "done" | "error" }>
+  >([]);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const liveRenderTimersRef = useRef<number[]>([]);
+  const lastPromptRef = useRef<string>("");
 
   const dispatch = usePuckSelector((s) => s.dispatch);
-  const componentCount = usePuckSelector((s) => (s.appState?.data as Data | undefined)?.content?.length ?? 0);
+  const componentCount = usePuckSelector(
+    (s) => (s.appState?.data as Data | undefined)?.content?.length ?? 0,
+  );
 
-  // Auto-scroll to bottom
+  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, status]);
+  }, [messages, loading]);
 
-  const handleSend = useCallback(() => {
-    const prompt = input.trim();
-    if (!prompt || isGenerating) return;
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        Math.min(textareaRef.current.scrollHeight, 120) + "px";
+    }
+  }, [input]);
 
-    setInput("");
-    setIsGenerating(true);
-    setStatus("Sending...");
+  // Cleanup live render timers + abort on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      for (const t of liveRenderTimersRef.current) clearTimeout(t);
+    };
+  }, []);
 
-    setMessages((prev) => [...prev, { role: "user", content: prompt }]);
+  const handleSend = useCallback(
+    (promptText?: string) => {
+      const prompt = (promptText ?? input).trim();
+      if (!prompt || loading) return;
 
-    const controller = apiClient.generateFromPromptStream(
-      {
-        prompt,
-        projectId,
-        pageId,
-        styleguideId: "",
-      },
-      // onChunk — don't show raw text, just keep status as "Generating..."
-      () => {
-        setStatus("Generating...");
-      },
-      // onDone — 3-step flow: plan message → render progress → confirm message
-      (result: AIGenerationResponse) => {
-        const total = result.components?.length ?? 0;
+      setInput("");
+      setLoading(true);
+      setPipelineSteps([]);
+      liveRenderTimersRef.current = [];
+      lastPromptRef.current = prompt;
 
-        if (total === 0 || !result.components) {
-          setIsGenerating(false);
-          const msg = result.message || "No components generated";
-          setMessages((prev) => [...prev, { role: "assistant", content: msg }]);
-          setStatus(null);
-          return;
-        }
+      const now = Date.now();
+      const userMsg: ChatMessage = {
+        id: generateId(),
+        role: "user",
+        content: prompt,
+        status: "success",
+        createdAt: now,
+      };
+      const assistantMsg: ChatMessage = {
+        id: generateId(),
+        role: "assistant",
+        content: "",
+        status: "pending",
+        createdAt: now + 1,
+      };
+      setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
-        // Step 1: Show plan/explanation message immediately
-        const planMsg =
-          result.message ||
-          `Tôi sẽ tạo ${total} thành phần cho bạn. Đang xử lý...`;
-        setMessages((prev) => [...prev, { role: "assistant", content: planMsg }]);
+      const controller = apiClient.generateFromPromptStream(
+        {
+          prompt,
+          projectId,
+          pageId,
+          styleguideId: styleguideId ?? "",
+        },
+        // onChunk — keep pipeline active
+        () => {},
+        // onDone — apply result to canvas
+        (result: AIGenerationResponse) => {
+          const total = result.components?.length ?? 0;
+          setLoading(false);
+          setPipelineSteps((prev) =>
+            prev.map((s) => ({ ...s, status: "done" as const })),
+          );
+          abortRef.current = null;
 
-        // Step 2: Show render progress
-        setStatus(`Đang render 0/${total} thành phần...`);
+          if (total === 0 || !result.components) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id
+                  ? {
+                      ...m,
+                      content: result.message || "No components generated",
+                      status: "success",
+                    }
+                  : m,
+              ),
+            );
+            return;
+          }
 
-        const timers = liveRenderToPuck(
-          result,
-          dispatch,
-          (applied: number, total: number) => {
-            if (applied < total) {
-              setStatus(`Đang render ${applied}/${total} thành phần...`);
-            } else {
-              // Step 3: Confirm finished
-              setIsGenerating(false);
-              setStatus(null);
-              const typeList = result.components
-                .map((c) => c.type)
-                .filter((v, i, a) => a.indexOf(v) === i)
-                .join(", ");
-              setMessages((prev) => [
-                ...prev,
-                {
-                  role: "assistant",
-                  content: `Đã tạo xong ${total} thành phần (${typeList}). Bạn có thể chỉnh sửa trực tiếp trên canvas!`,
-                },
-              ]);
-            }
-          },
-        );
-        liveRenderTimersRef.current = timers;
+          // Show plan message
+          const planMsg =
+            result.message || `Đang tạo ${total} thành phần...`;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsg.id
+                ? {
+                    ...m,
+                    content: planMsg,
+                    status: "success",
+                    action: result.action as string,
+                  }
+                : m,
+            ),
+          );
 
-        if (timers.length === 0) {
-          setIsGenerating(false);
-          setStatus(null);
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: `Đã tạo xong ${total} thành phần. Bạn có thể chỉnh sửa trực tiếp trên canvas!`,
+          // Live render
+          const timers = liveRenderToPuck(
+            result,
+            dispatch,
+            (applied: number, total: number) => {
+              if (applied >= total) {
+                const typeList = result
+                  .components!.map((c) => c.type)
+                  .filter((v, i, a) => a.indexOf(v) === i)
+                  .join(", ");
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsg.id
+                      ? {
+                          ...m,
+                          content: `Đã tạo xong ${total} thành phần (${typeList}). Bạn có thể chỉnh sửa trực tiếp trên canvas!`,
+                          status: "success",
+                          action: result.action as string,
+                        }
+                      : m,
+                  ),
+                );
+              }
             },
-          ]);
-        }
-      },
-      // onError
-      (error: string) => {
-        setIsGenerating(false);
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: `Error: ${error}` },
-        ]);
-        setStatus(null);
-      },
-      // onStatus — show pipeline steps in Vietnamese
-      (_step: string, label: string) => {
-        setStatus(label);
-      },
-    );
+          );
+          liveRenderTimersRef.current = timers;
 
-    abortRef.current = controller;
-  }, [input, isGenerating, projectId, pageId, dispatch]);
+          if (timers.length === 0) {
+            const typeList = result
+              .components!.map((c) => c.type)
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .join(", ");
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id
+                  ? {
+                      ...m,
+                      content: `Đã tạo xong ${total} thành phần (${typeList}). Bạn có thể chỉnh sửa trực tiếp trên canvas!`,
+                      status: "success",
+                      action: result.action as string,
+                    }
+                  : m,
+              ),
+            );
+          }
+        },
+        // onError
+        (error: string) => {
+          setLoading(false);
+          setPipelineSteps((prev) =>
+            prev.map((s) =>
+              s.status === "active" ? { ...s, status: "error" as const } : s,
+            ),
+          );
+          abortRef.current = null;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsg.id
+                ? { ...m, content: `Error: ${error}`, status: "error" }
+                : m,
+            ),
+          );
+        },
+        // onStatus — pipeline step tracking
+        (_step: string, label: string) => {
+          setPipelineSteps((prev) => {
+            const updated = prev.map((s) =>
+              s.status === "active" ? { ...s, status: "done" as const } : s,
+            );
+            return [
+              ...updated,
+              { step: _step, label, status: "active" as const },
+            ];
+          });
+        },
+      );
+
+      abortRef.current = controller;
+    },
+    [input, loading, projectId, pageId, styleguideId, dispatch],
+  );
 
   const handleCancel = useCallback(() => {
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
+    abortRef.current?.abort();
+    abortRef.current = null;
     if (liveRenderTimersRef.current.length > 0) {
       for (const t of liveRenderTimersRef.current) clearTimeout(t);
       liveRenderTimersRef.current = [];
     }
-    setIsGenerating(false);
-    setStatus(null);
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "Generation cancelled." },
-    ]);
+    setLoading(false);
+    setPipelineSteps([]);
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.status === "pending") {
+        return prev.map((m) =>
+          m.id === last.id
+            ? { ...m, content: "Generation cancelled.", status: "error" }
+            : m,
+        );
+      }
+      return prev;
+    });
   }, []);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -312,46 +434,33 @@ export function AIChatPanel({ projectId, pageId }: AIChatPanelProps) {
     [handleSend],
   );
 
+  const handleRetry = useCallback(() => {
+    if (lastPromptRef.current) {
+      handleSend(lastPromptRef.current);
+    }
+  }, [handleSend]);
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
+    <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div
-        style={{
-          padding: "12px 16px",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 18,
-            width: 28,
-            height: 28,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            borderRadius: 6,
-            color: "#fff",
-          }}
-        >
-          AI
-        </span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#1f2937" }}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-outline-variant/50">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-sm">
+          <span className="material-symbols-outlined text-on-primary text-[14px]">
+            auto_awesome
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-on-surface">
             AI Assistant
           </div>
-          <div style={{ fontSize: 11, color: "#9ca3af" }}>
-            {componentCount} component{componentCount !== 1 ? "s" : ""} on page
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-on-surface-outline">
+              {componentCount} component{componentCount !== 1 ? "s" : ""}
+            </span>
+            <AIProfileSummary
+              projectId={projectId}
+              onOpenEditor={() => setShowProfileEditor(true)}
+            />
           </div>
         </div>
       </div>
@@ -359,163 +468,343 @@ export function AIChatPanel({ projectId, pageId }: AIChatPanelProps) {
       {/* Messages */}
       <div
         ref={scrollRef}
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "12px 16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
       >
-        {messages.length === 0 && !status && (
-          <div style={{ textAlign: "center", padding: "32px 16px" }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                style={{ display: "inline-block", verticalAlign: "middle" }}
+        {messages.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center h-full text-center py-8 px-4">
+            {/* Animated gradient orb */}
+            <div className="relative mb-6">
+              <div
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-container to-primary flex items-center justify-center shadow-lg"
+                style={{ animation: "float 3s ease-in-out infinite" }}
               >
-                <path
-                  d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                  stroke="#a78bfa"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+                <span
+                  className="material-symbols-outlined text-on-primary-container text-2xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  auto_awesome
+                </span>
+              </div>
+              <div
+                className="absolute -inset-2 rounded-3xl bg-primary-container/20 blur-xl -z-10"
+                style={{ animation: "pulse-glow 2s ease-in-out infinite" }}
+              />
             </div>
-            <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>
-              Describe what you want to build.
-              <br />
-              <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                Try: &quot;Create a landing page for a coffee shop&quot;
-              </span>
+            <p className="text-sm font-semibold text-on-surface mb-1">
+              AI Design Assistant
             </p>
+            <p className="text-xs text-on-surface-outline mb-6 max-w-[250px] leading-relaxed">
+              Describe what you want to build and I&apos;ll create it for you
+            </p>
+            {/* Suggestion chips */}
+            <div className="flex flex-col gap-2 w-full max-w-[240px]">
+              {[
+                { icon: "web", text: "Create a hero section" },
+                { icon: "palette", text: "Design a pricing table" },
+                { icon: "view_quilt", text: "Build a feature grid" },
+              ].map((suggestion) => (
+                <button
+                  key={suggestion.text}
+                  onClick={() => handleSend(suggestion.text)}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/15 hover:border-primary-container/40 hover:bg-surface-container text-left group transition-all duration-200"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-on-surface-outline group-hover:text-primary transition-colors">
+                    {suggestion.icon}
+                  </span>
+                  <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors">
+                    {suggestion.text}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 8,
-              fontSize: 13,
-              lineHeight: 1.5,
-              maxWidth: "90%",
-              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              background: msg.role === "user" ? "#6366f1" : "#f3f4f6",
-              color: msg.role === "user" ? "#fff" : "#1f2937",
-            }}
-          >
-            {msg.content}
-          </div>
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} onRetry={handleRetry} />
         ))}
 
-        {/* Status indicator only — no raw JSON */}
-        {status && (
-          <div
-            style={{
-              padding: "6px 12px",
-              fontSize: 12,
-              color: "#8b5cf6",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <span
-              style={{
-                width: 12,
-                height: 12,
-                border: "2px solid #8b5cf6",
-                borderTopColor: "transparent",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-                display: "inline-block",
-              }}
-            />
-            {status}
+        {/* Pipeline indicator */}
+        {loading && (
+          <div className="flex gap-3 mr-8">
+            <div className="w-8 h-8 rounded-xl bg-primary-fixed flex items-center justify-center shrink-0 relative">
+              <span
+                className="material-symbols-outlined text-primary text-sm"
+                style={{ animation: "aiSpin 2s linear infinite" }}
+              >
+                auto_awesome
+              </span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-sm border border-outline-variant/10 shadow-sm max-w-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <ThinkingDots />
+                <span className="text-xs font-semibold text-primary">
+                  Processing
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {pipelineSteps.length === 0 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                    <span className="text-[11px] text-on-surface-outline">
+                      Connecting...
+                    </span>
+                  </div>
+                ) : (
+                  pipelineSteps.map((s) => (
+                    <div key={s.step} className="flex items-center gap-2">
+                      {s.status === "done" ? (
+                        <span
+                          className="material-symbols-outlined text-[14px] text-primary"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          check_circle
+                        </span>
+                      ) : s.status === "error" ? (
+                        <span className="material-symbols-outlined text-[14px] text-error">
+                          error
+                        </span>
+                      ) : (
+                        <span className="w-3.5 h-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                      )}
+                      <span
+                        className={`text-[11px] ${
+                          s.status === "active"
+                            ? "text-primary font-medium"
+                            : s.status === "done"
+                              ? "text-on-surface-outline"
+                              : "text-error"
+                        }`}
+                      >
+                        {s.label}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
+      </div>
+
+      {/* Slash commands — pill chips */}
+      <div className="px-4 py-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          {SLASH_COMMANDS.map((cmd) => (
+            <button
+              key={cmd.label}
+              onClick={() => handleSend(cmd.prompt)}
+              disabled={loading}
+              className="bg-surface-container/80 text-on-surface-variant text-[10px] font-semibold px-3 py-1.5 rounded-full hover:bg-primary-container/20 hover:text-on-primary-container transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-40 border border-outline-variant/15"
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                {cmd.icon}
+              </span>
+              {cmd.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Input area */}
-      <div
-        style={{
-          padding: "12px 16px",
-          borderTop: "1px solid #e5e7eb",
-          display: "flex",
-          gap: 8,
-        }}
-      >
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            isGenerating ? "Generating..." : "Describe what you want..."
-          }
-          disabled={isGenerating}
-          rows={2}
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            borderRadius: 8,
-            border: "1px solid #e5e7eb",
-            fontSize: 13,
-            resize: "none",
-            outline: "none",
-            fontFamily: "inherit",
-            background: isGenerating ? "#f9fafb" : "#fff",
-          }}
-        />
-        {isGenerating ? (
-          <button
-            onClick={handleCancel}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: "1px solid #ef4444",
-              background: "#fef2f2",
-              color: "#ef4444",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Stop
-          </button>
-        ) : (
-          <button
-            onClick={handleSend}
-            disabled={!input.trim()}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: "none",
-              background: input.trim() ? "#6366f1" : "#e5e7eb",
-              color: input.trim() ? "#fff" : "#9ca3af",
-              cursor: input.trim() ? "pointer" : "default",
-              fontSize: 12,
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Send
-          </button>
-        )}
+      <div className="px-3 pb-3">
+        <div className="relative flex items-end gap-2 bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-2 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              loading
+                ? "Generating..."
+                : "Describe what you want to build..."
+            }
+            rows={1}
+            className="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-2 resize-none max-h-[120px] min-h-[36px] leading-relaxed placeholder:text-on-surface-outline outline-none"
+            disabled={loading}
+          />
+          {loading ? (
+            <button
+              onClick={handleCancel}
+              className="w-10 h-10 flex items-center justify-center bg-error text-on-error rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all shrink-0"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                stop
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => handleSend()}
+              disabled={!input.trim()}
+              className="w-10 h-10 flex items-center justify-center bg-primary text-on-primary rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-30 shrink-0"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_upward
+              </span>
+            </button>
+          )}
+        </div>
+        <p className="text-[9px] text-center text-on-surface-outline/60 mt-1.5 tracking-wide">
+          Shift + Enter for new line
+        </p>
       </div>
 
+      {/* CSS animations */}
       <style>{`
-        @keyframes spin {
+        @keyframes thinkingBounce {
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.8; }
+        }
+        @keyframes aiSpin {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Profile Editor Overlay */}
+      {showProfileEditor && (
+        <div className="absolute inset-0 z-50 bg-surface">
+          <AIProfileEditor
+            projectId={projectId}
+            onClose={() => setShowProfileEditor(false)}
+          />
+        </div>
+      )}
     </div>
   );
+}
+
+// ─── Relative time ──────────────────────────────────────────────────────
+
+function relativeTime(ts: number): string {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 5) return "just now";
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  return `${Math.floor(diff / 3600)}h ago`;
+}
+
+// ─── MessageBubble ──────────────────────────────────────────────────────
+
+function MessageBubble({ message, onRetry }: { message: ChatMessage; onRetry?: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(message.content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {});
+  }, [message.content]);
+
+  // Skip rendering pending assistant messages — pipeline UI handles loading state
+  if (message.role === "assistant" && message.status === "pending") return null;
+
+  const time = relativeTime(message.createdAt);
+
+  if (message.role === "user") {
+    return (
+      <div className="flex justify-end ml-8">
+        <div className="max-w-sm">
+          <div className="bg-primary text-on-primary px-4 py-2.5 rounded-2xl rounded-tr-sm shadow-sm">
+            <p className="text-sm leading-relaxed">{message.content}</p>
+          </div>
+          <p className="text-[9px] text-on-surface-outline/50 text-right mt-1 mr-1">{time}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (message.role === "assistant") {
+    if (message.status === "error") {
+      return (
+        <div className="flex gap-3 mr-8">
+          <div className="w-8 h-8 rounded-xl bg-error-container/40 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-error text-sm">
+              error
+            </span>
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="bg-error-container/20 text-error px-4 py-3 rounded-2xl rounded-tl-sm text-sm border border-error/10">
+              {message.content}
+            </div>
+            <div className="flex items-center gap-2 ml-1">
+              <span className="text-[9px] text-on-surface-outline/50">{time}</span>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-1 text-[10px] text-primary font-medium hover:underline"
+                >
+                  <span className="material-symbols-outlined text-[12px]">refresh</span>
+                  Retry
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex gap-3 mr-8">
+        <div className="w-8 h-8 rounded-xl bg-primary-fixed flex items-center justify-center shrink-0">
+          <span
+            className="material-symbols-outlined text-primary text-sm"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            auto_awesome
+          </span>
+        </div>
+        <div className="flex-1 space-y-1">
+          <div className="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-sm border border-outline-variant/10 shadow-sm">
+            <p className="text-sm leading-relaxed text-on-surface">
+              {message.content}
+            </p>
+            {message.action &&
+              message.status === "success" &&
+              message.action !== "clarify" && (
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-outline-variant/10">
+                  <span className="inline-flex items-center gap-1.5 bg-primary-container/20 text-on-primary-container text-[10px] font-semibold px-2.5 py-1 rounded-lg">
+                    <span className="material-symbols-outlined text-[14px]">
+                      check_circle
+                    </span>
+                    {formatAction(message.action)}
+                  </span>
+                </div>
+              )}
+          </div>
+          <div className="flex items-center gap-2 ml-1">
+            <span className="text-[9px] text-on-surface-outline/50">{time}</span>
+            {message.content && message.status === "success" && (
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-0.5 text-[10px] text-on-surface-outline/60 hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-[12px]">
+                  {copied ? "check" : "content_copy"}
+                </span>
+                {copied ? "Copied" : "Copy"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────
+
+function formatAction(action: string): string {
+  return action
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

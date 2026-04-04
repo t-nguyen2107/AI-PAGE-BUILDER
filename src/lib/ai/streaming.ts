@@ -1,5 +1,5 @@
 import type { BaseMessage } from '@langchain/core/messages';
-import { createModel } from './provider';
+import { createModelBundle } from './provider';
 import { buildChainPrompt } from './prompts/system-prompt';
 import { buildTemplatePrompt } from './prompts/template-prompt';
 import { validateOutput } from './output';
@@ -10,16 +10,25 @@ import { generateId } from '@/lib/id';
 import type { AIGenerationResponse } from '@/types/ai';
 import { AIAction } from '@/types/enums';
 import type { ComponentData } from '@puckeditor/core';
+import type { ComponentTierPlan } from './prompts/prompt-optimizer';
 
 interface StreamOptions {
   styleguideData?: { colors?: string; typography?: string };
   miniContext?: string;
   history?: BaseMessage[];
   treeSummary?: string;
+  /** Serialized project AI profile (<800 chars) for prompt personalization */
+  projectProfile?: string;
   /** 'template' = compact prompt, AI picks templates + fills content. 'full' = current full AI pipeline. */
   mode?: 'full' | 'template';
   /** Business type for template assembler (stock image selection) */
   businessType?: string;
+  /** AbortSignal to cancel streaming when client disconnects */
+  signal?: AbortSignal;
+  /** Maximum time to wait for AI response in ms (default: 90_000) */
+  timeoutMs?: number;
+  /** Pre-computed component tiers for dynamic catalog (reduces prompt size) */
+  componentTiers?: ComponentTierPlan;
 }
 
 export interface SSEEvent {
@@ -45,8 +54,15 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
 
   return new ReadableStream({
     async start(controller) {
+      let closed = false;
       const send = (event: SSEEvent) => {
+        if (closed) return;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try { controller.close(); } catch { /* already closed */ }
       };
 
       const isTemplateMode = options.mode === 'template';
@@ -55,7 +71,14 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         // Status: generating
         send({ type: 'status', step: 'generating', label: isTemplateMode ? 'Selecting templates...' : 'Generating with AI...' });
 
-        const model = createModel();
+        const { model, jsonCallOptions } = createModelBundle();
+
+        // Always apply timeout; combine with external signal if provided
+        const timeoutMs = options.timeoutMs ?? 90_000;
+        const timeoutSignal = AbortSignal.timeout(timeoutMs);
+        const combinedSignal = options.signal
+          ? AbortSignal.any([options.signal, timeoutSignal])
+          : timeoutSignal;
 
         // Use compact template prompt or full system prompt based on mode
         const prompt = isTemplateMode
@@ -67,6 +90,8 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
               styleguideData: options.styleguideData,
               miniContext: options.miniContext,
               treeSummary: options.treeSummary,
+              projectProfile: options.projectProfile,
+              componentTiers: options.componentTiers,
             });
 
         // Build messages manually for streaming (no withStructuredOutput)
@@ -77,28 +102,46 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
 
         let accumulated = '';
         const MAX_ACCUMULATED = 100_000;
-        const stream = await model.stream(messages);
+        const streamOpts = { ...jsonCallOptions, signal: combinedSignal };
+        const stream = await model.stream(messages, streamOpts);
 
         for await (const chunk of stream) {
           const text = typeof chunk.content === 'string' ? chunk.content : '';
           if (text) {
             accumulated += text;
-            send({ type: 'chunk', content: text });
+            // Don't send raw chunks — model outputs JSON which looks ugly in UI.
+            // Status events ("Generating...", "Parsing...") provide better feedback.
           }
           if (accumulated.length > MAX_ACCUMULATED) {
             send({ type: 'error', message: 'Output exceeded maximum length — try a shorter prompt or fewer sections' });
-            controller.close();
-            return;
+            return; // finally will close
           }
         }
 
         // Parse accumulated text
         send({ type: 'status', step: 'parsing', label: isTemplateMode ? 'Assembling page...' : 'Parsing response...' });
-        const parsed = extractJSON(accumulated);
+        let parsed = extractJSON(accumulated);
+
+        // Fallback: if model returned plain text instead of JSON, emit clarify directly
+        if (!parsed && accumulated.trim()) {
+          const cleanText = cleanAIOutput(accumulated);
+          if (cleanText) {
+            console.warn('[streaming] Non-JSON response, falling back to clarify:', cleanText.substring(0, 200));
+            send({
+              type: 'done',
+              result: {
+                action: AIAction.CLARIFY,
+                message: cleanText.substring(0, 500),
+                components: [],
+              },
+            });
+            return; // finally will close
+          }
+        }
+
         if (!parsed) {
           send({ type: 'error', message: 'AI response could not be parsed as valid JSON' });
-          controller.close();
-          return;
+          return; // finally will close
         }
 
         if (isTemplateMode) {
@@ -107,8 +150,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
           const { data: plan, error: planError } = validateTemplateResponse(parsed);
           if (planError || !plan) {
             send({ type: 'error', message: planError ?? 'Component validation failed' });
-            controller.close();
-            return;
+            return; // finally will close
           }
 
           // Build ComponentData with auto-generated IDs, then order by section priority
@@ -144,8 +186,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
           const { data, error } = validateOutput(sanitized);
           if (error || !data) {
             send({ type: 'error', message: error ?? 'AI response failed validation' });
-            controller.close();
-            return;
+            return; // finally will close
           }
 
           send({ type: 'done', result: data });
@@ -156,15 +197,27 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
           message: err instanceof Error ? err.message : 'Unknown streaming error',
         });
       } finally {
-        controller.close();
+        close();
       }
     },
   });
 }
 
 /**
+ * Strip thinking tags, code fences, and whitespace from AI text output.
+ * Used when model returns plain text instead of JSON.
+ */
+export function cleanAIOutput(text: string): string {
+  return text
+    .replace(/<think[\s\S]*?<\/think>/gi, '')
+    .replace(/<thinking[\s\S]*?<\/thinking>/gi, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .trim();
+}
+
+/**
  * Extract JSON from AI text output.
- * Tries: direct parse → code fence → brace matching.
+ * Tries: direct parse → code fence → brace matching → truncated repair.
  */
 export function extractJSON(text: string): unknown {
   // Strip thinking tags (qwen: <think/>, GLM: ...)

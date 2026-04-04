@@ -8,6 +8,7 @@ const VALID_ACTIONS = new Set<string>(Object.values(AIAction));
 
 /** Known Puck component type names */
 const VALID_COMPONENT_TYPES = new Set([
+  // Sections
   'HeroSection',
   'FeaturesGrid',
   'PricingTable',
@@ -21,10 +22,28 @@ const VALID_COMPONENT_TYPES = new Set([
   'ContactForm',
   'HeaderNav',
   'FooterSection',
+  'NewsletterSignup',
+  'Gallery',
+  'SocialProof',
+  'ComparisonTable',
+  'ProductCards',
+  'FeatureShowcase',
+  'CountdownTimer',
+  'AnnouncementBar',
+  'Banner',
+  // Atomic / layout
   'TextBlock',
+  'HeadingBlock',
+  'RichTextBlock',
   'ImageBlock',
+  'ButtonBlock',
+  'CardBlock',
   'Spacer',
   'ColumnsLayout',
+  'SectionBlock',
+  'Blank',
+  'Flex',
+  'Grid',
 ]);
 
 /**
@@ -88,7 +107,7 @@ export function validateOutput(raw: unknown): {
     rawComponents = obj.nodes;
   }
 
-  if (rawComponents.length === 0 && obj.action !== 'delete_component') {
+  if (rawComponents.length === 0 && obj.action !== 'delete_node') {
     return { data: null, error: 'Missing "components" array' };
   }
 
