@@ -61,7 +61,8 @@ Built as a modular subsystem designed to integrate into a larger AI CMS platform
 
 - **Node.js** >= 18
 - **npm** >= 9
-- **Ollama** (optional, for AI features) -- [Install guide](https://ollama.com)
+- **Prisma Postgres** database -- [Create one free](https://console.prisma.io)
+- **Ollama** (optional, for local AI) -- [Install guide](https://ollama.com)
 
 ### Installation
 
@@ -73,7 +74,11 @@ cd AI-PAGE-BUILDER
 # Install dependencies
 npm install
 
-# Set up the database
+# Set up environment
+cp .env.sample .env.local
+# Edit .env.local with your database URL and AI provider config
+
+# Set up the database schema
 npm run db:push
 
 # Start development server
@@ -84,18 +89,23 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 
 ### Environment Variables
 
-Copy `.env.example` to `.env.local` and configure:
+Copy `.env.sample` to `.env.local` and configure:
 
 ```env
-# AI Provider (optional — app works without AI for manual editing)
-OLLAMA_BASE_URL=http://localhost:11434
-OPENAI_API_KEY=           # Optional
-ANTHROPIC_API_KEY=        # Optional
+# Database — Direct connection (for Prisma CLI: db push, migrate, studio)
+DATABASE_URL="postgresql://user:password@db.prisma.io:5432/postgres?sslmode=require"
 
-# Database
-DATABASE_URL=file:./dev.db
+# Database — Accelerate connection (for app runtime: connection pooling, edge caching)
+DATABASE_ORM="prisma+postgres://accelerate.prisma-data.net/?api_key=YOUR_KEY"
+
+# AI Provider (optional — app works without AI for manual editing)
+AI_PROVIDER="ollama"
+AI_MODEL="qwen3.5"
+AI_BASE_URL="http://localhost:11434"
+AI_API_KEY=""
 ```
 
+> **Setup:** Create a free [Prisma Postgres](https://console.prisma.io) database, then paste the connection strings from the dashboard.
 > The app works fully as a visual editor without any AI provider configured.
 
 ---
@@ -239,6 +249,34 @@ We welcome contributions! See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for detai
 - Puck components go in `src/puck/components/`
 - Use Tailwind CSS classes (no inline styles unless dynamic)
 - All API responses use `ApiResponse<T>` format
+
+---
+
+## Deploy
+
+### Deploy to Vercel
+
+The easiest way to deploy is via [Vercel](https://vercel.com):
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+When prompted, add these environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Prisma Accelerate URL (`prisma+postgres://...`) |
+| `AI_PROVIDER` | `ollama`, `openai`, or `anthropic` |
+| `AI_BASE_URL` | AI provider base URL |
+| `AI_MODEL` | Model name (e.g. `gpt-4o`, `qwen3.5`) |
+| `AI_API_KEY` | API key for the AI provider |
+
+> Use the **Accelerate URL** (`prisma+postgres://...`) as `DATABASE_URL` on Vercel for connection pooling.
 
 ---
 
