@@ -1,4 +1,5 @@
 import type { ApiResponse, Project, Page, Styleguide, GlobalSection, Revision, LibraryItem, AIGenerationRequest, AIGenerationResponse } from '@/types';
+import type { WizardChatMessage, WinnieResponse, GenerateSettingsResponse, FinalizeRequest, FinalizeResponse, WizardProjectInfo } from '@/types/wizard';
 
 const API_BASE = '/api';
 
@@ -189,5 +190,136 @@ export const apiClient = {
   clearConversation: (projectId: string, pageId: string) =>
     request<{ cleared: boolean }>(`/ai/conversations?projectId=${projectId}&pageId=${pageId}`, {
       method: 'DELETE',
+    }),
+
+  // ===== AI Profile =====
+  getAIProfile: (projectId: string) =>
+    request<{
+      profile: {
+        businessType?: string;
+        businessName?: string;
+        industry?: string;
+        targetAudience?: string;
+        tone?: string;
+        preferredStyle?: string;
+        language?: string;
+        contentThemes?: string;
+        totalSessions?: number;
+        lastAnalysisAt?: string | null;
+      } | null;
+      memoryCount: number;
+    }>(`/ai/profile?projectId=${projectId}`),
+
+  updateAIProfile: (projectId: string, data: Record<string, string>) =>
+    request<Record<string, string>>(`/ai/profile?projectId=${projectId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  resetAIProfile: (projectId: string) =>
+    request<{ reset: boolean }>(`/ai/profile?projectId=${projectId}`, {
+      method: 'DELETE',
+    }),
+
+  getAIMemories: (projectId: string, category?: string, page = 1, limit = 20) =>
+    request<{
+      memories: Array<{
+        id: string;
+        category: string;
+        content: string;
+        confidence: number | null;
+        timesReferenced: number;
+        createdAt: string;
+      }>;
+      total: number;
+      page: number;
+      limit: number;
+    }>(`/ai/profile/memories?projectId=${projectId}${category ? `&category=${category}` : ''}&page=${page}&limit=${limit}`),
+
+  deleteAIMemory: (projectId: string, memoryId: string) =>
+    request<{ deleted: boolean }>(`/ai/profile/memories?projectId=${projectId}&memoryId=${memoryId}`, {
+      method: 'DELETE',
+    }),
+
+  // ===== Wizard (New Project) =====
+
+  /**
+   * Stream chat with Winnie AI assistant for project onboarding.
+   */
+  wizardStreamChat(
+    data: { messages: WizardChatMessage[]; userMessage: string; collectedSoFar?: Record<string, unknown> },
+    onChunk: (text: string) => void,
+    onDone: (result: WinnieResponse) => void,
+    onError: (error: string) => void,
+    onStatus?: (step: string) => void,
+  ): AbortController {
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/ai/wizard/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          signal: controller.signal,
+        });
+
+        if (!res.ok || !res.body) {
+          const errText = await res.text().catch(() => 'Unknown error');
+          onError(`Chat failed (${res.status}): ${errText}`);
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            const match = line.match(/^data: ([\s\S]+)$/);
+            if (!match) continue;
+
+            try {
+              const event = JSON.parse(match[1]);
+              if (event.type === 'chunk' && event.content) onChunk(event.content);
+              else if (event.type === 'done' && event.extractedInfo) onDone(event.extractedInfo as WinnieResponse);
+              else if (event.type === 'error') onError(event.message ?? 'Chat error');
+              else if (event.type === 'status') onStatus?.(event.step);
+            } catch { /* skip malformed events */ }
+          }
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          onError(err instanceof Error ? err.message : 'Chat error');
+        }
+      }
+    })();
+
+    return controller;
+  },
+
+  /**
+   * Generate styleguide + SEO suggestions from collected project info.
+   */
+  wizardGenerateSettings: (projectInfo: WizardProjectInfo) =>
+    request<GenerateSettingsResponse>('/ai/wizard/generate-settings', {
+      method: 'POST',
+      body: JSON.stringify({ projectInfo }),
+    }),
+
+  /**
+   * Create project with all wizard data (project + styleguide + pages + AI profile).
+   */
+  wizardFinalize: (data: FinalizeRequest) =>
+    request<FinalizeResponse>('/ai/wizard/finalize', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 };

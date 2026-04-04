@@ -10,7 +10,8 @@ import { GeneralTab } from "./tabs/GeneralTab";
 import { StyleGuideTab } from "./tabs/StyleGuideTab";
 import { PageSettingsTab } from "./tabs/PageSettingsTab";
 import { SeoTab } from "./tabs/SeoTab";
-import { DEFAULT_COLORS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { generateCssVariables, type StyleGuideData } from "@/lib/css-variables";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -20,14 +21,35 @@ interface SettingsPanelProps {
   isHomePage: boolean;
 }
 
+type SocialLinks = {
+  facebook?: string; twitter?: string; instagram?: string;
+  linkedIn?: string; youtube?: string; tikTok?: string;
+};
+
+type ContactInfo = {
+  email?: string; phone?: string; address?: string;
+};
+
+type MetaVerification = {
+  google?: string; bing?: string;
+};
+
 type GeneralData = {
+  name?: string;
+  description?: string;
   siteName?: string;
   companyName?: string;
   logo?: string;
   favicon?: string;
+  thumbnailUrl?: string;
+  language?: string;
   gaCode?: string;
   headScripts?: string;
   bodyScripts?: string;
+  socialLinks?: SocialLinks;
+  contactInfo?: ContactInfo;
+  metaVerification?: MetaVerification;
+  defaultOgImage?: string;
 };
 
 type PageData = {
@@ -49,87 +71,16 @@ type SeoData = {
   structuredDataType?: string;
 };
 
-type HeadingStyle = {
-  font?: string; weight?: string; size?: string; lineHeight?: string;
-  letterSpacing?: string; marginTop?: string; marginBottom?: string; color?: string;
-};
-type BodyStyle = {
-  font?: string; weight?: string; size?: string; lineHeight?: string;
-  letterSpacing?: string; marginBottom?: string; color?: string;
-};
-type ButtonStyle = {
-  bg?: string; text?: string; border?: string; borderRadius?: string;
-  paddingX?: string; paddingY?: string; fontSize?: string; fontWeight?: string;
-  hoverBg?: string; hoverText?: string; hoverBorder?: string;
-  hoverShadow?: string; hoverScale?: string; transition?: string;
-};
-type StyleGuideData = {
-  colors: Record<string, string>;
-  typography: {
-    headingFont?: string;
-    bodyFont?: string;
-    monoFont?: string;
-    fontSizes?: Record<string, string>;
-    fontWeights?: Record<string, string>;
-    lineHeights?: Record<string, string>;
-    letterSpacings?: Record<string, string>;
-    headingStyles?: Record<string, HeadingStyle>;
-    bodyStyles?: Record<string, BodyStyle>;
-  };
-  spacing: { values: Record<string, string> };
-  cssVariables: Record<string, string>;
-  buttons?: { primary?: ButtonStyle; secondary?: ButtonStyle };
-};
-
-
-function generateCssVariables(styleGuide: StyleGuideData): Record<string, string> {
-  const vars: Record<string, string> = {};
-  const colors = { ...DEFAULT_COLORS, ...styleGuide.colors };
-
-  vars["--color-primary"] = colors.primary;
-  vars["--color-secondary"] = colors.secondary;
-  vars["--color-accent"] = colors.accent;
-  vars["--color-background"] = colors.background;
-  vars["--color-surface"] = colors.surface;
-  vars["--color-text"] = colors.text;
-  vars["--color-text-muted"] = colors.textMuted;
-  vars["--color-border"] = colors.border;
-  vars["--color-error"] = colors.error;
-  vars["--color-success"] = colors.success;
-  vars["--color-warning"] = colors.warning;
-
-  const typo = styleGuide.typography;
-  if (typo.headingFont) vars["--font-heading"] = typo.headingFont;
-  if (typo.bodyFont) vars["--font-body"] = typo.bodyFont;
-  if (typo.monoFont) vars["--font-mono"] = typo.monoFont;
-  if (typo.fontSizes) {
-    Object.entries(typo.fontSizes).forEach(([k, v]) => {
-      vars[`--text-${k}`] = v;
-    });
-  }
-  if (typo.lineHeights) {
-    Object.entries(typo.lineHeights).forEach(([k, v]) => {
-      vars[`--leading-${k}`] = v;
-    });
-  }
-  if (typo.letterSpacings) {
-    Object.entries(typo.letterSpacings).forEach(([k, v]) => {
-      vars[`--tracking-${k}`] = v;
-    });
-  }
-
-  Object.entries(styleGuide.spacing.values).forEach(([k, v]) => {
-    vars[`--spacing-${k}`] = v;
-  });
-
-  return vars;
-}
-
 type NavItem = {
   id: string;
   label: string;
   icon: string;
 };
+
+function safeJsonParse<T>(val: string | undefined | null): T | undefined {
+  if (!val || val === "{}" || val === "null") return undefined;
+  try { return JSON.parse(val) as T; } catch { return undefined; }
+}
 
 export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: SettingsPanelProps) {
   const addToast = useToastStore((s) => s.addToast);
@@ -173,15 +124,23 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
       try {
         const projectRes = await apiClient.getProject(projectId);
         if (projectRes.success && projectRes.data) {
-          const p = projectRes.data as unknown as Project;
+          const p = projectRes.data as unknown as Record<string, unknown>;
           setGeneral({
-            siteName: p.siteName,
-            companyName: p.companyName,
-            logo: p.logo,
-            favicon: p.favicon,
-            gaCode: p.gaCode,
-            headScripts: p.headScripts,
-            bodyScripts: p.bodyScripts,
+            name: p.name as string | undefined,
+            description: p.description as string | undefined,
+            siteName: p.siteName as string | undefined,
+            companyName: p.companyName as string | undefined,
+            logo: p.logo as string | undefined,
+            favicon: p.favicon as string | undefined,
+            thumbnailUrl: p.thumbnailUrl as string | undefined,
+            language: p.language as string | undefined,
+            gaCode: p.gaCode as string | undefined,
+            headScripts: p.headScripts as string | undefined,
+            bodyScripts: p.bodyScripts as string | undefined,
+            socialLinks: safeJsonParse<SocialLinks>(p.socialLinks as string | undefined),
+            contactInfo: safeJsonParse<ContactInfo>(p.contactInfo as string | undefined),
+            metaVerification: safeJsonParse<MetaVerification>(p.metaVerification as string | undefined),
+            defaultOgImage: p.defaultOgImage as string | undefined,
           });
 
           const sgRes = await apiClient.getStyleguide(projectId);
@@ -235,7 +194,13 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
       const promises: Promise<unknown>[] = [];
 
       if (isHomePage) {
-        promises.push(apiClient.updateProject(projectId, general));
+        const projectPayload = {
+          ...general,
+          socialLinks: general.socialLinks ? JSON.stringify(general.socialLinks) : undefined,
+          contactInfo: general.contactInfo ? JSON.stringify(general.contactInfo) : undefined,
+          metaVerification: general.metaVerification ? JSON.stringify(general.metaVerification) : undefined,
+        };
+        promises.push(apiClient.updateProject(projectId, projectPayload));
         const sgWithVars = {
           ...styleGuide,
           cssVariables: generateCssVariables(styleGuide),
@@ -266,25 +231,25 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-100 flex items-center justify-center max-sm:p-0 p-6">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
       />
 
-      {/* Panel */}
-      <div className="relative w-full max-w-5xl bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "88vh" }}>
+      {/* Panel — full-screen on mobile */}
+      <div className="relative w-full max-w-5xl max-sm:h-full max-sm:rounded-none bg-surface-lowest rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-scaleIn" style={{ maxHeight: "88vh" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 bg-surface-lowest border-b border-outline-variant/50">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">{isHomePage ? "Project Settings" : "Page Settings"}</h2>
-            <p className="text-[11px] text-gray-400 mt-0.5">Configure your {isHomePage ? "project" : "page"} settings</p>
+            <h2 className="text-sm font-semibold text-on-surface">{isHomePage ? "Project Settings" : "Page Settings"}</h2>
+            <p className="text-[11px] text-on-surface-outline mt-0.5">Configure your {isHomePage ? "project" : "page"} settings</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              className="px-3 py-1.5 text-xs text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors"
             >
               Cancel
             </button>
@@ -292,11 +257,11 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
               type="button"
               onClick={handleSave}
               disabled={saving || loading}
-              className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+              className="px-4 py-1.5 text-xs font-medium text-on-primary bg-primary hover:opacity-90 rounded-lg transition-colors disabled:opacity-50 shadow-sm active:scale-[0.98]"
             >
               {saving ? (
                 <span className="flex items-center gap-1.5">
-                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
                   Saving...
                 </span>
               ) : "Save Changes"}
@@ -305,27 +270,28 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
         </div>
 
         {/* Body: Sidebar + Content */}
-        <div className="flex flex-1 min-h-0">
-          {/* Left Sidebar */}
-          <nav className="w-52 border-r border-gray-200 bg-gray-50/80 py-2 shrink-0">
+        <div className="flex flex-1 min-h-0 max-sm:flex-col">
+          {/* Left Sidebar — horizontal scroll on mobile */}
+          <nav className="max-sm:w-full max-sm:border-b max-sm:border-r-0 w-52 border-r border-outline-variant/50 bg-surface-container/80 py-2 shrink-0">
             {!isHomePage && (
-              <div className="px-4 pb-2 mb-1 mx-3 rounded-lg bg-amber-50 border border-amber-100">
-                <p className="text-[10px] text-amber-600 leading-relaxed">
+              <div className="px-4 pb-2 mb-1 mx-3 rounded-lg bg-warning/10 border border-warning/20">
+                <p className="text-[10px] text-warning leading-relaxed">
                   Style guide is inherited from the project homepage.
                 </p>
               </div>
             )}
-            <div className="px-2 space-y-0.5">
+            <div className="max-sm:flex max-sm:overflow-x-auto max-sm:gap-1 px-2 space-y-0.5 max-sm:space-y-0">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium rounded-lg transition-all ${
+                  className={cn(
+                    'w-full flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium rounded-lg transition-all max-sm:w-auto max-sm:shrink-0',
                     activeTab === item.id
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-white"
-                  }`}
+                      ? 'bg-primary text-on-primary shadow-md shadow-primary/20'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                  )}
                 >
                   <NavIcon name={item.icon} active={activeTab === item.id} />
                   {item.label}
@@ -335,17 +301,14 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
           </nav>
 
           {/* Content Area — subtle bg so cards pop */}
-          <div className="flex-1 bg-gray-50/40 overflow-y-auto">
+          <div className="flex-1 bg-surface-container/40 overflow-y-auto">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-64 gap-3">
-                <svg className="w-6 h-6 text-indigo-400 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="text-xs text-gray-400">Loading settings...</span>
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs text-on-surface-outline">Loading settings...</span>
               </div>
             ) : (
-              <div className="p-5">
+              <div className="p-5 max-sm:p-4">
                 {activeTab === "general" && (
                   <GeneralTab value={general} onChange={setGeneral} projectId={projectId} />
                 )}
@@ -369,17 +332,5 @@ export function SettingsPanel({ open, onClose, projectId, pageId, isHomePage }: 
 }
 
 function NavIcon({ name, active }: { name: string; active: boolean }) {
-  const cls = `w-4 h-4 ${active ? "text-white" : "text-gray-400"}`;
-  switch (name) {
-    case "settings":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" /></svg>;
-    case "palette":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="13.5" cy="6.5" r="0.5" fill="currentColor" /><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor" /><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor" /><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" /></svg>;
-    case "search":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>;
-    case "description":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14,2 14,8 20,8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10,9 9,9 8,9" /></svg>;
-    default:
-      return null;
-  }
+  return <span className={`material-symbols-outlined text-lg ${active ? "text-on-primary" : "text-on-surface-outline"}`}>{name}</span>;
 }

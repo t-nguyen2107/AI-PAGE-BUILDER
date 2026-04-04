@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PROJECT_GRADIENTS } from '@/lib/constants';
+import { SkeletonCard } from '@/components/ui/skeleton';
 
 interface Project {
   id: string;
@@ -15,6 +17,7 @@ interface Project {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -111,7 +114,7 @@ export default function Home() {
             <span className="text-base font-bold tracking-tight text-on-surface">PageBuilder</span>
           </div>
           <button
-            onClick={openCreateModal}
+            onClick={() => router.push('/new-project')}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold',
               'bg-primary text-on-primary shadow-sm',
@@ -138,11 +141,7 @@ export default function Home() {
           /* ── Skeleton Grid ── */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-video rounded-xl bg-surface-container mb-3" />
-                <div className="h-4 w-2/3 rounded bg-surface-container mb-2" />
-                <div className="h-3 w-1/3 rounded bg-surface-container" />
-              </div>
+              <SkeletonCard key={i} />
             ))}
           </div>
         ) : projects.length === 0 ? (
@@ -156,14 +155,14 @@ export default function Home() {
               Create your first project and let AI help you build a stunning website.
             </p>
             <button
-              onClick={openCreateModal}
+              onClick={() => router.push('/new-project')}
               className={cn(
                 'flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold',
                 'bg-primary text-on-primary shadow-sm',
                 'hover:opacity-90 active:scale-[0.98] transition-all'
               )}
             >
-              <span className="material-symbols-outlined text-lg">add</span>
+              <span className="material-symbols-outlined text-lg">auto_awesome</span>
               Create First Project
             </button>
           </div>
