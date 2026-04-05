@@ -163,12 +163,12 @@ export async function searchVectors(
   const scopePlaceholders = safeScopes.map((_, i) => `$${i + 3}`).join(', ');
 
   const sql = `
-    SELECT id, content, metadata, scope, category, created_at,
+    SELECT id, content, metadata, scope, category, "createdAt",
            1 - (embedding_vec <=> $1::vector) AS score
     FROM vector_embeddings
     WHERE embedding_vec IS NOT NULL
       AND scope IN (${scopePlaceholders})
-      AND ($${safeScopes.length + 3}::text IS NULL OR project_id = $${safeScopes.length + 3})
+      AND ($${safeScopes.length + 3}::text IS NULL OR "projectId" = $${safeScopes.length + 3})
       AND ($${safeScopes.length + 4}::text IS NULL OR category = $${safeScopes.length + 4})
       AND 1 - (embedding_vec <=> $1::vector) >= $2
     ORDER BY embedding_vec <=> $1::vector
@@ -190,7 +190,7 @@ export async function searchVectors(
     metadata: string;
     scope: string;
     category: string;
-    created_at: Date;
+    createdAt: Date;
     score: number;
   };
 
@@ -203,7 +203,7 @@ export async function searchVectors(
     score: row.score,
     scope: row.scope,
     category: row.category,
-    createdAt: row.created_at,
+    createdAt: row.createdAt,
   }));
 }
 
@@ -230,7 +230,7 @@ export async function deleteVectorsByScope(
 export async function touchVector(id: string): Promise<void> {
   if (!isValidId(id)) return;
   await prisma.$executeRawUnsafe(
-    `UPDATE vector_embeddings SET times_referenced = times_referenced + 1, referenced_at = NOW() WHERE id = $1`,
+    `UPDATE vector_embeddings SET "timesReferenced" = "timesReferenced" + 1, "referencedAt" = NOW() WHERE id = $1`,
     id,
   );
 }
