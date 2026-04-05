@@ -72,3 +72,6 @@ _plan_writer.py
 
 # Prisma
 prisma/*.db
+
+#ref stuff
+.ref_stuff/

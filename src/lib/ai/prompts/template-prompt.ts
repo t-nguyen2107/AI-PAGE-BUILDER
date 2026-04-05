@@ -14,6 +14,8 @@ export interface TemplatePromptContext {
   language?: string;
   stockImages?: Record<string, string[]>;
   styleguideData?: { colors?: string; typography?: string };
+  /** Compact design guidance text from knowledge base */
+  designContext?: string;
 }
 
 /**
@@ -28,6 +30,22 @@ export function buildTemplatePrompt(_ctx?: TemplatePromptContext): ChatPromptTem
   if (_ctx?.businessType) extraRules.push(`7. Business type: "${_ctx.businessType}". Tailor ALL content (headings, descriptions, prices, features, team names, FAQ answers) to this business.`);
   if (_ctx?.businessStyle) extraRules.push(`8. Visual style: ${_ctx.businessStyle}`);
   if (_ctx?.styleguideData?.colors) extraRules.push(`9. Project colors: ${_ctx.styleguideData.colors}`);
+
+  // Design guidance block — injected when knowledge base resolves a business type
+  const designBlock = _ctx?.designContext
+    ? `## DESIGN INTELLIGENCE
+
+${_ctx.designContext}
+
+### Component Prop Rules
+- ALWAYS set animation on content sections: HeroSection="fade-up", FeaturesGrid="stagger", PricingTable="stagger", TestimonialSection="stagger-fade"
+- Use variant props: TestimonialSection variant="carousel", CTASection variant="gradient"|"dark", FeaturesGrid cardStyle="elevated"|"icon"
+- Use hoverEffect on FeaturesGrid ("lift") and ProductCards ("lift"|"zoom")
+- Use gradientFrom/gradientTo on HeroSection for rich backgrounds (never flat solid color)
+- PricingTable: include highlightedBadge, pricingToggle with yearlyPlans, animation="stagger"
+- Alternate section backgrounds: white → muted → dark → gradient (never all-white)
+`
+    : '';
 
   // Build component type reference from shared catalog
   const componentRef = Object.entries(COMPONENT_CATALOG)
@@ -56,6 +74,7 @@ Return JSON with this exact structure (the "id" field in each props is auto-gene
 6. Provide realistic data: real-seeming names, believable prices, relevant feature descriptions
 ${extraRules.join('\n')}
 
+${designBlock}
 ## Stock Image Paths (use in props where applicable)
 - Hero backgrounds: /stock/hero/office-modern.webp, /stock/hero/tech-dark.webp, /stock/hero/startup-team.webp
 - Food: /stock/food/meal-table.webp, /stock/food/pizza.webp, /stock/food/sushi.webp, /stock/food/steak.webp, /stock/food/burger.webp

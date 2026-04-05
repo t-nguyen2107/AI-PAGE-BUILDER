@@ -245,7 +245,7 @@ export function initializeRegistry(): void {
       heading: 'Latest Posts',
       subtitle: 'Stay updated with our latest articles',
       posts: [
-        { title: 'Getting Started with AI Website Builder', excerpt: 'Learn how to create your first website in minutes.', imageUrl: '/stock/blog/writing.webp' },
+        { title: 'Getting Started with LoomWeave', excerpt: 'Learn how to create your first website in minutes.', imageUrl: '/stock/blog/writing.webp' },
         { title: 'Design Tips for Modern Websites', excerpt: 'Best practices for creating beautiful, user-friendly layouts.', imageUrl: '/stock/blog/notebook.webp' },
         { title: 'The Future of No-Code Platforms', excerpt: 'How no-code tools are changing the way we build.', imageUrl: '/stock/blog/laptop-coffee.webp' },
       ],

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import type { WizardChatMessage, WinnieResponse, WizardProjectInfo } from "@/types/wizard";
+import { WinnieAvatar } from "./WinnieAvatar";
 import { ImportPlaceholders } from "./ImportPlaceholders";
 
 interface WinnieChatProps {
@@ -19,10 +20,21 @@ interface DisplayMessage {
 }
 
 const SUGGESTION_CHIPS = [
-  { icon: "local_cafe", text: "A modern coffee shop website" },
-  { icon: "cloud", text: "SaaS landing page with pricing" },
-  { icon: "photo_camera", text: "Portfolio for a photographer" },
-  { icon: "restaurant", text: "Restaurant with menu showcase" },
+  { icon: "local_cafe", title: "Coffee Shop", prompt: "A modern coffee shop website with menu showcase and online ordering" },
+  { icon: "cloud", title: "SaaS Landing", prompt: "A SaaS landing page with features, pricing tiers, and signup flow" },
+  { icon: "photo_camera", title: "Photography", prompt: "A portfolio website for a photographer with gallery and booking" },
+  { icon: "restaurant", title: "Restaurant", prompt: "A restaurant website with menu showcase, reservations, and reviews" },
+];
+
+const CHAT_CONTEXT_LIMIT = 10;
+
+// ── Greeting fast path: respond instantly without API call ──
+const GREETING_RE = /^(hi+|hello+|hey+|good\s*(morning|afternoon|evening)|chào|xin\s*chào|em\s*chào|anh\s*chào|chị\s*chào|alo|yo|sup|what'?s\s*up|howdy)\b/i;
+const GREETING_REPLIES = [
+  "Hey! I'm Winnie, your website design consultant. What kind of website are you looking to build today?",
+  "Hi there! Ready to create something amazing. Tell me about your project — what's the idea?",
+  "Hello! Let's design your dream website. What type of site do you have in mind?",
+  "Hey! Great to meet you. Describe your ideal website and I'll help bring it to life!",
 ];
 
 export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
@@ -40,28 +52,87 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [collectedInfo, setCollectedInfo] = useState<Partial<WizardProjectInfo> | null>(null);
   const [isComplete, setIsComplete] = useState(false);
-  const [completeMessageId, setCompleteMessageId] = useState<string | null>(null);
-
   const chatHistory = useRef<WizardChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const isStreamingRef = useRef(false);
+  const collectedInfoRef = useRef<Partial<WizardProjectInfo> | null>(null);
+  const followUpAskedRef = useRef(false);
 
+  // ── Typewriter effect ──
+  const typewriterPosRef = useRef(0);
+  const typewriterTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [, forceRender] = useState(0);
+
+  // Gradually reveal streaming text (2 chars / 20ms ≈ 100 chars/sec)
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const hasStreaming = messages.some(m => m.status === "streaming");
+
+    if (!hasStreaming) {
+      // No streaming message — stop timer, show everything
+      typewriterPosRef.current = Infinity;
+      if (typewriterTimerRef.current) {
+        clearInterval(typewriterTimerRef.current);
+        typewriterTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Start timer if not already running
+    if (!typewriterTimerRef.current) {
+      typewriterTimerRef.current = setInterval(() => {
+        typewriterPosRef.current += 2;
+        forceRender(n => n + 1);
+      }, 20);
+    }
   }, [messages]);
 
+  // Cleanup typewriter timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typewriterTimerRef.current) clearInterval(typewriterTimerRef.current);
+    };
+  }, []);
+
+  // Keep refs in sync with state
+  useEffect(() => { isStreamingRef.current = isStreaming; }, [isStreaming]);
+  useEffect(() => { collectedInfoRef.current = collectedInfo; }, [collectedInfo]);
+  // Auto-scroll on new messages
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  // Cleanup abort on unmount
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
 
+  // Auto-grow textarea
+  const adjustTextareaHeight = useCallback(() => {
+    const el = inputRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+    }
+  }, []);
+
   const handleSend = useCallback(
     async (messageText?: string) => {
-      const text = (messageText ?? input).trim();
-      if (!text || isStreaming) return;
+      const text = (messageText ?? inputRef.current?.value ?? "").trim();
+      // Guard: prevent double-send (abortRef acts as mutex for active request)
+      if (!text || isStreamingRef.current || abortRef.current !== null) return;
 
       setInput("");
-      setIsStreaming(true);
+      if (inputRef.current) inputRef.current.style.height = "auto";
+
+      // Reset completion state when user sends new message
+      if (isComplete) {
+        setIsComplete(false);
+        setFollowUpAsked(false);
+        setConfirmedReady(false);
+      }
 
       const msgId = crypto.randomUUID();
       setMessages((prev) => [
@@ -69,7 +140,23 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
         { id: `user-${msgId}`, role: "user", content: text, timestamp: Date.now(), status: "done" },
       ]);
 
+      // ── Greeting fast path: respond instantly, skip API ──
+      if (GREETING_RE.test(text) && text.split(/\s+/).length <= 4) {
+        const reply = GREETING_REPLIES[Math.floor(Math.random() * GREETING_REPLIES.length)];
+        chatHistory.current.push({ role: "user", content: text });
+        chatHistory.current.push({ role: "assistant", content: reply });
+        setMessages((prev) => [
+          ...prev,
+          { id: `assistant-${msgId}`, role: "assistant", content: reply, timestamp: Date.now(), status: "done" },
+        ]);
+        inputRef.current?.focus();
+        return;
+      }
+
+      setIsStreaming(true);
+
       const assistantMsgId = `assistant-${msgId}`;
+      typewriterPosRef.current = 0; // Reset typewriter for new message
       setMessages((prev) => [
         ...prev,
         { id: assistantMsgId, role: "assistant", content: "", timestamp: Date.now(), status: "streaming" },
@@ -77,6 +164,8 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
 
       chatHistory.current.push({ role: "user", content: text });
 
+      let succeeded = false;
+      let completedThisTurn = false;
       try {
         const controller = new AbortController();
         abortRef.current = controller;
@@ -85,9 +174,9 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: chatHistory.current.slice(-10),
+            messages: chatHistory.current.slice(-CHAT_CONTEXT_LIMIT),
             userMessage: text,
-            collectedSoFar: collectedInfo,
+            collectedSoFar: collectedInfoRef.current,
           }),
           signal: controller.signal,
         });
@@ -125,22 +214,39 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
                 if (info.collectedInfo) setCollectedInfo((prev) => ({ ...prev, ...info.collectedInfo }));
                 if (info.isComplete) {
                   setIsComplete(true);
-                  setCompleteMessageId(assistantMsgId);
+                  completedThisTurn = true;
                 }
               } else if (event.type === "error") {
                 throw new Error(event.message ?? "Chat error");
               }
             } catch (parseErr) {
               if (parseErr instanceof Error && parseErr.message !== "Chat error") {
-                /* skip malformed */
+                /* skip malformed SSE */
               } else throw parseErr;
             }
           }
         }
 
+        // Mark streaming message as done FIRST
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantMsgId ? { ...m, status: "done" as const } : m)),
         );
+        succeeded = true;
+
+        // Inject follow-up question AFTER streaming completes (fixes double-bubble bug)
+        if (completedThisTurn && !followUpAskedRef.current) {
+          setFollowUpAsked(true);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `follow-up-${crypto.randomUUID()}`,
+              role: "assistant",
+              content: "Awesome! I've got a great picture of your idea. Is there anything else you'd like to add? For example, favorite colors, a specific style, or any special features?",
+              timestamp: Date.now(),
+              status: "done",
+            },
+          ]);
+        }
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           setMessages((prev) =>
@@ -152,26 +258,32 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
           );
         }
       } finally {
+        abortRef.current = null;
         setIsStreaming(false);
+        // Only mark ready after successful response (not on error/abort)
+        if (succeeded && followUpAskedRef.current) {
+          setConfirmedReady(true);
+        }
         inputRef.current?.focus();
       }
     },
-    [input, isStreaming, collectedInfo],
+    [isComplete],
   );
 
   const handleNext = () => {
-    if (collectedInfo) {
-      const fullInfo: WizardProjectInfo = {
-        name: collectedInfo.name ?? "My Project",
-        idea: collectedInfo.idea ?? "",
-        style: collectedInfo.style ?? "modern",
-        targetAudience: collectedInfo.targetAudience ?? "general",
-        tone: collectedInfo.tone ?? "professional",
-        language: collectedInfo.language ?? "en",
-        pages: collectedInfo.pages ?? [{ title: "Home", slug: "home", description: "Homepage" }],
-      };
-      onComplete(fullInfo);
+    if (!collectedInfo?.name && !collectedInfo?.idea) {
+      return;
     }
+    const fullInfo: WizardProjectInfo = {
+      name: collectedInfo.name ?? "My Project",
+      idea: collectedInfo.idea ?? "",
+      style: collectedInfo.style ?? "modern",
+      targetAudience: collectedInfo.targetAudience ?? "general",
+      tone: collectedInfo.tone ?? "professional",
+      language: collectedInfo.language ?? "en",
+      pages: collectedInfo.pages ?? [{ title: "Home", slug: "home", description: "Homepage" }],
+    };
+    onComplete(fullInfo);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -181,131 +293,194 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* ── Messages ── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
-        {messages.map((msg) => (
-          <div key={msg.id} className={cn("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "flex-row")}>
-            {/* Avatar */}
-            {msg.role === "assistant" && (
-              <div className="shrink-0 relative">
-                <div
-                  className="w-9 h-9 rounded-2xl bg-linear-to-br from-primary via-primary-container to-tertiary flex items-center justify-center shadow-lg shadow-primary/25"
-                  style={{ animation: "winnie-breathe 3s ease-in-out infinite" }}
-                >
-                  <span className="material-symbols-outlined text-base text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    smart_toy
-                  </span>
-                </div>
-                <div className="absolute -inset-1.5 rounded-3xl bg-primary/15 blur-lg -z-10" style={{ animation: "winnie-glow 2s ease-in-out infinite" }} />
-              </div>
-            )}
+  // Is the chat in "welcome" state? (only the initial welcome message, no user messages)
+  const isWelcome = messages.length <= 1;
 
-            {/* Bubble */}
-            <div
-              className={cn(
-                "max-w-[80%] text-sm leading-relaxed",
-                msg.role === "user"
-                  ? "bg-primary text-on-primary px-4 py-3 rounded-2xl rounded-tr-lg shadow-md shadow-primary/10"
-                  : "bg-surface-container-lowest text-on-surface px-4 py-3 rounded-2xl rounded-tl-lg border border-outline-variant/10 shadow-sm",
-              )}
-            >
-              {msg.content ? (
-                <>
-                  <span className="whitespace-pre-wrap">{msg.content}</span>
-                  {msg.status === "streaming" && (
-                    <span className="inline-block w-0.5 h-4 bg-primary/70 ml-0.5 align-middle animate-pulse" />
+  return (
+    <div className="flex flex-col h-full relative">
+      {/* ── Gradient accent bar ── */}
+      <div
+        className="h-0.5 shrink-0 bg-linear-to-r from-primary via-primary-container to-primary animate-gradient-flow"
+        aria-hidden="true"
+      />
+
+      {/* ── Messages area ── */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6"
+        aria-live="polite"
+        role="log"
+      >
+        {/* ── Welcome Hero ── */}
+        {isWelcome ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-2">
+            {/* Avatar with glow */}
+            <div className="relative mb-5">
+              <div
+                className="absolute -inset-8 rounded-full bg-amber-400/10 blur-2xl animate-hero-glow"
+                aria-hidden="true"
+              />
+              <div className="relative">
+                <WinnieAvatar size="lg" animated />
+              </div>
+            </div>
+
+            {/* Greeting */}
+            <div className="animate-wizard-fade-up">
+              <h2 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight">
+                Let&apos;s build something amazing
+              </h2>
+              <p className="text-sm text-on-surface-outline mt-2 max-w-xs mx-auto leading-relaxed">
+                Tell me about your dream website and I&apos;ll help bring it to life
+              </p>
+            </div>
+
+            {/* Import teasers — prominent, above suggestions */}
+            <div className="mt-7 w-full max-w-md animate-card-enter" style={{ animationDelay: "100ms" }}>
+              <ImportPlaceholders />
+            </div>
+
+            {/* Simple suggestion chips */}
+            <div className="flex flex-wrap justify-center gap-2 mt-5 w-full max-w-md">
+              {SUGGESTION_CHIPS.map((chip, i) => (
+                <button
+                  key={chip.title}
+                  type="button"
+                  onClick={() => handleSend(chip.prompt)}
+                  disabled={isStreaming}
+                  className={cn(
+                    "animate-card-enter",
+                    "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full",
+                    "text-xs font-medium text-on-surface-variant",
+                    "border border-outline-variant/20 bg-surface-lowest",
+                    "hover:border-primary/25 hover:text-on-surface hover:bg-surface-container/60",
+                    "active:scale-[0.97] transition-all duration-200",
+                    "disabled:opacity-50 disabled:pointer-events-none",
                   )}
-                  {msg.role === "assistant" && msg.id === completeMessageId && msg.status === "done" && (
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="mt-3.5 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
-                    >
-                      Continue to Customize
-                      <span className="material-symbols-outlined text-base">arrow_forward</span>
-                    </button>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-1.5 py-1 px-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-              )}
+                  style={{ animationDelay: `${(i + 3) * 80}ms` }}
+                >
+                  <span
+                    className="material-symbols-outlined text-sm text-on-surface-outline"
+                    style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }}
+                  >
+                    {chip.icon}
+                  </span>
+                  {chip.title}
+                </button>
+              ))}
             </div>
           </div>
-        ))}
+        ) : (
+          /* ── Normal chat messages ── */
+          <div className="space-y-5">
+            {messages.map((msg, idx) => (
+              <div
+                key={msg.id}
+                className={cn(
+                  "flex gap-3 animate-wizard-fade-up",
+                  msg.role === "user" ? "flex-row-reverse" : "flex-row",
+                )}
+              >
+                {/* Avatar */}
+                {msg.role === "assistant" && (
+                  <div className="shrink-0 mt-1">
+                    <WinnieAvatar size="sm" />
+                  </div>
+                )}
 
-        {/* Import placeholders (only at start) */}
-        {messages.length <= 2 && (
-          <div className="pt-2">
-            <ImportPlaceholders />
+                {/* Bubble */}
+                <div
+                  className={cn(
+                    "max-w-[85%] text-sm leading-relaxed",
+                    msg.role === "user"
+                      ? "bg-primary text-on-primary px-4 py-3 rounded-2xl rounded-tr-md shadow-sm"
+                      : "bg-surface-container/50 text-on-surface px-4 py-3 rounded-2xl rounded-tl-md",
+                  )}
+                >
+                  {msg.content ? (
+                    <>
+                      <span className="whitespace-pre-wrap">
+                        {msg.status === "streaming"
+                          ? msg.content.slice(0, typewriterPosRef.current)
+                          : msg.content}
+                      </span>
+                      {msg.status === "streaming" && (
+                        <span className="inline-block w-0.5 h-4 bg-primary/70 ml-0.5 align-middle animate-cursor-blink" />
+                      )}
+                      {/* Continue button — only after follow-up exchange */}
+                      {msg.role === "assistant" && confirmedReady && msg.status === "done" && idx === messages.length - 1 && (
+                        <div className="mt-4 animate-celebrate-glow rounded-xl">
+                          <button
+                            type="button"
+                            onClick={handleNext}
+                            className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+                          >
+                            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                              auto_awesome
+                            </span>
+                            Continue to Customize
+                            <span className="material-symbols-outlined text-base">arrow_forward</span>
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* Typing indicator — wave dots */
+                    <div className="flex items-center gap-1.5 py-1 px-1">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="w-2 h-2 rounded-full bg-on-surface-outline/40 animate-dot-wave"
+                          style={{ animationDelay: `${i * 200}ms` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* ── Suggestion chips ── */}
-      {messages.length <= 2 && !isStreaming && (
-        <div className="px-4 pb-3">
-          <p className="text-[10px] text-on-surface-outline/70 uppercase tracking-widest font-semibold mb-2">Quick start</p>
-          <div className="grid grid-cols-2 gap-2">
-            {SUGGESTION_CHIPS.map((chip) => (
-              <button
-                key={chip.text}
-                type="button"
-                onClick={() => handleSend(chip.text)}
-                disabled={isStreaming}
-                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left group border border-outline-variant/15 bg-surface-container-lowest/60 hover:bg-surface-container hover:border-primary/20 transition-all duration-200 disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-base text-on-surface-outline group-hover:text-primary transition-colors">
-                  {chip.icon}
-                </span>
-                <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors leading-snug">
-                  {chip.text}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Input area ── */}
-      <div className="px-4 pb-4 pt-2">
-        <div className="relative flex items-end gap-2 bg-surface-container-lowest border border-outline-variant/15 rounded-2xl p-2 focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200 shadow-sm">
+      <div className="px-4 sm:px-6 pb-4 pt-2 shrink-0">
+        <div className="flex items-center gap-2 bg-surface-container/40 rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary/15 focus-within:bg-surface-container/60 transition-all duration-200">
           <textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              adjustTextareaHeight();
+            }}
             onKeyDown={handleKeyDown}
-            placeholder="Describe your website idea..."
+            placeholder={isWelcome ? "Try a suggestion above, or type your idea..." : "Describe your website idea..."}
             disabled={isStreaming}
             rows={1}
-            className="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-3 resize-none max-h-28 min-h-9 leading-relaxed placeholder:text-on-surface-outline/60 outline-none"
+            className="flex-1 bg-transparent text-sm resize-none outline-none max-h-32 min-h-6 leading-relaxed placeholder:text-on-surface-outline/50"
           />
           <button
             type="button"
             onClick={() => handleSend()}
             disabled={!input.trim() || isStreaming}
             className="w-9 h-9 flex items-center justify-center bg-primary text-on-primary rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-20 shrink-0"
+            aria-label="Send message"
           >
             <span className="material-symbols-outlined text-lg">arrow_upward</span>
           </button>
         </div>
 
         {/* Actions row */}
-        <div className="flex items-center justify-between mt-2.5 px-1">
+        <div className="flex items-center justify-between mt-2 px-1">
           <button
             type="button"
             onClick={onSkip}
-            className="text-[11px] text-on-surface-outline/60 hover:text-on-surface-variant transition-colors"
+            className="text-[11px] text-on-surface-outline/70 hover:text-on-surface-variant transition-colors"
           >
             Skip to blank project
           </button>
 
-          {isComplete && (
+          {confirmedReady && (
             <button
               type="button"
               onClick={handleNext}
@@ -317,18 +492,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
           )}
         </div>
       </div>
-
-      {/* CSS keyframes for Winnie avatar */}
-      <style>{`
-        @keyframes winnie-breathe {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-        @keyframes winnie-glow {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.1); }
-        }
-      `}</style>
     </div>
   );
 }

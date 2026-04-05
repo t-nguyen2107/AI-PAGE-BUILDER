@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { StatsSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 // ─── Animated counter hook ────────────────────────────────────────────
 
@@ -36,45 +37,6 @@ function useCountUp(target: string, visible: boolean, duration = 2000) {
   return count;
 }
 
-// ─── Scroll animation hook ────────────────────────────────────────────
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-
-    const prefersReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    stagger: visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-  };
-
-  return { ref, className: animClasses[animation] ?? "", visible };
-}
-
 // ─── Stat card ────────────────────────────────────────────────────────
 
 function StatCard({
@@ -84,6 +46,7 @@ function StatCard({
   animation,
   visible,
   staggerDelay,
+  cardStyle,
 }: {
   stat: StatsSectionProps["stats"][number];
   animated?: boolean;
@@ -91,6 +54,7 @@ function StatCard({
   animation: string;
   visible: boolean;
   staggerDelay: number;
+  cardStyle: string;
 }) {
   const displayValue = useCountUp(stat.value, visible, duration);
 
@@ -102,9 +66,16 @@ function StatCard({
     ? { transitionDelay: visible ? `${staggerDelay}ms` : "0ms" }
     : {};
 
+  const cardClasses: Record<string, string> = {
+    card: "p-6 rounded-xl bg-card border border-border shadow-sm",
+    bordered: "p-6 rounded-xl border-2 border-primary/20",
+    gradient: "p-6 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10",
+    none: "",
+  };
+
   return (
     <div
-      className="text-center transition-all duration-500 ease-out"
+      className={`text-center transition-all duration-500 ease-out ${cardClasses[cardStyle] ?? ""}`}
       style={staggerStyle}
     >
       {stat.icon && (
@@ -132,6 +103,7 @@ export function StatsSection(props: StatsSectionProps & ComponentMeta) {
     animated,
     duration,
     animation = "none",
+    cardStyle = "none",
     className,
     ...metaRest
   } = props;
@@ -165,6 +137,7 @@ export function StatsSection(props: StatsSectionProps & ComponentMeta) {
               animation={animation}
               visible={visible}
               staggerDelay={i * 120}
+              cardStyle={cardStyle}
             />
           ))}
         </div>

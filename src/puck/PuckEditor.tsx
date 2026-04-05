@@ -161,7 +161,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
           config={config}
           data={data}
           onPublish={handlePublish}
-          headerTitle="AI Page Builder"
+          headerTitle="LoomWeave"
           viewports={[
             { width: 1280, label: "Desktop" },
             { width: 768, label: "Tablet" },

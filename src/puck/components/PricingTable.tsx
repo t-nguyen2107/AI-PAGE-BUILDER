@@ -135,7 +135,7 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
                 </span>
               )}
               {yearly && plan.savePercentage && (
-                <span className="absolute top-4 right-4 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-semibold px-2 py-1 rounded-full">
+                <span className="absolute top-4 right-4 bg-success/10 text-success text-xs font-semibold px-2 py-1 rounded-full">
                   {plan.savePercentage}
                 </span>
               )}

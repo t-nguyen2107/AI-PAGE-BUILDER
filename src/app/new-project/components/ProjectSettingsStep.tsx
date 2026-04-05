@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
+import { Modal } from "@/components/ui/modal";
+import { WinnieAvatar } from "./WinnieAvatar";
 import type { WizardProjectInfo, WizardSettings, WizardStyleguide, WizardSeo, WizardGeneral } from "@/types/wizard";
 
 interface ProjectSettingsStepProps {
@@ -20,20 +22,33 @@ const FONT_OPTIONS = [
 ];
 
 const COLOR_FIELDS = [
-  { key: "primary", label: "Primary", group: "brand" },
-  { key: "secondary", label: "Secondary", group: "brand" },
-  { key: "accent", label: "Accent", group: "brand" },
-  { key: "background", label: "Background", group: "base" },
-  { key: "surface", label: "Surface", group: "base" },
-  { key: "text", label: "Text", group: "base" },
-  { key: "textMuted", label: "Muted", group: "base" },
-  { key: "border", label: "Border", group: "base" },
+  { key: "primary", label: "Primary" },
+  { key: "secondary", label: "Secondary" },
+  { key: "accent", label: "Accent" },
+  { key: "background", label: "Background" },
+  { key: "surface", label: "Surface" },
+  { key: "text", label: "Text" },
+  { key: "textMuted", label: "Muted" },
+  { key: "border", label: "Border" },
 ];
+
+/** Get contrasting text color based on luminance */
+function getContrastColor(hex: string): string {
+  const c = hex.replace("#", "");
+  if (c.length < 6) return "#333";
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "#1a1a2e" : "#ffffff";
+}
 
 export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: ProjectSettingsStepProps) {
   const [tab, setTab] = useState<SettingsTab>("style");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasEdits, setHasEdits] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   const [styleguide, setStyleguide] = useState<WizardStyleguide>({
     colors: {},
@@ -77,14 +92,39 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const markEdited = () => { if (!hasEdits) setHasEdits(true); };
+
+  const handleBack = () => {
+    if (hasEdits) {
+      setShowDiscardConfirm(true);
+      return;
+    }
+    onBack();
+  };
+
+  const handleDiscardConfirm = () => {
+    setShowDiscardConfirm(false);
+    onBack();
+  };
+
   const handleNext = () => {
     onSettingsReady({ styleguide, seo, general });
+  };
+
+  const updateColor = (key: string, value: string) => {
+    setStyleguide((prev) => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
+    markEdited();
+  };
+
+  const updateFont = (field: "headingFont" | "bodyFont", value: string) => {
+    setStyleguide((prev) => ({ ...prev, typography: { ...prev.typography, [field]: value } }));
+    markEdited();
   };
 
   return (
     <div className="flex flex-col h-full">
       {/* Tab header */}
-      <div className="flex items-center gap-6 px-6 pt-5 pb-0 shrink-0">
+      <div className="flex items-center gap-6 px-5 sm:px-6 pt-5 pb-0 shrink-0">
         {(["style", "seo"] as const).map((t) => (
           <button
             key={t}
@@ -101,16 +141,14 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
               </span>
               {t === "style" ? "Style Guide" : "SEO & Metadata"}
             </span>
-            {/* Active underline */}
             <div className={cn(
-              "absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary transition-transform origin-left",
+              "absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary transition-transform origin-center duration-300",
               tab === t ? "scale-x-100" : "scale-x-0",
             )} />
           </button>
         ))}
 
-        {/* Subtitle */}
-        <p className="ml-auto text-[11px] text-on-surface-outline">
+        <p className="ml-auto text-[11px] text-on-surface-outline hidden sm:block">
           AI suggestions for <span className="font-medium text-on-surface-variant">&ldquo;{projectInfo.name}&rdquo;</span>
         </p>
       </div>
@@ -120,22 +158,17 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
       {/* Loading state */}
       {loading && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-2xl text-primary animate-pulse">auto_awesome</span>
-            </div>
-            <div className="absolute -inset-2 rounded-3xl bg-primary/5 blur-xl -z-10" />
-          </div>
+          <WinnieAvatar size="lg" animated />
           <div className="text-center">
             <p className="text-sm font-medium text-on-surface">Generating suggestions...</p>
             <p className="text-xs text-on-surface-outline mt-1">AI is analyzing your project requirements</p>
           </div>
-          <div className="flex items-center gap-1 mt-2">
+          <div className="flex items-center gap-1.5 mt-2">
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
-                style={{ animationDelay: `${i * 150}ms` }}
+                className="w-2 h-2 rounded-full bg-primary/60 animate-dot-wave"
+                style={{ animationDelay: `${i * 200}ms` }}
               />
             ))}
           </div>
@@ -144,7 +177,7 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
 
       {/* Error */}
       {error && !loading && (
-        <div className="mx-6 mt-4 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-warning/8 border border-warning/15">
+        <div className="mx-5 sm:mx-6 mt-4 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-warning/8 border border-warning/15">
           <span className="material-symbols-outlined text-warning text-base">info</span>
           <p className="text-xs text-warning leading-relaxed">{error}</p>
         </div>
@@ -152,16 +185,16 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
 
       {/* Content */}
       {!loading && (
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-6">
           {tab === "style" && (
             <>
-              {/* Color palette preview */}
+              {/* Color palette */}
               {styleguide.colors && Object.keys(styleguide.colors).length > 0 && (
                 <section>
                   <SectionTitle icon="palette" title="Color Palette" />
                   <div className="rounded-2xl overflow-hidden border border-outline-variant/10 shadow-sm">
                     {/* Preview bar */}
-                    <div className="flex h-14">
+                    <div className="flex h-12">
                       {["primary", "secondary", "accent", "background", "surface", "text"].map((key) =>
                         styleguide.colors[key] ? (
                           <div
@@ -171,7 +204,7 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
                           >
                             <span
                               className="text-[9px] font-bold uppercase tracking-wider"
-                              style={{ color: ["background", "surface"].includes(key) ? "#333" : "#fff" }}
+                              style={{ color: getContrastColor(styleguide.colors[key]) }}
                             >
                               {key}
                             </span>
@@ -181,19 +214,14 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
                     </div>
 
                     {/* Color editors */}
-                    <div className="grid grid-cols-4 gap-px bg-outline-variant/10">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-outline-variant/10">
                       {COLOR_FIELDS.map(({ key, label }) => (
                         <div key={key} className="bg-surface-lowest flex items-center gap-2.5 px-3 py-2.5 hover:bg-surface-container/50 transition-colors">
                           <label className="relative cursor-pointer">
                             <input
                               type="color"
                               value={styleguide.colors[key] || "#000000"}
-                              onChange={(e) =>
-                                setStyleguide((prev) => ({
-                                  ...prev,
-                                  colors: { ...prev.colors, [key]: e.target.value },
-                                }))
-                              }
+                              onChange={(e) => updateColor(key, e.target.value)}
                               className="absolute inset-0 opacity-0 cursor-pointer"
                             />
                             <div
@@ -206,12 +234,7 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
                             <input
                               type="text"
                               value={styleguide.colors[key] || ""}
-                              onChange={(e) =>
-                                setStyleguide((prev) => ({
-                                  ...prev,
-                                  colors: { ...prev.colors, [key]: e.target.value },
-                                }))
-                              }
+                              onChange={(e) => updateColor(key, e.target.value)}
                               className="w-full text-[10px] text-on-surface-outline bg-transparent outline-none font-mono"
                             />
                           </div>
@@ -226,28 +249,27 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
               <section>
                 <SectionTitle icon="text_fields" title="Typography" />
                 <div className="rounded-2xl border border-outline-variant/10 bg-surface-lowest shadow-sm overflow-hidden">
-                  <div className="grid grid-cols-2 divide-x divide-outline-variant/10">
-                    {(["headingFont", "bodyFont"] as const).map((field) => (
-                      <div key={field} className="p-4">
-                        <p className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">
-                          {field === "headingFont" ? "Headings" : "Body Text"}
-                        </p>
-                        <select
-                          value={styleguide.typography[field] || "Inter"}
-                          onChange={(e) =>
-                            setStyleguide((prev) => ({
-                              ...prev,
-                              typography: { ...prev.typography, [field]: e.target.value },
-                            }))
-                          }
-                          className="w-full text-sm border border-outline-variant/20 rounded-lg px-3 py-2 bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/30 transition-colors"
-                        >
-                          {FONT_OPTIONS.map((f) => (
-                            <option key={f} value={`${f}, sans-serif`}>{f}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-outline-variant/10">
+                    {(["headingFont", "bodyFont"] as const).map((field) => {
+                      // Strip fallback from value for matching
+                      const currentValue = (styleguide.typography[field] || "Inter").split(",")[0].trim();
+                      return (
+                        <div key={field} className="p-4">
+                          <p className="text-[10px] font-semibold text-on-surface-outline uppercase tracking-wider mb-2">
+                            {field === "headingFont" ? "Headings" : "Body Text"}
+                          </p>
+                          <select
+                            value={currentValue}
+                            onChange={(e) => updateFont(field, `${e.target.value}, sans-serif`)}
+                            className="w-full text-sm border border-outline-variant/20 rounded-xl px-3 py-2.5 bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/30 transition-colors"
+                          >
+                            {FONT_OPTIONS.map((f) => (
+                              <option key={f} value={f}>{f}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Font preview */}
@@ -271,16 +293,16 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
               {/* General */}
               <section>
                 <SectionTitle icon="settings" title="General Info" />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <SettingsInput
                     label="Site Name"
                     value={general.siteName}
-                    onChange={(v) => setGeneral((prev) => ({ ...prev, siteName: v }))}
+                    onChange={(v) => { setGeneral((prev) => ({ ...prev, siteName: v })); markEdited(); }}
                   />
                   <SettingsInput
                     label="Company Name"
                     value={general.companyName}
-                    onChange={(v) => setGeneral((prev) => ({ ...prev, companyName: v }))}
+                    onChange={(v) => { setGeneral((prev) => ({ ...prev, companyName: v })); markEdited(); }}
                   />
                 </div>
               </section>
@@ -313,7 +335,7 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
                     <input
                       type="text"
                       value={seo[key]}
-                      onChange={(e) => setSeo((prev) => ({ ...prev, [key]: e.target.value }))}
+                      onChange={(e) => { setSeo((prev) => ({ ...prev, [key]: e.target.value })); markEdited(); }}
                       placeholder={placeholder}
                       className={cn(
                         "w-full text-sm border rounded-xl px-3.5 py-2.5 bg-surface-lowest text-on-surface placeholder:text-on-surface-outline/40",
@@ -321,7 +343,6 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
                         (seo[key]?.length ?? 0) > max ? "border-error/40" : "border-outline-variant/20",
                       )}
                     />
-                    {/* Visual progress bar */}
                     <div className="mt-1.5 h-0.5 rounded-full bg-outline-variant/10 overflow-hidden">
                       <div
                         className={cn(
@@ -340,10 +361,10 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/10 shrink-0">
+      <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-outline-variant/10 shrink-0">
         <button
           type="button"
-          onClick={onBack}
+          onClick={handleBack}
           className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-on-surface-variant hover:text-on-surface rounded-xl hover:bg-surface-container transition-colors"
         >
           <span className="material-symbols-outlined text-sm">arrow_back</span>
@@ -364,6 +385,27 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
           <span className="material-symbols-outlined text-base">rocket_launch</span>
         </button>
       </div>
+
+      {/* Discard changes confirmation */}
+      <Modal open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)} title="Discard changes?">
+        <p className="text-sm text-on-surface-variant mb-5">You have unsaved changes. Going back will discard them.</p>
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setShowDiscardConfirm(false)}
+            className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface rounded-xl hover:bg-surface-container transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleDiscardConfirm}
+            className="px-4 py-2 text-sm font-semibold bg-error text-on-primary rounded-xl hover:opacity-90 active:scale-[0.98] transition-all"
+          >
+            Discard & Go Back
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

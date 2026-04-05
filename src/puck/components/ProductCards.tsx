@@ -10,7 +10,7 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }, (_, i) => (
         <svg
           key={i}
-          className={`w-4 h-4 ${i < rating ? "text-yellow-400" : "text-muted-foreground/30"}`}
+          className={`w-4 h-4 ${i < rating ? "text-tertiary" : "text-muted-foreground/30"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -78,7 +78,7 @@ function QuickViewModal({
         </div>
 
         {product.inStock === false && (
-          <p className="text-sm text-red-500 mb-4">Out of Stock</p>
+          <p className="text-sm text-error mb-4">Out of Stock</p>
         )}
 
         <div className="flex gap-3">
@@ -157,7 +157,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                     </span>
                   )}
                   {saleBadge && product.originalPrice && !product.badge && (
-                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                    <span className="absolute top-3 left-3 bg-error text-on-error text-xs font-semibold px-2.5 py-1 rounded-full">
                       Sale
                     </span>
                   )}
@@ -183,7 +183,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                     </span>
                   )}
                   {saleBadge && product.originalPrice && !product.badge && (
-                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                    <span className="absolute top-3 left-3 bg-error text-on-error text-xs font-semibold px-2.5 py-1 rounded-full">
                       Sale
                     </span>
                   )}

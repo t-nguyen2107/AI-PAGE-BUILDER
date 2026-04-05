@@ -5,18 +5,24 @@
 
 /** Default color palette for StyleGuide */
 export const DEFAULT_COLORS: Record<string, string> = {
-  primary: '#2170e4',
-  secondary: '#64748b',
-  accent: '#8b5cf6',
+  primary: '#22746e',
+  secondary: '#081b22',
+  accent: '#e39c37',
   background: '#ffffff',
-  surface: '#f8f9fa',
-  text: '#191c1d',
-  textMuted: '#727785',
-  border: '#dfe1e3',
+  surface: '#f5f6f7',
+  text: '#0d1f24',
+  textMuted: '#6b7d83',
+  border: '#d3dcdf',
   success: '#1b6d3c',
   error: '#ba1a1a',
   warning: '#8b5e00',
 };
+
+/**
+ * Alternative default primary used by the project creation route.
+ * Used by isDefaultStyleguide() to detect unmodified styleguides.
+ */
+export const PROJECT_ROUTE_DEFAULT_PRIMARY = '#081b22';
 
 /** Gradient patterns for project thumbnails */
 export const PROJECT_GRADIENTS = [

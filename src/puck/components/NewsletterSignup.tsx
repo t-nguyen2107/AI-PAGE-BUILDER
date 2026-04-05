@@ -92,7 +92,7 @@ export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
     "w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary";
   const btnClass = `inline-block rounded-lg px-8 py-3 font-semibold transition ${
     hasBgImage
-      ? "bg-white text-gray-900 hover:bg-gray-100"
+      ? "bg-surface-lowest text-on-surface hover:bg-surface-container"
       : "bg-primary-foreground text-primary hover:opacity-90"
   }`;
 

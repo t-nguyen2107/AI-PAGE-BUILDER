@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { PROJECT_GRADIENTS } from '@/lib/constants';
 import { SkeletonCard } from '@/components/ui/skeleton';
-import { Modal } from '@/components/ui/modal';
+import { NewProjectWizardModal } from '@/app/new-project/components/NewProjectWizardModal';
 
 interface Project {
   id: string;
@@ -18,11 +19,9 @@ interface Project {
 }
 
 export default function Home() {
-  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState('');
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -51,36 +50,16 @@ export default function Home() {
     finally { setLoading(false); }
   }
 
-  async function handleCreateProject() {
-    if (!newName.trim()) return;
-    try {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim() }),
-      });
-      const data = await res.json();
-      if (data.success && data.data) {
-        setNewName('');
-        setCreating(false);
-        router.push(`/new-project?projectId=${data.data.id}`);
-      }
-    } catch { console.error('Failed to create project'); }
-  }
-
   async function handleDeleteProject(projectId: string) {
     setDeletingId(projectId);
     try {
       const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.success) setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      if (data.success) {
+        setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      }
     } catch { console.error('Failed to delete project'); }
     finally { setDeletingId(null); setMenuProjectId(null); }
-  }
-
-  function openCreateModal() {
-    setNewName('');
-    setCreating(true);
   }
 
   function formatRelativeTime(dateStr: string): string {
@@ -102,23 +81,31 @@ export default function Home() {
       {/* ── Top Nav ── */}
       <nav className="sticky top-0 z-sticky bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50">
         <div className="max-w-7xl mx-auto flex justify-between items-center h-14 px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-on-primary">layers</span>
-            </div>
-            <span className="text-base font-bold tracking-tight text-on-surface">PageBuilder</span>
+          <div className="flex items-center">
+            <Image
+              src="/assets/images/logo-full-color.png"
+              alt="LoomWeave"
+              width={160}
+              height={44}
+              className="h-10 w-auto dark:brightness-0 dark:invert"
+              priority
+            />
           </div>
-          <button
-            onClick={openCreateModal}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold',
-              'bg-primary text-on-primary shadow-sm',
-              'hover:opacity-90 active:scale-[0.98] transition-all'
-            )}
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            New Project
-          </button>
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setWizardOpen(true)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold',
+                'bg-primary text-on-primary shadow-sm',
+                'hover:opacity-90 active:scale-[0.98] transition-all'
+              )}
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              New Project
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -150,7 +137,7 @@ export default function Home() {
               Create your first project and let AI help you build a stunning website.
             </p>
             <button
-              onClick={openCreateModal}
+              onClick={() => setWizardOpen(true)}
               className={cn(
                 'flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold',
                 'bg-primary text-on-primary shadow-sm',
@@ -261,7 +248,7 @@ export default function Home() {
             ))}
 
             {/* ── Add New Card ── */}
-            <button onClick={openCreateModal} className="group block">
+            <button onClick={() => setWizardOpen(true)} className="group block">
               <div className={cn(
                 'aspect-video rounded-xl border-2 border-dashed',
                 'border-outline-variant/60 flex flex-col items-center justify-center gap-3',
@@ -281,45 +268,11 @@ export default function Home() {
         )}
       </main>
 
-      {/* ── Create Project Modal ── */}
-      <Modal open={creating} onClose={() => setCreating(false)} title="New Project">
-        <p className="text-sm text-on-surface-variant mb-5">
-          Give your project a name to get started.
-        </p>
-        <input
-          type="text"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
-          placeholder="e.g. My Portfolio, Landing Page..."
-          className={cn(
-            'w-full h-11 rounded-lg bg-surface px-4 text-sm',
-            'text-on-surface placeholder:text-on-surface-outline',
-            'border border-outline-variant',
-            'focus:outline-none focus:ring-2 focus:ring-primary/30',
-            'transition-all'
-          )}
-        />
-        <div className="flex gap-3 mt-6 justify-end">
-          <button
-            onClick={() => setCreating(false)}
-            className="px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreateProject}
-            disabled={!newName.trim()}
-            className={cn(
-              'px-5 py-2 rounded-lg text-sm font-semibold',
-              'bg-primary text-on-primary shadow-sm',
-              'disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all'
-            )}
-          >
-            Create & Edit
-          </button>
-        </div>
-      </Modal>
+      {/* ── New Project Wizard Modal ── */}
+      <NewProjectWizardModal
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+      />
     </div>
   );
 }

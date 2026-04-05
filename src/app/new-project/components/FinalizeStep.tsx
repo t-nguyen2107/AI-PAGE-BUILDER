@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 import { generateCssVariables } from "@/lib/css-variables";
+import { WinnieAvatar } from "./WinnieAvatar";
 import type { WizardProjectInfo, WizardSettings } from "@/types/wizard";
 import { useWizardStore } from "@/store/wizard-store";
 
@@ -37,15 +38,38 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<string>("");
 
+  const mountedRef = useRef(true);
+  // Refs to avoid stale closures in finalize callback
+  const projectInfoRef = useRef(projectInfo);
+  const settingsRef = useRef(settings);
+  const routerRef = useRef(router);
+  const setIdsRef = useRef(setIds);
+  const existingProjectIdRef = useRef(existingProjectId);
+
+  // Keep refs in sync
+  useEffect(() => { projectInfoRef.current = projectInfo; }, [projectInfo]);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+  useEffect(() => { routerRef.current = router; }, [router]);
+  useEffect(() => { setIdsRef.current = setIds; }, [setIds]);
+  useEffect(() => { existingProjectIdRef.current = existingProjectId; }, [existingProjectId]);
+
   const finalize = useCallback(async () => {
+    const info = projectInfoRef.current;
+    const s = settingsRef.current;
+    const r = routerRef.current;
+    const setI = setIdsRef.current;
+    const existingId = existingProjectIdRef.current;
+
     try {
       let projectId: string;
       let homePageId: string;
       let styleguideId: string;
 
-      if (existingProjectId) {
+      if (existingId) {
+        if (!mountedRef.current) return;
         setCurrentPhase("creating");
-        const projRes = await apiClient.getProject(existingProjectId);
+        const projRes = await apiClient.getProject(existingId);
+        if (!mountedRef.current) return;
         if (!projRes.success || !projRes.data) {
           throw new Error("Failed to load existing project");
         }
@@ -59,37 +83,49 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
         if (!homePage) throw new Error("No home page found");
         homePageId = homePage.id;
         styleguideId = (proj.styleguide as { id: string } | undefined)?.id ?? "";
-        setIds(projectId, homePageId, styleguideId);
+        setI(projectId, homePageId, styleguideId);
       } else {
+        if (!mountedRef.current) return;
         setCurrentPhase("creating");
-        const finalizeRes = await apiClient.wizardFinalize({ projectInfo, settings });
+        const finalizeRes = await apiClient.wizardFinalize({ projectInfo: info, settings: s });
+        if (!mountedRef.current) return;
         if (!finalizeRes.success || !finalizeRes.data) {
           throw new Error("Failed to create project");
         }
         ({ projectId, homePageId, styleguideId } = finalizeRes.data);
-        setIds(projectId, homePageId, styleguideId);
+        setI(projectId, homePageId, styleguideId);
       }
 
+      if (!mountedRef.current) return;
       setCurrentPhase("styleguide");
-      const styleguideWithVars = {
-        ...settings.styleguide,
-        cssVariables: generateCssVariables(settings.styleguide as Parameters<typeof generateCssVariables>[0]),
-      };
-      await apiClient.updateStyleguide(projectId, styleguideWithVars as unknown as Parameters<typeof apiClient.updateStyleguide>[1]);
+      const cssVars = generateCssVariables(s.styleguide as Parameters<typeof generateCssVariables>[0]);
+      if (!cssVars || typeof cssVars !== "object") {
+        throw new Error("Failed to generate CSS variables");
+      }
+      // WizardStyleguide fields are structurally compatible with Styleguide at runtime
+      const styleguideUpdate = {
+        colors: s.styleguide.colors,
+        typography: s.styleguide.typography,
+        spacing: s.styleguide.spacing,
+        cssVariables: cssVars,
+      } as unknown as Parameters<typeof apiClient.updateStyleguide>[1];
+      await apiClient.updateStyleguide(projectId, styleguideUpdate);
 
+      if (!mountedRef.current) return;
       setCurrentPhase("seo");
       await apiClient.updateProject(projectId, {
-        siteName: settings.general.siteName,
-        companyName: settings.general.companyName,
-        language: settings.general.language,
+        siteName: s.general.siteName,
+        companyName: s.general.companyName,
+        language: s.general.language,
       } as Parameters<typeof apiClient.updateProject>[1]);
 
+      if (!mountedRef.current) return;
       setCurrentPhase("generating");
-      const prompt = `Create a complete homepage for "${projectInfo.name}".
-Business: ${projectInfo.idea}
-Target audience: ${projectInfo.targetAudience}
-Visual style: ${projectInfo.style}
-Tone: ${projectInfo.tone}
+      const prompt = `Create a complete homepage for "${info.name}".
+Business: ${info.idea}
+Target audience: ${info.targetAudience}
+Visual style: ${info.style}
+Tone: ${info.tone}
 
 Generate a professional landing page with all essential sections including header, hero, features, and footer.`;
 
@@ -115,36 +151,39 @@ Generate a professional landing page with all essential sections including heade
 
       setCurrentPhase("done");
       setTimeout(() => {
-        router.push(`/builder/${projectId}`);
+        r.push(`/builder/${projectId}`);
       }, 1500);
     } catch (err) {
       console.error("Finalize error:", err);
       setCurrentPhase("error");
       setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred");
     }
-  }, [projectInfo, settings, router, setIds]);
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    mountedRef.current = true;
     finalize().catch(() => {
-      if (!cancelled) {
+      if (mountedRef.current) {
         setCurrentPhase("error");
         setErrorMessage("An unexpected error occurred");
       }
     });
-    return () => { cancelled = true; };
+    return () => { mountedRef.current = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentPhaseIndex = PHASES.findIndex((p) => p.phase === currentPhase);
-  const progressPercent = currentPhase === "done" ? 100 : Math.round(((currentPhaseIndex) / PHASES.length) * 100);
+  // Start at 15% when creating begins, scale up from there
+  const progressPercent =
+    currentPhase === "done" ? 100
+    : Math.round(15 + ((currentPhaseIndex) / (PHASES.length - 1)) * 85);
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-6 py-8">
-      {/* Central orb */}
-      <div className="relative mb-10">
-        {/* Outer glow ring */}
+      {/* Central avatar */}
+      <div className="relative mb-8">
+        {/* Glow ring */}
         <div className={cn(
-          "absolute -inset-6 rounded-full blur-2xl transition-colors duration-700",
+          "absolute -inset-4 rounded-full blur-2xl transition-colors duration-700",
           currentPhase === "done" ? "bg-success/15" : currentPhase === "error" ? "bg-error/10" : "bg-primary/10",
         )} />
 
@@ -155,21 +194,15 @@ Generate a professional landing page with all essential sections including heade
           </div>
         )}
 
-        {/* Main icon */}
-        <div className={cn(
-          "relative w-20 h-20 rounded-3xl flex items-center justify-center transition-all duration-500 shadow-xl",
-          currentPhase === "done" && "bg-success shadow-success/30",
-          currentPhase === "error" && "bg-error shadow-error/30",
-          currentPhase !== "done" && currentPhase !== "error" && "bg-primary shadow-primary/30",
-        )}>
-          <span className={cn(
-            "material-symbols-outlined text-3xl text-on-primary",
-            currentPhase === "done" && "animate-none",
-            currentPhase !== "done" && currentPhase !== "error" && "animate-pulse",
-          )} style={{ fontVariationSettings: "'FILL' 1" }}>
-            {currentPhase === "done" ? "check_circle" : currentPhase === "error" ? "error" : "auto_awesome"}
-          </span>
-        </div>
+        <WinnieAvatar
+          size="lg"
+          animated={currentPhase !== "done" && currentPhase !== "error"}
+          className={cn(
+            "transition-all duration-500",
+            currentPhase === "done" && "ring-2 ring-success/30 ring-offset-2 ring-offset-surface-lowest",
+            currentPhase === "error" && "ring-2 ring-error/30 ring-offset-2 ring-offset-surface-lowest",
+          )}
+        />
       </div>
 
       {/* Progress bar */}
@@ -208,9 +241,9 @@ Generate a professional landing page with all essential sections including heade
               className={cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300",
                 isActive && "bg-primary/5 ring-1 ring-primary/10",
-                isCompleted && !isActive && "opacity-50",
-                !isCompleted && !isActive && "opacity-25",
-                currentPhase === "error" && !isActive && "opacity-25",
+                isCompleted && !isActive && "opacity-60",
+                !isCompleted && !isActive && "opacity-40",
+                currentPhase === "error" && !isActive && "opacity-40",
               )}
             >
               {/* Status icon */}
@@ -238,7 +271,7 @@ Generate a professional landing page with all essential sections including heade
               <div className="flex-1 min-w-0">
                 <p className={cn(
                   "text-xs font-semibold leading-tight",
-                  isCompleted && "text-success line-through",
+                  isCompleted && "text-success",
                   isActive && "text-on-surface",
                   !isCompleted && !isActive && "text-on-surface-outline",
                 )}>
@@ -276,7 +309,7 @@ Generate a professional landing page with all essential sections including heade
       )}
 
       {/* Project name */}
-      <p className="mt-6 text-[11px] text-on-surface-outline/60">
+      <p className="mt-6 text-[11px] text-on-surface-outline/70">
         Building &ldquo;{projectInfo.name}&rdquo;
       </p>
     </div>

@@ -12,11 +12,13 @@ interface WizardStore {
   projectId: string | null;
   homePageId: string | null;
   styleguideId: string | null;
+  completedSteps: Set<WizardStep>;
 
   setStep: (step: WizardStep) => void;
   setProjectInfo: (info: WizardProjectInfo) => void;
   setSettings: (settings: WizardSettings) => void;
   setIds: (projectId: string, homePageId: string, styleguideId: string) => void;
+  completeStep: (step: WizardStep) => void;
   reset: () => void;
 }
 
@@ -27,6 +29,7 @@ const initialState = {
   projectId: null,
   homePageId: null,
   styleguideId: null,
+  completedSteps: new Set<WizardStep>(),
 };
 
 export const useWizardStore = create<WizardStore>((set) => ({
@@ -37,5 +40,11 @@ export const useWizardStore = create<WizardStore>((set) => ({
   setSettings: (settings) => set({ settings }),
   setIds: (projectId, homePageId, styleguideId) =>
     set({ projectId, homePageId, styleguideId }),
+  completeStep: (step) =>
+    set((s) => {
+      const next = new Set(s.completedSteps);
+      next.add(step);
+      return { completedSteps: next };
+    }),
   reset: () => set(initialState),
 }));

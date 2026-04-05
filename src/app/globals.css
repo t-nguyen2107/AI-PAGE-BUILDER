@@ -5,56 +5,60 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
-   PageBuilder — Unified Design System
+   LoomWeave — Unified Design System
 
-   Single token system: Material Design 3 inspired
-   All components consume these tokens via Tailwind.
-   shadcn tokens are aliased to Material equivalents for
-   compatibility with shadcn/ui components (Button, etc.).
+   Brand: Primary #22746e | Secondary #081b22 | Accent #e39c37
+   Fonts: Heading Poppins | Body Inter
+
+   Material Design 3 inspired token system.
+   shadcn tokens aliased to Material equivalents.
    ============================================================ */
 
 :root {
   /* ── Surface hierarchy (light theme) ── */
-  --surface: #f8f9fa;
-  --surface-low: #f3f4f5;
-  --surface-container: #edeeef;
-  --surface-high: #e7e8e9;
-  --surface-highest: #e1e3e4;
+  --surface: #f5f6f7;
+  --surface-low: #f0f2f3;
+  --surface-container: #e6e9eb;
+  --surface-high: #dce0e3;
+  --surface-highest: #d2d7da;
   --surface-lowest: #ffffff;
 
-  /* ── Primary — Sapphire Blue ── */
-  --primary: #2170e4;
-  --primary-light: #5b93e0;
-  --primary-dark: #0058be;
+  /* ── Primary — Teal Green #22746e (buttons, CTAs, links) ── */
+  --primary: #22746e;
+  --primary-light: #2d918a;
+  --primary-dark: #1a5c56;
   --on-primary: #ffffff;
-  --primary-container: #d0e2ff;
-  --on-primary-container: #004ba1;
-  --primary-fixed: #a8c8ff;
-  --primary-fixed-dim: #8bb4ec;
+  --primary-container: #b2e8e2;
+  --on-primary-container: #00201e;
+  --primary-fixed: #96d4cc;
+  --primary-fixed-dim: #7abeb6;
 
-  /* ── Primary text (dark neutral) ── */
-  --primary-text: #191c1d;
+  /* ── Primary text ── */
+  --primary-text: #0d1f24;
 
   /* ── On-colors (text on surfaces) ── */
-  --on-surface: #191c1d;
-  --on-surface-variant: #424754;
-  --on-surface-outline: #727785;
+  --on-surface: #0d1f24;
+  --on-surface-variant: #3d4f55;
+  --on-surface-outline: #6b7d83;
 
-  /* ── Secondary ── */
-  --secondary: #dae2f9;
-  --on-secondary: #192746;
-  --secondary-container: #dae2f9;
-  --secondary-fixed: #bfc7db;
-  --secondary-fixed-dim: #a1a9bf;
-  --on-secondary-fixed: #191c1d;
+  /* ── Secondary — Deep Teal Navy #081b22 (text, dark backgrounds) ── */
+  --secondary: #081b22;
+  --on-secondary: #ffffff;
+  --secondary-container: #d0e8e4;
+  --on-secondary-container: #041f26;
+  --secondary-fixed: #b2e8e2;
+  --secondary-fixed-dim: #96d4cc;
+  --on-secondary-fixed: #041419;
 
-  /* ── Tertiary — Teal accent ── */
-  --tertiary: #006a67;
-  --tertiary-container: #9cf1ec;
+  /* ── Tertiary — Amber Gold #e39c37 ── */
+  --tertiary: #e39c37;
+  --tertiary-container: #fde0b0;
+  --on-tertiary: #3a2800;
+  --on-tertiary-container: #5c4200;
 
   /* ── Outline & borders ── */
-  --outline: #c4c6c9;
-  --outline-variant: #dfe1e3;
+  --outline: #b8c4c8;
+  --outline-variant: #d3dcdf;
 
   /* ── Error ── */
   --error: #ba1a1a;
@@ -72,24 +76,24 @@
   --warning-container: #ffdea8;
   --on-warning-container: #2b1d00;
 
-  /* ── Info ── */
-  --info: #2170e4;
-  --info-container: #d0e2ff;
-  --on-info-container: #001d3f;
+  /* ── Info — uses secondary teal ── */
+  --info: #22746e;
+  --info-container: #b2e8e2;
+  --on-info-container: #00201e;
 
   /* ── Inverse (for dark overlays) ── */
-  --inverse-surface: #191c1d;
-  --inverse-on-surface: #f0f0f4;
-  --inverse-primary: #a8c8ff;
+  --inverse-surface: #0d1f24;
+  --inverse-on-surface: #dfe8ea;
+  --inverse-primary: #b2e8e2;
 
-  /* ── Shadows ── */
-  --shadow-ambient: 0px 24px 48px -12px rgba(25, 28, 29, 0.06);
-  --shadow-sm: 0px 1px 3px rgba(25, 28, 29, 0.04);
-  --shadow-md: 0px 4px 12px rgba(25, 28, 29, 0.08);
-  --shadow-lg: 0px 8px 24px rgba(25, 28, 29, 0.12);
+  /* ── Shadows — teal-tinted ── */
+  --shadow-ambient: 0px 24px 48px -12px rgba(8, 27, 34, 0.08);
+  --shadow-sm: 0px 1px 3px rgba(8, 27, 34, 0.05);
+  --shadow-md: 0px 4px 12px rgba(8, 27, 34, 0.10);
+  --shadow-lg: 0px 8px 24px rgba(8, 27, 34, 0.15);
 
-  /* ── Primary gradient ── */
-  --primary-gradient: linear-gradient(15deg, #0058be, #2170e4);
+  /* ── Primary gradient — teal to lighter teal ── */
+  --primary-gradient: linear-gradient(15deg, #1a5c56, #22746e);
 
   /* ── Z-index scale ── */
   --z-base: 0;
@@ -167,45 +171,48 @@
    Dark mode — full Material token overrides
    ============================================================ */
 .dark {
-  /* Surfaces — elevated dark layers */
-  --surface: #121315;
-  --surface-low: #0e0f11;
-  --surface-container: #1a1b1e;
-  --surface-high: #242528;
-  --surface-highest: #2e2f33;
-  --surface-lowest: #1a1b1e;
+  /* Surfaces — deep teal-tinted dark layers */
+  --surface: #0d1f24;
+  --surface-low: #091519;
+  --surface-container: #152a30;
+  --surface-high: #1f383f;
+  --surface-highest: #2a464e;
+  --surface-lowest: #111b1f;
 
-  /* Primary — lighter for dark surfaces */
-  --primary: #6ea8fe;
-  --primary-light: #8bb4ec;
-  --primary-dark: #4285f4;
-  --on-primary: #003258;
-  --primary-container: #004ba1;
-  --on-primary-container: #d0e2ff;
-  --primary-fixed: #a8c8ff;
-  --primary-fixed-dim: #8bb4ec;
+  /* Primary — lightened teal for dark bg readability */
+  --primary: #5ec4b8;
+  --primary-light: #88d4cc;
+  --primary-dark: #3aaa9e;
+  --on-primary: #00201e;
+  --primary-container: #1a3a47;
+  --on-primary-container: #b2e8e2;
+  --primary-fixed: #5ec4b8;
+  --primary-fixed-dim: #3aaa9e;
 
-  --primary-text: #e4e5e7;
+  --primary-text: #dfe8ea;
 
   /* On-colors */
-  --on-surface: #e4e5e7;
-  --on-surface-variant: #c4c6cf;
-  --on-surface-outline: #8e9099;
+  --on-surface: #dfe8ea;
+  --on-surface-variant: #bfccd0;
+  --on-surface-outline: #8a9b9f;
 
-  /* Secondary */
-  --secondary: #3b4252;
-  --on-secondary: #e0e5f5;
-  --secondary-container: #3b4252;
-  --secondary-fixed: #a1a9bf;
-  --secondary-fixed-dim: #8b93a9;
+  /* Secondary — lightened dark navy for dark mode */
+  --secondary: #7aabb0;
+  --on-secondary: #041419;
+  --secondary-container: #1a3540;
+  --on-secondary-container: #c0e4e0;
+  --secondary-fixed: #7aabb0;
+  --secondary-fixed-dim: #5e9498;
 
   /* Tertiary */
-  --tertiary: #9cf1ec;
-  --tertiary-container: #004f4c;
+  --tertiary: #f5c878;
+  --tertiary-container: #7a5400;
+  --on-tertiary: #3a2800;
+  --on-tertiary-container: #fde0b0;
 
   /* Outline */
-  --outline: #5c5f63;
-  --outline-variant: #44474b;
+  --outline: #4a5f64;
+  --outline-variant: #344a4f;
 
   /* Error */
   --error: #ffb4ab;
@@ -222,18 +229,18 @@
   --warning-container: #6d4400;
 
   /* Info */
-  --info: #6ea8fe;
-  --info-container: #004ba1;
+  --info: #96d4cc;
+  --info-container: #1a4e48;
 
   /* Inverse */
-  --inverse-surface: #e4e5e7;
-  --inverse-on-surface: #191c1d;
+  --inverse-surface: #dfe8ea;
+  --inverse-on-surface: #0d1f24;
 
   /* Shadows */
-  --shadow-ambient: 0px 24px 48px -12px rgba(0, 0, 0, 0.32);
-  --shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0px 4px 12px rgba(0, 0, 0, 0.24);
-  --shadow-lg: 0px 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-ambient: 0px 24px 48px -12px rgba(0, 0, 0, 0.36);
+  --shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0px 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0px 8px 24px rgba(0, 0, 0, 0.36);
 
   /* shadcn aliases */
   --background: var(--surface-lowest);
@@ -288,9 +295,14 @@
   --color-on-surface-outline: var(--on-surface-outline);
   --color-on-primary: var(--on-primary);
   --color-on-primary-container: var(--on-primary-container);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-secondary-container: var(--on-secondary-container);
   --color-on-error: var(--on-error);
   --color-on-error-container: var(--on-error-container);
   --color-on-secondary-fixed: var(--on-secondary-fixed);
+
+  /* Primary text */
+  --color-primary-text: var(--primary-text);
 
   /* Secondary */
   --color-secondary: var(--secondary);
@@ -301,6 +313,8 @@
   /* Tertiary */
   --color-tertiary: var(--tertiary);
   --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-on-tertiary-container: var(--on-tertiary-container);
 
   /* Outline */
   --color-outline: var(--outline);
@@ -319,7 +333,7 @@
 
   /* Fonts */
   --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-heading);
 
   /* Radius */
   --radius-sm: 2px;
@@ -386,6 +400,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Heading font — Poppins via --font-heading CSS var */
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -418,7 +438,7 @@ body {
 }
 
 .dark .glass {
-  background: rgba(18, 19, 21, 0.80);
+  background: rgba(13, 31, 36, 0.80);
 }
 
 /* Subtle border for light panels */
@@ -796,6 +816,78 @@ body {
 .animate-slideInRight { animation: slideInRight 0.5s var(--ease-out) forwards; }
 .animate-scaleIn { animation: scaleIn 0.4s var(--ease-out) forwards; }
 .animate-shimmer { animation: shimmer 2s linear infinite; }
+
+/* ── Wizard animations ── */
+@keyframes winnie-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes winnie-wing {
+  0%, 100% { transform: scaleX(1) rotate(0deg); }
+  50% { transform: scaleX(0.85) rotate(-8deg); }
+}
+@keyframes wizard-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes dot-wave {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes step-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(34, 116, 110, 0.3); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 116, 110, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 116, 110, 0); }
+}
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.animate-winnie-float { animation: winnie-float 3s ease-in-out infinite; }
+.animate-winnie-wing { animation: winnie-wing 0.6s ease-in-out infinite; }
+.animate-wizard-fade-up { animation: wizard-fade-up 0.4s var(--ease-out) forwards; }
+.animate-cursor-blink { animation: cursor-blink 1s step-end infinite; }
+.animate-dot-wave { animation: dot-wave 1.4s ease-in-out infinite; }
+.animate-step-pulse { animation: step-pulse-ring 2s ease-out infinite; }
+
+/* ── Chat enhancement animations ── */
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes celebrate-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 116, 110, 0.25), 0 0 20px rgba(34, 116, 110, 0.08); }
+  50% { box-shadow: 0 0 0 10px rgba(34, 116, 110, 0), 0 0 30px rgba(34, 116, 110, 0.15); }
+}
+@keyframes hero-glow-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.animate-gradient-flow {
+  background-size: 200% 100%;
+  animation: gradient-flow 4s ease infinite;
+}
+.animate-card-enter {
+  opacity: 0;
+  animation: card-enter 0.5s var(--ease-out) forwards;
+}
+.animate-celebrate-glow {
+  animation: celebrate-glow 2s ease-out infinite;
+}
+.animate-hero-glow {
+  animation: hero-glow-pulse 3s ease-in-out infinite;
+}
 
 /* Reduced motion — respect user preference */
 @media (prefers-reduced-motion: reduce) {

@@ -11,6 +11,7 @@ interface ChainOptions {
   history?: BaseMessage[];
   treeSummary?: string;
   projectProfile?: string;
+  designContext?: string;
 }
 
 /**
@@ -29,6 +30,7 @@ export async function invokeAIChain(
     miniContext: options.miniContext,
     treeSummary: options.treeSummary,
     projectProfile: options.projectProfile,
+    designContext: options.designContext,
   });
 
   const chain = prompt.pipe(structuredModel);

@@ -157,6 +157,20 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
     },
     gradientFrom: { type: "text", label: "Gradient From (hex)" },
     gradientTo: { type: "text", label: "Gradient To (hex)" },
+    gradientPreset: {
+      type: "select",
+      label: "Gradient Preset",
+      options: [
+        { label: "None", value: "" },
+        { label: "Sunset", value: "sunset" },
+        { label: "Ocean", value: "ocean" },
+        { label: "Forest", value: "forest" },
+        { label: "Aurora", value: "aurora" },
+        { label: "Midnight", value: "midnight" },
+        { label: "Berry", value: "berry" },
+        { label: "Ember", value: "ember" },
+      ],
+    },
     padding: {
       type: "select",
       options: [
@@ -418,6 +432,15 @@ const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
         { label: "Stagger Fade", value: "stagger-fade" },
       ],
     },
+    cardStyle: {
+      type: "select",
+      label: "Card Style",
+      options: [
+        { label: "Default", value: "default" },
+        { label: "Elevated", value: "elevated" },
+        { label: "Glass", value: "glass" },
+      ],
+    },
     testimonials: {
       type: "array",
       arrayFields: {
@@ -507,6 +530,15 @@ const CTASection: ComponentConfig<CTASectionProps> = {
     },
     backgroundUrl: { type: "text", label: "Background Image URL" },
     trustText: { type: "text", label: "Trust Text" },
+    animation: {
+      type: "select",
+      label: "Entrance Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Zoom", value: "zoom" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Ready to Get Started?",
@@ -516,6 +548,7 @@ const CTASection: ComponentConfig<CTASectionProps> = {
     layout: "centered",
     imagePosition: "right",
     variant: "default",
+    animation: "none",
   },
   render: CTASectionRender,
 };
@@ -625,6 +658,15 @@ const StatsSection: ComponentConfig<StatsSectionProps> = {
         { label: "None", value: "none" },
         { label: "Fade Up", value: "fade-up" },
         { label: "Stagger", value: "stagger" },
+      ],
+    },
+    cardStyle: {
+      type: "select",
+      options: [
+        { label: "None (plain)", value: "none" },
+        { label: "Card", value: "card" },
+        { label: "Bordered", value: "bordered" },
+        { label: "Gradient", value: "gradient" },
       ],
     },
   },

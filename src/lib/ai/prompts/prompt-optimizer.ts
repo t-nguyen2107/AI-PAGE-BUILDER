@@ -4,7 +4,16 @@
  * Zero latency, zero LLM cost — pure rule-based transformation.
  * Extracts business context, language, style, and intent from the raw prompt
  * and wraps it with structured metadata the AI can use immediately.
+ *
+ * Now enriched with design knowledge: color palettes, typography, landing
+ * patterns, and style recommendations tailored to the detected business type.
  */
+
+import {
+  resolveDesignGuidance,
+  formatDesignGuidance,
+  type DesignGuidance,
+} from '../knowledge/design-knowledge';
 
 // ---------------------------------------------------------------------------
 // Industry / Business type mapping (Vietnamese + English → canonical type)
@@ -137,6 +146,10 @@ export interface OptimizedContext {
   intent: Intent;
   /** @name references extracted from prompt (e.g., ["hero_heading", "cta_buy"]) */
   nameRefs: string[];
+  /** Resolved design guidance (colors, style, pattern, typography, reasoning) */
+  designGuidance: DesignGuidance | null;
+  /** Compact design guidance text for prompt injection */
+  designContext: string | null;
 }
 
 export function optimizePrompt(rawPrompt: string): OptimizedContext {
@@ -167,6 +180,10 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
 
   const finalStyle = explicitStyle ?? inferredStyle;
 
+  // Resolve design guidance from knowledge base
+  const designGuidance = resolveDesignGuidance(businessType);
+  const designContext = designGuidance ? formatDesignGuidance(designGuidance) : null;
+
   // Build context prefix
   const contextParts: string[] = [];
 
@@ -193,7 +210,12 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
       ? `[Prompt Context: ${contextParts.join('. ')}]\n\n`
       : '';
 
-  const enrichedPrompt = `${contextBlock}${rawPrompt}`;
+  // Append design context if available
+  const designBlock = designContext
+    ? `\n[Design Guidance: ${designContext}]\n`
+    : '';
+
+  const enrichedPrompt = `${contextBlock}${rawPrompt}${designBlock}`;
 
   return {
     enrichedPrompt,
@@ -202,6 +224,8 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
     language,
     intent,
     nameRefs,
+    designGuidance,
+    designContext,
   };
 }
 

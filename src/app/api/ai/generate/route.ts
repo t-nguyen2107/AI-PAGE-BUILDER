@@ -6,6 +6,8 @@ import { optimizePrompt, resolveNameToId } from '@/lib/ai/prompts/prompt-optimiz
 import * as aiMemory from '@/lib/ai/memory';
 import { getProjectProfileText } from '@/lib/ai/memory-manager';
 import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
+import { searchDesignKnowledge } from '@/lib/ai/knowledge/knowledge-search';
+import { autoUpdateStyleguide } from '@/lib/ai/knowledge/auto-styleguide';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generatePuckComponent } from '@/features/ai/component-generator';
 import { successResponse, errorResponse } from '@/lib/api-response';
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
   let history: BaseMessage[] = [];
   let treeSummary: string | undefined;
   let projectProfile = '';
+  let ragContext = '';
 
   await Promise.allSettled([
     (async () => {
@@ -91,7 +94,18 @@ export async function POST(request: NextRequest) {
   ]);
 
   // --- Optimize prompt with context ---
-  const { enrichedPrompt, nameRefs, intent, businessType } = optimizePrompt(prompt);
+  const { enrichedPrompt, nameRefs, intent, businessType, designContext } = optimizePrompt(prompt);
+
+  // --- RAG: vector knowledge lookup (non-fatal, runs after businessType is resolved) ---
+  try {
+    const ragResult = await searchDesignKnowledge({ query: prompt, businessType: businessType ?? undefined });
+    ragContext = ragResult.contextText;
+  } catch (e) {
+    console.warn('[ai-generate] RAG lookup failed (non-fatal):', e);
+  }
+
+  // Merge static design context with RAG knowledge (RAG augments static)
+  const mergedDesignContext = [designContext, ragContext].filter(Boolean).join('\n') || undefined;
 
   // --- Resolve @name references to targetNodeId ---
   let resolvedTargetNodeId = targetNodeId;
@@ -110,7 +124,7 @@ export async function POST(request: NextRequest) {
   if (intent === 'create_page') {
     try {
       const { model, jsonCallOptions } = createModelBundle();
-      const tmplPrompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData });
+      const tmplPrompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData, designContext: mergedDesignContext ?? undefined });
       const messages = await tmplPrompt.formatMessages({ input: enrichedPrompt });
       const response = await model.invoke(messages, jsonCallOptions);
 
@@ -157,6 +171,7 @@ export async function POST(request: NextRequest) {
       history,
       treeSummary,
       projectProfile: projectProfile || undefined,
+      designContext: mergedDesignContext ?? undefined,
     });
   } catch (err) {
     chainError = err instanceof Error ? err.message : 'Unknown error from AI chain';
@@ -250,6 +265,13 @@ export async function POST(request: NextRequest) {
   if (sessionId) {
     analyzeAndUpdateProfile(projectId, sessionId).catch((err) => {
       console.error('[ai-profile] Background analysis failed:', err);
+    });
+  }
+
+  // --- Fire-and-forget: auto-update styleguide if using defaults ---
+  if (businessType) {
+    autoUpdateStyleguide(projectId, businessType).catch((err) => {
+      console.error('[auto-styleguide] Background styleguide update failed:', err);
     });
   }
 

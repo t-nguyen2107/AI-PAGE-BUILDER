@@ -3,48 +3,19 @@
 import { useRef, useState, useEffect } from "react";
 import type { HeroSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
-// ─── Scroll-triggered animation hook ─────────────────────────────────
+// ─── Gradient presets ────────────────────────────────────────────────
 
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    "fade-in": visible ? "opacity-100" : "opacity-0",
-    "slide-left": visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8",
-    "slide-right": visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8",
-    zoom: visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
-  };
-
-  return {
-    ref,
-    className: animClasses[animation] ?? "",
-    visible,
-  };
-}
+const GRADIENT_PRESETS: Record<string, { from: string; to: string }> = {
+  sunset:  { from: "#f97316", to: "#ec4899" },
+  ocean:   { from: "#0ea5e9", to: "#6366f1" },
+  forest:  { from: "#059669", to: "#065f46" },
+  aurora:  { from: "#7c3aed", to: "#06b6d4" },
+  midnight:{ from: "#1e1b4b", to: "#312e81" },
+  berry:   { from: "#be185d", to: "#7c3aed" },
+  ember:   { from: "#dc2626", to: "#f97316" },
+};
 
 // ─── Render component ─────────────────────────────────────────────────
 
@@ -67,6 +38,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
     trustBadges,
     gradientFrom,
     gradientTo,
+    gradientPreset,
     className,
     ...metaRest
   } = props;
@@ -76,9 +48,14 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   const isSplit = layout === "split-left" || layout === "split-right";
   const anim = useScrollAnimation(animation ?? "none");
 
+  // Resolve gradient preset → explicit colors (explicit props take precedence)
+  const preset = gradientPreset ? GRADIENT_PRESETS[gradientPreset] : undefined;
+  const resolvedFrom = gradientFrom ?? preset?.from;
+  const resolvedTo = gradientTo ?? preset?.to;
+
   // Determine overlay style
-  const overlayStyle = gradientFrom
-    ? `linear-gradient(135deg, ${gradientFrom}cc, ${(gradientTo ?? gradientFrom)}cc)`
+  const overlayStyle = resolvedFrom
+    ? `linear-gradient(135deg, ${resolvedFrom}cc, ${(resolvedTo ?? resolvedFrom)}cc)`
     : backgroundOverlay
       ? "rgba(0,0,0,0.5)"
       : undefined;
@@ -86,10 +63,10 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   const sectionStyle: React.CSSProperties = {
     ...(backgroundUrl && !videoUrl
       ? {
-          backgroundImage: backgroundOverlay && !gradientFrom
+          backgroundImage: backgroundOverlay && !resolvedFrom
             ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`
-            : gradientFrom
-              ? `linear-gradient(135deg, ${gradientFrom}cc, ${(gradientTo ?? gradientFrom)}cc), url(${backgroundUrl})`
+            : resolvedFrom
+              ? `linear-gradient(135deg, ${resolvedFrom}cc, ${(resolvedTo ?? resolvedFrom)}cc), url(${backgroundUrl})`
               : `url(${backgroundUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -100,7 +77,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   };
 
   const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;
-  const hasBg = !!(backgroundUrl || videoUrl || gradientFrom);
+  const hasBg = !!(backgroundUrl || videoUrl || resolvedFrom);
   const textClass = hasBg && !hasBgOverride ? "text-white" : !hasBgOverride ? "bg-background text-foreground" : "";
 
   // ─── Content block (shared between centered and split) ────────────
@@ -167,11 +144,11 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
       )}
 
       {/* Gradient-only overlay (no video, no backgroundUrl) */}
-      {!videoUrl && !backgroundUrl && gradientFrom && (
+      {!videoUrl && !backgroundUrl && resolvedFrom && (
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(135deg, ${gradientFrom}dd, ${(gradientTo ?? gradientFrom)}dd)`,
+            background: `linear-gradient(135deg, ${resolvedFrom}dd, ${(resolvedTo ?? resolvedFrom)}dd)`,
           }}
         />
       )}

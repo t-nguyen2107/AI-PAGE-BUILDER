@@ -106,7 +106,7 @@ export async function storeVectorBatch(
   const texts = entries.map((e) => e.content);
   const vectors = await Promise.all(texts.map((t) => embed(t, embeddingConfig)));
   const model = embeddingConfig?.model ?? 'nomic-embed-text';
-  const dimensions = embeddingConfig?.dimensions ?? vectors[0]!.length;
+  const dimensions = embeddingConfig?.dimensions ?? vectors[0]?.length ?? 768;
 
   const ids: string[] = [];
 
@@ -156,7 +156,9 @@ export async function searchVectors(
   const topK = opts.topK ?? 5;
   const minScore = opts.minScore ?? 0.5;
   const scopes = opts.scopes ?? ['project'];
-  // Validate scopes against allowlist to prevent injection
+  // Validate scopes against allowlist to prevent injection.
+  // Scopes are parameterized via $N placeholders in the SQL — values never
+  // interpolated as raw text. The allowlist is a defense-in-depth check.
   const VALID_SCOPES = new Set(['user', 'project', 'global']);
   const safeScopes = scopes.filter((s) => VALID_SCOPES.has(s));
   if (safeScopes.length === 0) return []; // No valid scopes — return empty

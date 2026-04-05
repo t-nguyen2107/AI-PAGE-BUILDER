@@ -73,7 +73,7 @@ export function CountdownTimer(props: CountdownTimerProps & ComponentMeta) {
     default:
       "flex flex-col items-center bg-background rounded-lg px-5 py-4 min-w-[80px] shadow-sm",
     flip:
-      "flex flex-col items-center bg-gray-900 text-white rounded-lg px-5 py-4 min-w-[80px] shadow-lg relative overflow-hidden",
+      "flex flex-col items-center bg-inverse-surface text-inverse-on-surface rounded-lg px-5 py-4 min-w-[80px] shadow-lg relative overflow-hidden",
     minimal:
       "flex flex-col items-center px-4 py-2 min-w-[60px]",
   };
@@ -86,7 +86,7 @@ export function CountdownTimer(props: CountdownTimerProps & ComponentMeta) {
 
   const labelClassByStyle: Record<string, string> = {
     default: "text-xs text-muted-foreground mt-1 uppercase tracking-wider",
-    flip: "text-[10px] text-gray-400 mt-1 uppercase tracking-wider",
+    flip: "text-[10px] text-on-surface-outline mt-1 uppercase tracking-wider",
     minimal: "text-xs text-muted-foreground mt-0.5 uppercase tracking-wide",
   };
 
@@ -127,7 +127,7 @@ export function CountdownTimer(props: CountdownTimerProps & ComponentMeta) {
                     className={unitClassByStyle[style] ?? unitClassByStyle.default}
                   >
                     {style === "flip" && (
-                      <div className="absolute inset-x-0 top-1/2 h-px bg-gray-700" />
+                      <div className="absolute inset-x-0 top-1/2 h-px bg-outline" />
                     )}
                     <span className={digitClassByStyle[style] ?? digitClassByStyle.default}>
                       {unit.value}

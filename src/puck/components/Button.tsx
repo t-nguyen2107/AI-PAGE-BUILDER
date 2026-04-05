@@ -17,7 +17,7 @@ const variantStyles = {
   primary:
     "bg-primary text-primary-foreground hover:opacity-90",
   secondary:
-    "bg-gray-100 text-gray-900 hover:bg-gray-200",
+    "bg-surface-container text-on-surface hover:bg-surface-high",
   outline:
     "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
 };

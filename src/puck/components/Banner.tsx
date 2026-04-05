@@ -88,7 +88,7 @@ export function Banner(props: BannerProps & ComponentMeta) {
 
   // Variant classes
   const variantClasses: Record<string, string> = {
-    gradient: "bg-gradient-to-r from-primary to-primary/80 text-white",
+    gradient: "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground",
     solid: "bg-primary text-primary-foreground",
     image: "text-white",
     video: "text-white relative overflow-hidden",
@@ -170,7 +170,7 @@ export function Banner(props: BannerProps & ComponentMeta) {
           <div className={`flex ${isCenter ? "justify-center" : "justify-start"} mt-6`}>
             <a
               href={ctaHref}
-              className="inline-block rounded-lg px-6 py-2.5 font-semibold transition hover:opacity-90 bg-white text-gray-900"
+              className="inline-block rounded-lg px-6 py-2.5 font-semibold transition hover:opacity-90 bg-surface-lowest text-on-surface"
             >
               {ctaText}
             </a>

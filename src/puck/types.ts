@@ -91,6 +91,7 @@ export type HeroSectionProps = {
   trustBadges?: { text: string }[];
   gradientFrom?: string;
   gradientTo?: string;
+  gradientPreset?: "" | "sunset" | "ocean" | "forest" | "aurora" | "midnight" | "berry" | "ember";
   padding: string;
 };
 
@@ -150,6 +151,7 @@ export type TestimonialSectionProps = {
   autoplay?: boolean;
   interval?: number; // ms between carousel slides, default 5000
   animation?: "none" | "fade-up" | "stagger-fade";
+  cardStyle?: "default" | "elevated" | "glass";
 };
 
 // ─── CTA ────────────────────────────────────────────────────────────
@@ -166,6 +168,7 @@ export type CTASectionProps = {
   ctaSecondaryHref?: string;
   variant?: "default" | "gradient" | "dark";
   trustText?: string;
+  animation?: "none" | "fade-up" | "zoom";
 };
 
 // ─── FAQ ────────────────────────────────────────────────────────────
@@ -198,6 +201,7 @@ export type StatsSectionProps = {
   animated?: boolean;
   duration?: number;
   animation?: "none" | "fade-up" | "stagger";
+  cardStyle?: "none" | "card" | "bordered" | "gradient";
 };
 
 // ─── Team ───────────────────────────────────────────────────────────

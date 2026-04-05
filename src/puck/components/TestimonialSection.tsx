@@ -1,47 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import type { TestimonialSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
-
-// ─── Scroll-triggered animation hook ─────────────────────────────────
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    "stagger-fade": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-  };
-
-  return {
-    ref,
-    className: animClasses[animation] ?? "",
-    visible,
-  };
-}
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 // ─── Star rating sub-component ────────────────────────────────────────
 
@@ -51,7 +13,7 @@ function StarRating({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((star) => (
         <svg
           key={star}
-          className={`w-4 h-4 ${star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+          className={`w-4 h-4 ${star <= rating ? "text-tertiary fill-tertiary" : "text-muted-foreground/30"}`}
           viewBox="0 0 20 20"
           aria-hidden="true"
         >
@@ -64,9 +26,15 @@ function StarRating({ rating }: { rating: number }) {
 
 // ─── Testimonial card (shared between grid and carousel) ──────────────
 
-function TestimonialCard({ item }: { item: TestimonialSectionProps["testimonials"][number] }) {
+function TestimonialCard({ item, cardStyle }: { item: TestimonialSectionProps["testimonials"][number]; cardStyle: string }) {
+  const cardClasses: Record<string, string> = {
+    elevated: "p-6 rounded-xl bg-card border border-border shadow-md hover:shadow-lg transition-shadow h-full flex flex-col",
+    glass: "p-6 rounded-xl bg-surface-lowest/80 dark:bg-surface/80 backdrop-blur-sm border border-border/20 shadow-sm h-full flex flex-col",
+    default: "p-6 rounded-xl bg-card border border-border h-full flex flex-col",
+  };
+
   return (
-    <div className="p-6 rounded-xl bg-card border border-border h-full flex flex-col">
+    <div className={cardClasses[cardStyle] ?? cardClasses.default}>
       {item.rating && item.rating >= 1 && item.rating <= 5 && (
         <StarRating rating={item.rating} />
       )}
@@ -109,6 +77,7 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
     autoplay = false,
     interval = 5000,
     animation = "none",
+    cardStyle = "default",
     className,
     ...metaRest
   } = props;
@@ -167,7 +136,7 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
                   className="snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%]"
                   style={isStagger ? { transitionDelay: `${i * 100}ms` } : undefined}
                 >
-                  <TestimonialCard item={t} />
+                  <TestimonialCard item={t} cardStyle={cardStyle} />
                 </div>
               ))}
             </div>
@@ -179,7 +148,7 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
                   key={i}
                   style={isStagger ? { transitionDelay: `${i * 100}ms` } : undefined}
                 >
-                  <TestimonialCard item={t} />
+                  <TestimonialCard item={t} cardStyle={cardStyle} />
                 </div>
               ))}
             </div>

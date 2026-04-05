@@ -28,6 +28,9 @@ export async function requireAuth(_request: NextRequest): Promise<AuthResult> {
   //   const session = await getSession(request);
   //   if (!session) return { authenticated: false, error: 'Unauthorized' };
   //   return { authenticated: true, userId: session.userId };
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('[auth] PLACEHOLDER AUTH ACTIVE — all requests allowed. Replace before production.');
+  }
 
   return { authenticated: true, userId: 'prototype-user' };
 }

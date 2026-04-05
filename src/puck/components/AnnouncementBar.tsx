@@ -6,8 +6,8 @@ import { extractStyleProps } from "../lib/style-override";
 
 const bgStyles: Record<Exclude<AnnouncementBarProps["bgColor"], "custom">, string> = {
   primary: "bg-primary text-primary-foreground",
-  dark: "bg-gray-900 text-white",
-  accent: "bg-yellow-500 text-gray-900",
+  dark: "bg-inverse-surface text-inverse-on-surface",
+  accent: "bg-tertiary text-on-tertiary",
 };
 
 const iconMap: Record<string, React.ReactNode> = {

@@ -15,6 +15,8 @@ interface PromptContext {
   projectProfile?: string;
   /** Pre-computed tier plan from prompt optimizer for dynamic catalog */
   componentTiers?: ComponentTierPlan;
+  /** Compact design guidance text from knowledge base (colors, styles, patterns, typography) */
+  designContext?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +150,42 @@ The name lets users reference components by name in chat (e.g., @hero_welcome).
 5. **Visual hierarchy** — clear headings, supporting text, prominent CTAs
 6. **Generous spacing** — sections need breathing room
 7. **Contrast** — dark backgrounds need light text and vice versa
+
+## DESIGN INTELLIGENCE
+
+When generating pages, follow these enhanced design rules:
+
+### Color Usage
+- If design guidance provides colors — USE them as your palette. Override any defaults.
+- Use primary color for CTAs, nav highlights, and key interactive elements
+- Use accent color for secondary actions and highlights (badges, tags)
+- Alternate section backgrounds: white → muted (gray-50 equivalent) → dark → gradient
+- Dark sections MUST use light text. Light sections MUST use dark text
+- For HeroSection: prefer gradientFrom/gradientTo with the provided palette colors
+
+### Component Prop Utilization (CRITICAL)
+- ALWAYS set \`animation\` prop on content sections (prefer "fade-up" or "stagger" for first visible, "stagger-fade" for grids)
+- Use \`variant\` props for visual variety: TestimonialSection → try "carousel", CTASection → use "gradient" or "dark"
+- Use \`hoverEffect\` on FeaturesGrid ("lift") and ProductCards ("lift" or "zoom")
+- Use \`cardStyle\` on FeaturesGrid — alternate between "icon", "elevated", "image" for different feels
+- Use \`gradientFrom\`/\`gradientTo\` on HeroSection for rich backgrounds (not flat solid colors)
+- Use \`trustBadges\` on HeroSection when business type benefits from credibility signals
+- Use ComponentMeta props (bgColor, textColor, padding) for per-section visual variety
+- PricingTable: ALWAYS include highlightedBadge (e.g., "Most Popular"), set animation to "stagger", include pricingToggle with yearlyPlans
+- StatsSection: ALWAYS set animated to true for count-up effect
+
+### Content Quality
+- Generate 4-6 features with SPECIFIC descriptions tied to the business type (not generic filler)
+- Pricing tiers with believable prices, specific feature lists, highlighted popular plan
+- Testimonials with full names, realistic company names, specific quotes about the business
+- Stats with impressive but believable numbers relevant to the industry
+- FAQ with genuine questions customers would ask about this specific business type
+
+### Layout Variety
+- Avoid all sections looking the same width/alignment — mix centered, split-left, split-right heroes
+- Use ColumnsLayout or split layouts for visual rhythm
+- Dense section → breathing room (spacer or simpler section) → dense section
+${ctx?.designContext ? '### Active Design Guidance\n' + ctx.designContext : ''}
 
 ## FULL PAGE GENERATION
 

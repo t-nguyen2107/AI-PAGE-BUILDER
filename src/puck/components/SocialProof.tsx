@@ -117,7 +117,7 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
         <div className="max-w-6xl mx-auto flex justify-center">
           <div className="bg-background border border-border rounded-lg shadow-lg p-4 max-w-sm animate-[slideIn_0.3s_ease-out]">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
               <p className="text-sm text-foreground">
                 {testimonialText ?? "Someone just purchased this product!"}
               </p>

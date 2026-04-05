@@ -1,5 +1,8 @@
+"use client";
+
 import type { CTASectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export function CTASection(props: CTASectionProps & ComponentMeta) {
   const {
@@ -15,12 +18,14 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
     ctaSecondaryHref,
     variant = "default",
     trustText,
+    animation = "none",
     className,
     ...metaRest
   } = props;
   const hasBg = !!backgroundUrl;
   const isSplit = layout === "split";
   const hasImage = isSplit && !!imageUrl;
+  const anim = useScrollAnimation(animation);
 
   const sectionStyle: React.CSSProperties = hasBg
     ? {
@@ -36,7 +41,7 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
     if (hasBg) return "text-white";
     switch (variant) {
       case "gradient":
-        return "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground";
+        return "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground relative overflow-hidden";
       case "dark":
         return "bg-foreground text-background";
       default:
@@ -47,11 +52,11 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
   // Button styling based on variant
   const getPrimaryButtonClasses = () => {
     if (hasBg) {
-      return "bg-white text-gray-900 hover:bg-gray-100";
+      return "bg-surface-lowest text-on-surface hover:bg-surface-container";
     }
     switch (variant) {
       case "gradient":
-        return "bg-white text-primary hover:bg-gray-100";
+        return "bg-surface-lowest text-primary hover:bg-surface-container";
       case "dark":
         return "bg-background text-foreground hover:opacity-90";
       default:
@@ -61,11 +66,11 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
 
   const getSecondaryButtonClasses = () => {
     if (hasBg) {
-      return "border-2 border-white text-white hover:bg-white hover:text-gray-900";
+      return "border-2 border-surface-lowest text-inverse-on-surface hover:bg-surface-lowest hover:text-on-surface";
     }
     switch (variant) {
       case "gradient":
-        return "border-2 border-white text-white hover:bg-white hover:text-primary";
+        return "border-2 border-surface-lowest text-inverse-on-surface hover:bg-surface-lowest hover:text-primary";
       case "dark":
         return "border-2 border-background text-background hover:bg-background hover:text-foreground";
       default:
@@ -78,7 +83,18 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
       className={`w-full py-20 px-6 ${getVariantClasses()} ${className ?? ""}`}
       style={sectionStyle}
     >
-      <div className={`${isSplit ? "max-w-6xl" : "max-w-3xl"} mx-auto ${isSplit ? "grid md:grid-cols-2 gap-8 items-center" : "text-center"}`}>
+      {/* Decorative background blobs for gradient variant */}
+      {variant === "gradient" && !hasBg && (
+        <>
+          <div className="absolute top-0 left-0 w-64 h-64 rounded-full bg-primary-foreground/5 -translate-x-1/2 -translate-y-1/2 blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-primary-foreground/5 translate-x-1/3 translate-y-1/3 blur-3xl" />
+        </>
+      )}
+
+      <div
+        ref={anim.ref}
+        className={`relative z-10 ${isSplit ? "max-w-6xl" : "max-w-3xl"} mx-auto transition-all duration-700 ease-out ${anim.className} ${isSplit ? "grid md:grid-cols-2 gap-8 items-center" : "text-center"}`}
+      >
         {/* Image side (for split layout) */}
         {hasImage && imagePosition === "left" && (
           <div className="order-1">

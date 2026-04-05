@@ -43,7 +43,7 @@ function useScrollAnimation(animation: string) {
 const HOVER_CLASSES: Record<string, string> = {
   none: "",
   lift: "hover:-translate-y-1 hover:shadow-lg transition",
-  glow: "hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] transition",
+  glow: "hover:shadow-[0_0_15px_rgba(34,116,110,0.3)] transition",
   border: "hover:border-primary transition",
 };
 
