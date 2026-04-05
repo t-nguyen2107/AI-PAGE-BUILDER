@@ -19,10 +19,10 @@ interface DisplayMessage {
 }
 
 const SUGGESTION_CHIPS = [
-  "A modern coffee shop website",
-  "SaaS landing page with pricing",
-  "Portfolio for a photographer",
-  "Restaurant with menu showcase",
+  { icon: "local_cafe", text: "A modern coffee shop website" },
+  { icon: "cloud", text: "SaaS landing page with pricing" },
+  { icon: "photo_camera", text: "Portfolio for a photographer" },
+  { icon: "restaurant", text: "Restaurant with menu showcase" },
 ];
 
 export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
@@ -51,11 +51,8 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // Cleanup: abort in-flight chat request on unmount
   useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   const handleSend = useCallback(
@@ -67,14 +64,10 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       setIsStreaming(true);
 
       const msgId = crypto.randomUUID();
-      const userMsg: DisplayMessage = {
-        id: `user-${msgId}`,
-        role: "user",
-        content: text,
-        timestamp: Date.now(),
-        status: "done",
-      };
-      setMessages((prev) => [...prev, userMsg]);
+      setMessages((prev) => [
+        ...prev,
+        { id: `user-${msgId}`, role: "user", content: text, timestamp: Date.now(), status: "done" },
+      ]);
 
       const assistantMsgId = `assistant-${msgId}`;
       setMessages((prev) => [
@@ -99,9 +92,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
           signal: controller.signal,
         });
 
-        if (!res.ok || !res.body) {
-          throw new Error(`Chat failed (${res.status})`);
-        }
+        if (!res.ok || !res.body) throw new Error(`Chat failed (${res.status})`);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -126,17 +117,12 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
               if (event.type === "chunk" && event.content) {
                 fullText += event.content;
                 setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === assistantMsgId ? { ...m, content: fullText } : m,
-                  ),
+                  prev.map((m) => (m.id === assistantMsgId ? { ...m, content: fullText } : m)),
                 );
               } else if (event.type === "done" && event.extractedInfo) {
                 const info = event.extractedInfo as WinnieResponse;
                 chatHistory.current.push({ role: "assistant", content: info.reply });
-
-                if (info.collectedInfo) {
-                  setCollectedInfo((prev) => ({ ...prev, ...info.collectedInfo }));
-                }
+                if (info.collectedInfo) setCollectedInfo((prev) => ({ ...prev, ...info.collectedInfo }));
                 if (info.isComplete) {
                   setIsComplete(true);
                   setCompleteMessageId(assistantMsgId);
@@ -153,9 +139,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
         }
 
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId ? { ...m, status: "done" as const } : m,
-          ),
+          prev.map((m) => (m.id === assistantMsgId ? { ...m, status: "done" as const } : m)),
         );
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
@@ -199,85 +183,98 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-outline-variant/30">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <span className="material-symbols-outlined text-xl text-primary">auto_awesome</span>
-        </div>
-        <div>
-          <h2 className="text-sm font-semibold text-on-surface">Winnie</h2>
-          <p className="text-[11px] text-on-surface-outline">AI Website Design Consultant</p>
-        </div>
-      </div>
-
-      {/* Import Placeholders */}
-      <div className="px-6 py-3 border-b border-outline-variant/20 bg-surface-container/30">
-        <ImportPlaceholders />
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      {/* ── Messages ── */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
         {messages.map((msg) => (
-          <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+          <div key={msg.id} className={cn("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "flex-row")}>
+            {/* Avatar */}
+            {msg.role === "assistant" && (
+              <div className="shrink-0 relative">
+                <div
+                  className="w-9 h-9 rounded-2xl bg-linear-to-br from-primary via-primary-container to-tertiary flex items-center justify-center shadow-lg shadow-primary/25"
+                  style={{ animation: "winnie-breathe 3s ease-in-out infinite" }}
+                >
+                  <span className="material-symbols-outlined text-base text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    smart_toy
+                  </span>
+                </div>
+                <div className="absolute -inset-1.5 rounded-3xl bg-primary/15 blur-lg -z-10" style={{ animation: "winnie-glow 2s ease-in-out infinite" }} />
+              </div>
+            )}
+
+            {/* Bubble */}
             <div
               className={cn(
-                "max-w-[85%] px-4 py-2.5 text-sm leading-relaxed",
+                "max-w-[80%] text-sm leading-relaxed",
                 msg.role === "user"
-                  ? "bg-primary text-on-primary rounded-2xl rounded-br-md"
-                  : "bg-surface-container/80 text-on-surface rounded-2xl rounded-bl-md border border-outline-variant/20",
+                  ? "bg-primary text-on-primary px-4 py-3 rounded-2xl rounded-tr-lg shadow-md shadow-primary/10"
+                  : "bg-surface-container-lowest text-on-surface px-4 py-3 rounded-2xl rounded-tl-lg border border-outline-variant/10 shadow-sm",
               )}
             >
               {msg.content ? (
                 <>
-                  <span className="whitespace-pre-wrap">
-                    {msg.content}
-                    {msg.status === "streaming" && (
-                      <span className="inline-block w-0.5 h-3.5 bg-primary ml-0.5 align-middle animate-ai-pulse" />
-                    )}
-                  </span>
+                  <span className="whitespace-pre-wrap">{msg.content}</span>
+                  {msg.status === "streaming" && (
+                    <span className="inline-block w-0.5 h-4 bg-primary/70 ml-0.5 align-middle animate-pulse" />
+                  )}
                   {msg.role === "assistant" && msg.id === completeMessageId && msg.status === "done" && (
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
+                      className="mt-3.5 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
                     >
-                      Let&apos;s customize your project
+                      Continue to Customize
                       <span className="material-symbols-outlined text-base">arrow_forward</span>
                     </button>
                   )}
                 </>
               ) : (
-                <div className="flex items-center gap-1.5 py-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div className="flex items-center gap-1.5 py-1 px-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               )}
             </div>
           </div>
         ))}
+
+        {/* Import placeholders (only at start) */}
+        {messages.length <= 2 && (
+          <div className="pt-2">
+            <ImportPlaceholders />
+          </div>
+        )}
       </div>
 
-      {/* Suggestion Chips (show when few messages) */}
-      {messages.length <= 2 && (
-        <div className="px-6 pb-2 flex flex-wrap gap-2">
-          {SUGGESTION_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => handleSend(chip)}
-              disabled={isStreaming}
-              className="px-3 py-1.5 text-xs rounded-full border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-50"
-            >
-              {chip}
-            </button>
-          ))}
+      {/* ── Suggestion chips ── */}
+      {messages.length <= 2 && !isStreaming && (
+        <div className="px-4 pb-3">
+          <p className="text-[10px] text-on-surface-outline/70 uppercase tracking-widest font-semibold mb-2">Quick start</p>
+          <div className="grid grid-cols-2 gap-2">
+            {SUGGESTION_CHIPS.map((chip) => (
+              <button
+                key={chip.text}
+                type="button"
+                onClick={() => handleSend(chip.text)}
+                disabled={isStreaming}
+                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left group border border-outline-variant/15 bg-surface-container-lowest/60 hover:bg-surface-container hover:border-primary/20 transition-all duration-200 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-base text-on-surface-outline group-hover:text-primary transition-colors">
+                  {chip.icon}
+                </span>
+                <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors leading-snug">
+                  {chip.text}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Input */}
-      <div className="px-6 py-4 border-t border-outline-variant/30">
-        <div className="flex gap-2 items-end">
+      {/* ── Input area ── */}
+      <div className="px-4 pb-4 pt-2">
+        <div className="relative flex items-end gap-2 bg-surface-container-lowest border border-outline-variant/15 rounded-2xl p-2 focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200 shadow-sm">
           <textarea
             ref={inputRef}
             value={input}
@@ -286,44 +283,52 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
             placeholder="Describe your website idea..."
             disabled={isStreaming}
             rows={1}
-            className="flex-1 resize-none rounded-xl border border-outline-variant/40 bg-surface-container/50 px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-outline focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
-            style={{ maxHeight: "120px" }}
+            className="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-3 resize-none max-h-28 min-h-9 leading-relaxed placeholder:text-on-surface-outline/60 outline-none"
           />
           <button
             type="button"
             onClick={() => handleSend()}
             disabled={!input.trim() || isStreaming}
-            className="p-2.5 rounded-xl bg-primary text-on-primary hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            className="w-9 h-9 flex items-center justify-center bg-primary text-on-primary rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-20 shrink-0"
           >
-            <span className="material-symbols-outlined text-lg">send</span>
+            <span className="material-symbols-outlined text-lg">arrow_upward</span>
           </button>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between mt-3">
+        {/* Actions row */}
+        <div className="flex items-center justify-between mt-2.5 px-1">
           <button
             type="button"
             onClick={onSkip}
-            className="text-xs text-on-surface-outline hover:text-on-surface transition-colors"
+            className="text-[11px] text-on-surface-outline/60 hover:text-on-surface-variant transition-colors"
           >
-            Skip & create blank project
+            Skip to blank project
           </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={!isComplete}
-            className={cn(
-              "px-5 py-2 rounded-lg text-xs font-medium transition-all",
-              isComplete
-                ? "bg-primary text-on-primary shadow-md shadow-primary/20 hover:opacity-90 active:scale-[0.98]"
-                : "bg-surface-container text-on-surface-outline cursor-not-allowed",
-            )}
-          >
-            Next: Customize
-            <span className="material-symbols-outlined text-sm align-middle ml-1">arrow_forward</span>
-          </button>
+
+          {isComplete && (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-primary text-on-primary shadow-md shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              Next Step
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* CSS keyframes for Winnie avatar */}
+      <style>{`
+        @keyframes winnie-breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        @keyframes winnie-glow {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.1); }
+        }
+      `}</style>
     </div>
   );
 }

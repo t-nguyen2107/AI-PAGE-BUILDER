@@ -83,7 +83,7 @@ function TestimonialCard({ item }: { item: TestimonialSectionProps["testimonials
           />
         ) : (
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">
-            {item.author
+            {(item.author || "")
               .split(" ")
               .map((n) => n[0])
               .join("")

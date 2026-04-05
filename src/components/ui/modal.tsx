@@ -61,33 +61,49 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
     [handleClose],
   );
 
+  // Auto-focus: only on open change, prefer input/textarea over buttons
   useEffect(() => {
     if (open) {
       previousFocusRef.current = document.activeElement as HTMLElement;
-      document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
 
       requestAnimationFrame(() => {
         if (dialogRef.current) {
-          const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          const input = dialogRef.current.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+            'input, textarea, select'
           );
-          if (focusable.length > 0) {
-            focusable[0].focus();
+          if (input) {
+            input.focus();
           } else {
-            dialogRef.current.focus();
+            const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], [tabindex]:not([tabindex="-1"])'
+            );
+            if (focusable.length > 0) {
+              focusable[0].focus();
+            } else {
+              dialogRef.current.focus();
+            }
           }
         }
       });
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
       if (!open && previousFocusRef.current) {
         previousFocusRef.current.focus();
         previousFocusRef.current = null;
       }
+    };
+  }, [open]);
+
+  // Keydown listener: separate so auto-focus doesn't re-fire on handleKeyDown change
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [open, handleKeyDown]);
 

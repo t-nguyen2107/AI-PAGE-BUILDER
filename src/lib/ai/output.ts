@@ -19,7 +19,7 @@ export function createStructuredModel(model: BaseChatModel) {
   });
 }
 
-const THINK_TAG_RE = /<think[\s\S]*?<\/think>/gi;
+const THINK_TAG_RE = /<think[\s\S]*?<\/think\s*>/gi;
 
 function stripThinkTags(text: string): string {
   return text.replace(THINK_TAG_RE, '');

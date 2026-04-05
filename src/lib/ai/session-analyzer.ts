@@ -68,7 +68,7 @@ const STYLE_MAP: Record<string, string> = {
 
 // ─── Vietnamese detection ────────────────────────────────────────────────────
 
-function isVietnamese(text: string): boolean {
+export function isVietnamese(text: string): boolean {
   const vietnameseMarks = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗùúụủũưừứựửữỳýỵỷỹđĐ]/g;
   const matches = text.match(vietnameseMarks);
   return (matches?.length ?? 0) >= 2;
@@ -78,7 +78,7 @@ function isVietnamese(text: string): boolean {
 
 const COMPONENT_TYPE_RE = /"type"\s*:\s*"(\w+)"/g;
 
-function extractComponentTypes(responseJson: string): string[] {
+export function extractComponentTypes(responseJson: string): string[] {
   const types: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = COMPONENT_TYPE_RE.exec(responseJson)) !== null) {

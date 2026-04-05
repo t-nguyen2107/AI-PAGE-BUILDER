@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PROJECT_GRADIENTS } from '@/lib/constants';
 import { SkeletonCard } from '@/components/ui/skeleton';
+import { Modal } from '@/components/ui/modal';
 
 interface Project {
   id: string;
@@ -25,13 +26,8 @@ export default function Home() {
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const createInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchProjects(); }, []);
-
-  useEffect(() => {
-    if (creating && createInputRef.current) createInputRef.current.focus();
-  }, [creating]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -57,7 +53,6 @@ export default function Home() {
 
   async function handleCreateProject() {
     if (!newName.trim()) return;
-    setCreating(true);
     try {
       const res = await fetch('/api/projects', {
         method: 'POST',
@@ -68,7 +63,7 @@ export default function Home() {
       if (data.success && data.data) {
         setNewName('');
         setCreating(false);
-        setProjects((prev) => [data.data, ...prev]);
+        router.push(`/new-project?projectId=${data.data.id}`);
       }
     } catch { console.error('Failed to create project'); }
   }
@@ -114,7 +109,7 @@ export default function Home() {
             <span className="text-base font-bold tracking-tight text-on-surface">PageBuilder</span>
           </div>
           <button
-            onClick={() => router.push('/new-project')}
+            onClick={openCreateModal}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold',
               'bg-primary text-on-primary shadow-sm',
@@ -155,7 +150,7 @@ export default function Home() {
               Create your first project and let AI help you build a stunning website.
             </p>
             <button
-              onClick={() => router.push('/new-project')}
+              onClick={openCreateModal}
               className={cn(
                 'flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold',
                 'bg-primary text-on-primary shadow-sm',
@@ -173,7 +168,7 @@ export default function Home() {
               <Link
                 key={project.id}
                 href={`/builder/${project.id}`}
-                className="group block"
+                className={cn("group block relative", menuProjectId === project.id && "z-50")}
               >
                 {/* Thumbnail */}
                 <div className="aspect-video rounded-xl overflow-hidden mb-3 relative">
@@ -287,64 +282,44 @@ export default function Home() {
       </main>
 
       {/* ── Create Project Modal ── */}
-      {creating && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-modal flex items-center justify-center p-4"
-          onClick={() => setCreating(false)}
-        >
-          <div
-            className={cn(
-              'bg-surface-lowest rounded-2xl shadow-2xl w-full max-w-md',
-              'animate-scaleIn'
-            )}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Create new project"
+      <Modal open={creating} onClose={() => setCreating(false)} title="New Project">
+        <p className="text-sm text-on-surface-variant mb-5">
+          Give your project a name to get started.
+        </p>
+        <input
+          type="text"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+          placeholder="e.g. My Portfolio, Landing Page..."
+          className={cn(
+            'w-full h-11 rounded-lg bg-surface px-4 text-sm',
+            'text-on-surface placeholder:text-on-surface-outline',
+            'border border-outline-variant',
+            'focus:outline-none focus:ring-2 focus:ring-primary/30',
+            'transition-all'
+          )}
+        />
+        <div className="flex gap-3 mt-6 justify-end">
+          <button
+            onClick={() => setCreating(false)}
+            className="px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
           >
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-on-surface mb-1">New Project</h3>
-              <p className="text-sm text-on-surface-variant mb-5">
-                Give your project a name to get started.
-              </p>
-              <input
-                ref={createInputRef}
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
-                placeholder="e.g. My Portfolio, Landing Page..."
-                className={cn(
-                  'w-full h-11 rounded-lg bg-surface px-4 text-sm',
-                  'text-on-surface placeholder:text-on-surface-outline',
-                  'border border-outline-variant',
-                  'focus:outline-none focus:ring-2 focus:ring-primary/30',
-                  'transition-all'
-                )}
-              />
-            </div>
-            <div className="flex gap-3 px-6 pb-6 justify-end">
-              <button
-                onClick={() => setCreating(false)}
-                className="px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateProject}
-                disabled={!newName.trim()}
-                className={cn(
-                  'px-5 py-2 rounded-lg text-sm font-semibold',
-                  'bg-primary text-on-primary shadow-sm',
-                  'disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all'
-                )}
-              >
-                Create
-              </button>
-            </div>
-          </div>
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateProject}
+            disabled={!newName.trim()}
+            className={cn(
+              'px-5 py-2 rounded-lg text-sm font-semibold',
+              'bg-primary text-on-primary shadow-sm',
+              'disabled:opacity-40 hover:opacity-90 active:scale-[0.98] transition-all'
+            )}
+          >
+            Create & Edit
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
