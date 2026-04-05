@@ -51,8 +51,8 @@ export async function loadAIContext(opts: {
   if (sessionResult.status === 'fulfilled') {
     const session = sessionResult.value;
     sessionId = session.id;
-    try { miniContext = await aiMemory.getMiniContext(session.id); } catch { /* non-fatal */ }
-    try { history = await aiMemory.getSessionHistory(session.id); } catch { /* non-fatal */ }
+    try { miniContext = await aiMemory.getMiniContext(session.id); } catch (e) { console.warn('[context-loader] getMiniContext failed:', e); }
+    try { history = await aiMemory.getSessionHistory(session.id); } catch (e) { console.warn('[context-loader] getSessionHistory failed:', e); }
   }
 
   return { styleguideData, treeSummary, miniContext, history, sessionId };

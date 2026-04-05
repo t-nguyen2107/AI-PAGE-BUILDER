@@ -12,35 +12,7 @@
  */
 
 /** Valid Puck component type names */
-const VALID_COMPONENT_TYPES = new Set([
-  'HeaderNav',
-  'HeroSection',
-  'FeaturesGrid',
-  'FeatureShowcase',
-  'StatsSection',
-  'LogoGrid',
-  'TestimonialSection',
-  'PricingTable',
-  'ComparisonTable',
-  'FAQSection',
-  'BlogSection',
-  'CTASection',
-  'TeamSection',
-  'ContactForm',
-  'NewsletterSignup',
-  'Gallery',
-  'SocialProof',
-  'ProductCards',
-  'CountdownTimer',
-  'AnnouncementBar',
-  'Banner',
-  'FooterSection',
-  'TextBlock',
-  'ImageBlock',
-  'Spacer',
-  'ColumnsLayout',
-  'CustomSection',
-]);
+import { VALID_COMPONENT_TYPES } from './component-catalog';
 
 /** Validated component from AI response */
 export interface PuckComponentRaw {

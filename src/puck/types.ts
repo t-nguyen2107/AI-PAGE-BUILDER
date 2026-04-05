@@ -82,8 +82,15 @@ export type HeroSectionProps = {
   ctaSecondaryText?: string;
   ctaSecondaryHref?: string;
   align: "left" | "center";
+  layout?: "centered" | "split-left" | "split-right";
   backgroundUrl?: string;
   backgroundOverlay: boolean;
+  videoUrl?: string;
+  imageUrl?: string;
+  animation?: "none" | "fade-up" | "fade-in" | "slide-left" | "slide-right" | "zoom";
+  trustBadges?: { text: string }[];
+  gradientFrom?: string;
+  gradientTo?: string;
   padding: string;
 };
 
@@ -92,12 +99,17 @@ export type FeatureItem = {
   title: string;
   description: string;
   icon?: string;
+  imageUrl?: string;
 };
 export type FeaturesGridProps = {
   heading: string;
   subtext?: string;
   columns: 2 | 3 | 4;
   features: FeatureItem[];
+  variant?: "grid" | "carousel";
+  cardStyle?: "icon" | "image" | "flat" | "elevated";
+  animation?: "none" | "stagger-fade" | "stagger-slide";
+  hoverEffect?: "none" | "lift" | "glow" | "border";
 };
 
 // ─── Pricing ────────────────────────────────────────────────────────
@@ -110,11 +122,17 @@ export type PricingPlan = {
   ctaText: string;
   ctaHref: string;
   highlighted: boolean;
+  savePercentage?: string; // For yearly plans, e.g. "Save 20%"
 };
 export type PricingTableProps = {
   heading: string;
   subtext?: string;
   plans: PricingPlan[];
+  pricingToggle?: boolean; // Enable monthly/yearly toggle
+  yearlyPlans?: PricingPlan[]; // Separate plans for yearly pricing
+  highlightedBadge?: string; // Custom badge text for highlighted plan
+  currency?: string; // Currency symbol (default "$")
+  animation?: "none" | "fade-up" | "stagger"; // Entrance animation
 };
 
 // ─── Testimonial ────────────────────────────────────────────────────
@@ -123,10 +141,15 @@ export type TestimonialItem = {
   author: string;
   role: string;
   avatarUrl?: string;
+  rating?: number; // 1-5 star rating
 };
 export type TestimonialSectionProps = {
   heading?: string;
   testimonials: TestimonialItem[];
+  variant?: "grid" | "carousel";
+  autoplay?: boolean;
+  interval?: number; // ms between carousel slides, default 5000
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── CTA ────────────────────────────────────────────────────────────
@@ -136,28 +159,45 @@ export type CTASectionProps = {
   ctaText: string;
   ctaHref: string;
   backgroundUrl?: string;
+  layout?: "centered" | "split";
+  imageUrl?: string;
+  imagePosition?: "left" | "right";
+  ctaSecondaryText?: string;
+  ctaSecondaryHref?: string;
+  variant?: "default" | "gradient" | "dark";
+  trustText?: string;
 };
 
 // ─── FAQ ────────────────────────────────────────────────────────────
 export type FAQItem = {
   question: string;
   answer: string;
+  icon?: string;
 };
 export type FAQSectionProps = {
   heading: string;
   subtext?: string;
   items: FAQItem[];
+  accordion?: boolean;
+  columns?: 1 | 2;
+  searchable?: boolean;
 };
 
 // ─── Stats ──────────────────────────────────────────────────────────
 export type StatItem = {
   value: string;
   label: string;
+  prefix?: string;
+  suffix?: string;
+  icon?: string;
 };
 export type StatsSectionProps = {
   heading?: string;
   stats: StatItem[];
   columns: 2 | 3 | 4;
+  animated?: boolean;
+  duration?: number;
+  animation?: "none" | "fade-up" | "stagger";
 };
 
 // ─── Team ───────────────────────────────────────────────────────────
@@ -165,11 +205,17 @@ export type TeamMember = {
   name: string;
   role: string;
   avatarUrl?: string;
+  socialTwitter?: string;
+  socialLinkedin?: string;
+  socialGithub?: string;
 };
 export type TeamSectionProps = {
   heading: string;
   subtext?: string;
   members: TeamMember[];
+  hoverEffect?: "none" | "flip" | "lift";
+  socialLinks?: boolean;
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── Blog ───────────────────────────────────────────────────────────
@@ -179,11 +225,16 @@ export type BlogPost = {
   imageUrl?: string;
   date: string;
   href: string;
+  category?: string;
 };
 export type BlogSectionProps = {
   heading: string;
   posts: BlogPost[];
   columns: 2 | 3;
+  variant?: "grid" | "carousel";
+  masonry?: boolean;
+  categoryFilter?: boolean;
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── Logo Grid ──────────────────────────────────────────────────────
@@ -194,6 +245,10 @@ export type LogoItem = {
 export type LogoGridProps = {
   heading?: string;
   logos: LogoItem[];
+  variant?: "grid" | "carousel";
+  grayscale?: boolean;
+  tooltip?: boolean;
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── Contact ────────────────────────────────────────────────────────
@@ -209,13 +264,18 @@ export type ContactFormProps = {
 export type HeaderNavLink = {
   label: string;
   href: string;
+  children?: { label: string; href: string }[];
 };
 export type HeaderNavProps = {
   logo: string;
+  logoImageUrl?: string;
   links: HeaderNavLink[];
   ctaText?: string;
   ctaHref?: string;
   sticky: boolean;
+  mobileMenu?: boolean;
+  transparent?: boolean;
+  showSearch?: boolean;
 };
 
 // ─── Footer ─────────────────────────────────────────────────────────
@@ -223,11 +283,19 @@ export type FooterLinkGroup = {
   title: string;
   links: HeaderNavLink[];
 };
+export type FooterSocialLink = {
+  platform: string;
+  url: string;
+};
 export type FooterSectionProps = {
   logo?: string;
   description?: string;
   linkGroups: FooterLinkGroup[];
   copyright?: string;
+  socialLinks?: FooterSocialLink[];
+  backToTop?: boolean;
+  newsletterIntegration?: boolean;
+  showCopyright?: boolean;
 };
 
 // ─── RichText Block ────────────────────────────────────────────────
@@ -248,6 +316,10 @@ export type ImageBlockProps = {
 // ─── Spacer ─────────────────────────────────────────────────────────
 export type SpacerProps = {
   height: number;
+  showDivider?: boolean;
+  dividerStyle?: "solid" | "dashed" | "dotted";
+  dividerColor?: string;
+  dividerWidth?: "full" | "contained";
 };
 
 // ─── Columns ────────────────────────────────────────────────────────
@@ -261,6 +333,10 @@ export type ColumnsLayoutProps = {
   col2?: SlotRender;
   col3?: SlotRender;
   col4?: SlotRender;
+  unequalWidths?: boolean;
+  widths?: string[];
+  stackOrder?: "normal" | "reverse";
+  gapSize?: "sm" | "md" | "lg" | "xl";
 };
 
 // ─── Newsletter Signup ────────────────────────────────────────────────
@@ -271,6 +347,12 @@ export type NewsletterSignupProps = {
   buttonText: string;
   layout: "centered" | "split";
   backgroundUrl?: string;
+  subscriberCount?: string;
+  privacyNote?: string;
+  bgVariant?: "none" | "gradient" | "image";
+  testimonialQuote?: string;
+  testimonialAuthor?: string;
+  animation?: "none" | "fade-up" | "zoom";
 };
 
 // ─── Gallery ─────────────────────────────────────────────────────────
@@ -283,6 +365,9 @@ export type GalleryProps = {
   heading?: string;
   columns: 2 | 3 | 4;
   images: GalleryImage[];
+  variant?: "grid" | "carousel" | "masonry";
+  lightbox?: boolean;
+  hoverEffect?: "none" | "zoom" | "overlay";
 };
 
 // ─── Social Proof ────────────────────────────────────────────────────
@@ -301,6 +386,10 @@ export type SocialProofProps = {
   showAvatars: boolean;
   avatarCount: number;
   testimonialText?: string;
+  animated?: boolean;
+  avatarUrls?: string[];
+  variant?: "default" | "notification";
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── Comparison Table ────────────────────────────────────────────────
@@ -316,6 +405,10 @@ export type ComparisonTableProps = {
   heading?: string;
   plans: ComparisonPlan[];
   features: ComparisonFeature[];
+  highlightedPlan?: number;
+  highlightedColor?: string;
+  tooltipDetails?: boolean;
+  animation?: "none" | "fade-up";
 };
 
 // ─── Product Cards ───────────────────────────────────────────────────
@@ -327,17 +420,23 @@ export type ProductCard = {
   description?: string;
   badge?: string;
   href: string;
+  rating?: number;
+  inStock?: boolean;
 };
 export type ProductCardsProps = {
   heading?: string;
   columns: 2 | 3 | 4;
   products: ProductCard[];
+  quickView?: boolean;
+  saleBadge?: boolean;
+  hoverEffect?: "none" | "lift" | "zoom";
 };
 
 // ─── Feature Showcase ────────────────────────────────────────────────
 export type ShowcaseFeature = {
   title: string;
   description: string;
+  icon?: string;
 };
 export type FeatureShowcaseProps = {
   heading: string;
@@ -347,6 +446,9 @@ export type FeatureShowcaseProps = {
   imagePosition: "left" | "right";
   ctaText?: string;
   ctaHref?: string;
+  animation?: "none" | "fade-up" | "slide-left" | "slide-right";
+  videoUrl?: string;
+  tabbed?: boolean;
 };
 
 // ─── Countdown Timer ─────────────────────────────────────────────────
@@ -358,6 +460,10 @@ export type CountdownTimerProps = {
   ctaHref?: string;
   showDays: boolean;
   showHours: boolean;
+  style?: "default" | "flip" | "minimal";
+  showLabels?: boolean;
+  animation?: "none" | "fade-up";
+  endMessage?: string;
 };
 
 // ─── Announcement Bar ────────────────────────────────────────────────
@@ -365,8 +471,11 @@ export type AnnouncementBarProps = {
   message: string;
   ctaText?: string;
   ctaHref?: string;
-  bgColor: "primary" | "dark" | "accent";
+  bgColor: "primary" | "dark" | "accent" | "custom";
+  customBgColor?: string;
   dismissible: boolean;
+  animation?: "none" | "slide-down" | "fade-in";
+  icon?: "info" | "megaphone" | "gift" | "tag";
 };
 
 // ─── Banner ──────────────────────────────────────────────────────────
@@ -375,9 +484,14 @@ export type BannerProps = {
   subtext?: string;
   ctaText: string;
   ctaHref: string;
-  variant: "gradient" | "image" | "solid";
+  variant: "gradient" | "image" | "solid" | "video";
   backgroundUrl?: string;
   align: "left" | "center";
+  videoUrl?: string;
+  countdown?: boolean;
+  countdownDate?: string;
+  animatedGradient?: boolean;
+  animation?: "none" | "fade-up" | "zoom";
 };
 
 // ─── Component meta (shared across all components) ──────────────────
@@ -395,7 +509,7 @@ export interface ComponentMeta {
   borderRadius?: string;
   /** CSS max-width value (e.g. "800px", "100%") */
   maxWidth?: string;
-  /** CSS opacity 0–1 */
+  /** CSS opacity 0-1 */
   opacity?: number;
   /** Extra CSS class names */
   className?: string;

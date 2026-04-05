@@ -118,13 +118,39 @@ export function CustomSection(props: CustomSectionProps & ComponentMeta) {
  * Scope custom CSS rules to a parent class.
  * Prepends `.custom-section ` to every selector.
  * Handles multi-selector rules, @-rules, pseudo-elements, and nested selectors.
+ * Blocks dangerous @import rules.
  */
 function scopeCss(css: string, scopeClass: string): string {
   // Remove comments
-  const cleaned = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  let cleaned = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
-  // Process each rule — match selectors before opening brace
-  return cleaned.replace(
+  // Block @import (external stylesheet injection)
+  cleaned = cleaned.replace(/@import\s+[^;]+;/gi, "/* @import blocked */");
+
+  // Scope selectors inside @media / @supports / @keyframes blocks
+  cleaned = cleaned.replace(
+    /(@(?:media|supports|keyframes|font-face|container)[^{]*)\{([\s\S]*?)\}\s*\}/g,
+    (_match, atRule: string, body: string) => {
+      const scopedBody = body.replace(
+        /([^{},@][^{},]*)\{/g,
+        (_m: string, selectors: string) => {
+          return selectors
+            .split(",")
+            .map((s) => {
+              const trimmed = s.trim();
+              if (!trimmed) return trimmed;
+              if (trimmed.startsWith(`.${scopeClass}`)) return trimmed;
+              return `.${scopeClass} ${trimmed}`;
+            })
+            .join(", ") + " {";
+        },
+      );
+      return `${atRule}{${scopedBody}}`;
+    },
+  );
+
+  // Scope top-level selectors (not inside @-blocks)
+  cleaned = cleaned.replace(
     /([^{}@][^{}]*)\{/g,
     (_match, selectors: string) => {
       const scoped = selectors
@@ -132,7 +158,6 @@ function scopeCss(css: string, scopeClass: string): string {
         .map((s) => {
           const trimmed = s.trim();
           if (!trimmed) return trimmed;
-          // Don't double-scope already scoped rules
           if (trimmed.startsWith(`.${scopeClass}`)) return trimmed;
           return `.${scopeClass} ${trimmed}`;
         })
@@ -140,4 +165,6 @@ function scopeCss(css: string, scopeClass: string): string {
       return `${scoped} {`;
     },
   );
+
+  return cleaned;
 }

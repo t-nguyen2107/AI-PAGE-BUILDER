@@ -16,7 +16,7 @@ import { extractJSON } from '@/lib/ai/streaming';
 import { orderPuckComponents } from '@/lib/ai/puck-adapter';
 import { generateId } from '@/lib/id';
 import type { ComponentData } from '@puckeditor/core';
-import { AIAction } from '@/types/enums';
+import { AIAction, ComponentCategory } from '@/types/enums';
 import type { AIGenerationResponse } from '@/types/ai';
 import type { BaseMessage } from '@langchain/core/messages';
 
@@ -101,7 +101,9 @@ export async function POST(request: NextRequest) {
       if (page?.treeData) {
         resolvedTargetNodeId = resolveNameToId(page.treeData, nameRefs);
       }
-    } catch { /* non-fatal */ }
+    } catch (resolveErr) {
+      console.warn('[generate/route] Name resolution failed (non-fatal):', resolveErr);
+    }
   }
 
   // --- Template mode for full-page generation ---
@@ -163,7 +165,7 @@ export async function POST(request: NextRequest) {
     try {
       const intent = parsePrompt(prompt);
       const components = intent.componentCategory
-        ? [generatePuckComponent(intent.componentCategory as any, intent.properties)]
+        ? [generatePuckComponent(intent.componentCategory as ComponentCategory, intent.properties)]
         : [];
 
       if (components.length > 0) {

@@ -125,7 +125,9 @@ export async function analyzeSession(
   for (const msg of userMessages) {
     const lower = msg.content.toLowerCase();
     for (const [keyword, data] of Object.entries(INDUSTRY_KEYWORDS)) {
-      if (lower.includes(keyword)) {
+      // Use word boundary matching to avoid false positives (e.g., "spa" matching "spacious")
+      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (regex.test(lower)) {
         insights.push({
           category: 'fact',
           content: `Business identified as: ${data.type} (${data.industry})`,

@@ -1,6 +1,24 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { successResponse, errorResponse } from '@/lib/api-response';
+import { requireAuth, canAccessProject } from '@/lib/auth';
+
+/**
+ * Basic HTML sanitizer for headScripts/bodyScripts.
+ * Strips <script> tags, event handlers, and javascript: URLs.
+ */
+function sanitizeHtmlScripts(html: string): string {
+  return html
+    // Remove <script> tags and contents
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    // Remove event handler attributes
+    .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/\s*on\w+\s*=\s*\S+/gi, '')
+    // Remove javascript: URLs
+    .replace(/javascript\s*:/gi, '')
+    // Trim whitespace
+    .trim();
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +31,13 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (!auth.authenticated) return errorResponse('UNAUTHORIZED', auth.error ?? 'Authentication required', 401);
+
     const { projectId } = await params;
+    if (!await canAccessProject(request, projectId)) {
+      return errorResponse('FORBIDDEN', 'Access denied', 403);
+    }
 
     const project = await prisma.project.findUnique({
       where: { id: projectId },
@@ -44,6 +68,10 @@ export async function PUT(
 ) {
   const { projectId } = await params;
   try {
+    const auth = await requireAuth(request);
+    if (!auth.authenticated) return errorResponse('UNAUTHORIZED', auth.error ?? 'Authentication required', 401);
+    if (!await canAccessProject(request, projectId)) return errorResponse('FORBIDDEN', 'Access denied', 403);
+
     const body = await request.json();
     const {
       name, description,
@@ -94,8 +122,8 @@ export async function PUT(
     if (thumbnailUrl !== undefined) data.thumbnailUrl = thumbnailUrl?.trim() || null;
     if (language !== undefined) data.language = language?.trim() || null;
     if (gaCode !== undefined) data.gaCode = gaCode?.trim() || null;
-    if (headScripts !== undefined) data.headScripts = headScripts || null;
-    if (bodyScripts !== undefined) data.bodyScripts = bodyScripts || null;
+    if (headScripts !== undefined) data.headScripts = sanitizeHtmlScripts(headScripts) || null;
+    if (bodyScripts !== undefined) data.bodyScripts = sanitizeHtmlScripts(bodyScripts) || null;
     if (socialLinks !== undefined) data.socialLinks = socialLinks || null;
     if (contactInfo !== undefined) data.contactInfo = contactInfo || null;
     if (metaVerification !== undefined) data.metaVerification = metaVerification || null;
@@ -133,11 +161,17 @@ export async function PUT(
 // ---------------------------------------------------------------------------
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   const { projectId } = await params;
   try {
+    const auth = await requireAuth(_request);
+    if (!auth.authenticated) return errorResponse('UNAUTHORIZED', auth.error ?? 'Authentication required', 401);
+
+    if (!await canAccessProject(_request, projectId)) {
+      return errorResponse('FORBIDDEN', 'Access denied', 403);
+    }
 
     await prisma.project.delete({ where: { id: projectId } });
 

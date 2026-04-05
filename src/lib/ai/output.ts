@@ -7,46 +7,7 @@ import type { ComponentData } from '@puckeditor/core';
 const VALID_ACTIONS = new Set<string>(Object.values(AIAction));
 
 /** Known Puck component type names */
-const VALID_COMPONENT_TYPES = new Set([
-  // Sections
-  'HeroSection',
-  'FeaturesGrid',
-  'PricingTable',
-  'TestimonialSection',
-  'CTASection',
-  'FAQSection',
-  'StatsSection',
-  'TeamSection',
-  'BlogSection',
-  'LogoGrid',
-  'ContactForm',
-  'HeaderNav',
-  'FooterSection',
-  'NewsletterSignup',
-  'Gallery',
-  'SocialProof',
-  'ComparisonTable',
-  'ProductCards',
-  'FeatureShowcase',
-  'CountdownTimer',
-  'AnnouncementBar',
-  'Banner',
-  // Atomic / layout
-  'TextBlock',
-  'HeadingBlock',
-  'RichTextBlock',
-  'ImageBlock',
-  'ButtonBlock',
-  'CardBlock',
-  'Spacer',
-  'ColumnsLayout',
-  'SectionBlock',
-  'Blank',
-  'Flex',
-  'Grid',
-  // Custom
-  'CustomSection',
-]);
+import { VALID_COMPONENT_TYPES } from './prompts/component-catalog';
 
 /**
  * Wrap a chat model with structured output enforcement.
@@ -159,8 +120,4 @@ export function validateOutput(raw: unknown): {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const EMOJI_RE = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
-
-function stripEmojis(text: string): string {
-  return text.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
-}
+import { stripEmojis } from './utils';

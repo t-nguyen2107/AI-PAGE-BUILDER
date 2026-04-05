@@ -121,6 +121,14 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
         { label: "Center", value: "center" },
       ],
     },
+    layout: {
+      type: "select",
+      options: [
+        { label: "Centered", value: "centered" },
+        { label: "Split \u2014 Image Left", value: "split-left" },
+        { label: "Split \u2014 Image Right", value: "split-right" },
+      ],
+    },
     backgroundUrl: { type: "text", label: "Background Image URL" },
     backgroundOverlay: {
       type: "radio",
@@ -129,6 +137,26 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
         { label: "Off", value: false },
       ],
     },
+    videoUrl: { type: "text", label: "Video Background URL (mp4)" },
+    imageUrl: { type: "text", label: "Hero Image URL" },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Fade In", value: "fade-in" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+        { label: "Zoom", value: "zoom" },
+      ],
+    },
+    trustBadges: {
+      type: "array",
+      arrayFields: { text: { type: "text" } },
+      getItemSummary: (item: Record<string, unknown>) => (item.text as string) || "Badge",
+    },
+    gradientFrom: { type: "text", label: "Gradient From (hex)" },
+    gradientTo: { type: "text", label: "Gradient To (hex)" },
     padding: {
       type: "select",
       options: [
@@ -144,7 +172,9 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
     ctaText: "Get Started",
     ctaHref: "#",
     align: "left",
+    layout: "centered",
     backgroundOverlay: false,
+    animation: "none",
     padding: "96px",
   },
   render: HeroSectionRender,
@@ -162,12 +192,46 @@ const FeaturesGrid: ComponentConfig<FeaturesGridProps> = {
         { label: "4 columns", value: 4 },
       ],
     },
+    variant: {
+      type: "select",
+      options: [
+        { label: "Grid", value: "grid" },
+        { label: "Carousel", value: "carousel" },
+      ],
+    },
+    cardStyle: {
+      type: "select",
+      options: [
+        { label: "Icon", value: "icon" },
+        { label: "Image", value: "image" },
+        { label: "Flat", value: "flat" },
+        { label: "Elevated", value: "elevated" },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Stagger Fade", value: "stagger-fade" },
+        { label: "Stagger Slide", value: "stagger-slide" },
+      ],
+    },
+    hoverEffect: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Lift", value: "lift" },
+        { label: "Glow", value: "glow" },
+        { label: "Border", value: "border" },
+      ],
+    },
     features: {
       type: "array",
       arrayFields: {
         title: { type: "text" },
         description: { type: "textarea" },
         icon: { type: "text" },
+        imageUrl: { type: "text", label: "Image URL" },
       },
       getItemSummary: (col) => col.title,
     },
@@ -175,6 +239,10 @@ const FeaturesGrid: ComponentConfig<FeaturesGridProps> = {
   defaultProps: {
     heading: "Our Features",
     columns: 3,
+    variant: "grid",
+    cardStyle: "icon",
+    animation: "none",
+    hoverEffect: "none",
     features: [
       {
         title: "Easy to Use",
@@ -200,6 +268,50 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
   fields: {
     heading: { type: "text" },
     subtext: { type: "textarea" },
+    pricingToggle: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    yearlyPlans: {
+      type: "array",
+      arrayFields: {
+        name: { type: "text" },
+        price: { type: "text" },
+        period: { type: "text" },
+        description: { type: "textarea" },
+        savePercentage: { type: "text" },
+        features: {
+          type: "array",
+          arrayFields: {
+            value: { type: "text" },
+          },
+          getItemSummary: (col: Record<string, unknown>) => String(col.value ?? ""),
+        },
+        ctaText: { type: "text" },
+        ctaHref: { type: "text" },
+        highlighted: {
+          type: "radio",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false },
+          ],
+        },
+      },
+      getItemSummary: (col) => col.name,
+    },
+    highlightedBadge: { type: "text" },
+    currency: { type: "text" },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger", value: "stagger" },
+      ],
+    },
     plans: {
       type: "array",
       arrayFields: {
@@ -283,6 +395,29 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
 const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
   fields: {
     heading: { type: "text" },
+    variant: {
+      type: "select",
+      options: [
+        { label: "Grid", value: "grid" },
+        { label: "Carousel", value: "carousel" },
+      ],
+    },
+    autoplay: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    interval: { type: "text", label: "Auto-rotate interval (ms)" },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger Fade", value: "stagger-fade" },
+      ],
+    },
     testimonials: {
       type: "array",
       arrayFields: {
@@ -290,27 +425,46 @@ const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
         author: { type: "text" },
         role: { type: "text" },
         avatarUrl: { type: "text" },
+        rating: {
+          type: "select",
+          label: "Rating",
+          options: [
+            { label: "None", value: "" },
+            { label: "5 Stars", value: "5" },
+            { label: "4 Stars", value: "4" },
+            { label: "3 Stars", value: "3" },
+            { label: "2 Stars", value: "2" },
+            { label: "1 Star", value: "1" },
+          ],
+        },
       },
       getItemSummary: (col) => col.author,
     },
   },
   defaultProps: {
     heading: "What Our Clients Say",
+    variant: "grid",
+    autoplay: false,
+    interval: 5000,
+    animation: "none",
     testimonials: [
       {
         quote: "This platform transformed our workflow. Highly recommended!",
         author: "Sarah Johnson",
         role: "CEO at TechCorp",
+        rating: 5,
       },
       {
         quote: "The best tool we've ever used for building websites.",
         author: "Michael Chen",
         role: "Lead Developer at WebStudio",
+        rating: 5,
       },
       {
         quote: "Outstanding support and an incredible product.",
         author: "Emily Davis",
         role: "Designer at CreativeHub",
+        rating: 4,
       },
     ],
   },
@@ -323,13 +477,45 @@ const CTASection: ComponentConfig<CTASectionProps> = {
     subtext: { type: "textarea" },
     ctaText: { type: "text", contentEditable: true },
     ctaHref: { type: "text" },
-    backgroundUrl: { type: "text" },
+    ctaSecondaryText: { type: "text", label: "Secondary Button Text" },
+    ctaSecondaryHref: { type: "text", label: "Secondary Button Link" },
+    layout: {
+      type: "select",
+      label: "Layout",
+      options: [
+        { label: "Centered", value: "centered" },
+        { label: "Split", value: "split" },
+      ],
+    },
+    imageUrl: { type: "text", label: "Image URL (for split layout)" },
+    imagePosition: {
+      type: "select",
+      label: "Image Position",
+      options: [
+        { label: "Left", value: "left" },
+        { label: "Right", value: "right" },
+      ],
+    },
+    variant: {
+      type: "select",
+      label: "Variant",
+      options: [
+        { label: "Default", value: "default" },
+        { label: "Gradient", value: "gradient" },
+        { label: "Dark", value: "dark" },
+      ],
+    },
+    backgroundUrl: { type: "text", label: "Background Image URL" },
+    trustText: { type: "text", label: "Trust Text" },
   },
   defaultProps: {
     heading: "Ready to Get Started?",
     subtext: "Join thousands of satisfied customers today.",
     ctaText: "Start Now",
     ctaHref: "#",
+    layout: "centered",
+    imagePosition: "right",
+    variant: "default",
   },
   render: CTASectionRender,
 };
@@ -338,17 +524,45 @@ const FAQSection: ComponentConfig<FAQSectionProps> = {
   fields: {
     heading: { type: "text" },
     subtext: { type: "textarea" },
+    accordion: {
+      type: "radio",
+      label: "Accordion Mode",
+      options: [
+        { label: "Accordion", value: true },
+        { label: "Static", value: false },
+      ],
+    },
+    columns: {
+      type: "select",
+      label: "Columns",
+      options: [
+        { label: "1", value: 1 },
+        { label: "2", value: 2 },
+      ],
+    },
+    searchable: {
+      type: "radio",
+      label: "Searchable",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
     items: {
       type: "array",
       arrayFields: {
         question: { type: "text" },
         answer: { type: "textarea" },
+        icon: { type: "text" },
       },
       getItemSummary: (col) => col.question,
     },
   },
   defaultProps: {
     heading: "Frequently Asked Questions",
+    accordion: true,
+    columns: 1,
+    searchable: false,
     items: [
       {
         question: "How do I get started?",
@@ -383,6 +597,9 @@ const StatsSection: ComponentConfig<StatsSectionProps> = {
       arrayFields: {
         value: { type: "text" },
         label: { type: "text" },
+        icon: { type: "text", label: "Icon (Material Symbol)" },
+        prefix: { type: "text", label: "Prefix (e.g. $)" },
+        suffix: { type: "text", label: "Suffix (e.g. +, K, %)" },
       },
       getItemSummary: (col) => col.label,
     },
@@ -394,16 +611,35 @@ const StatsSection: ComponentConfig<StatsSectionProps> = {
         { label: "4", value: 4 },
       ],
     },
+    animated: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    duration: { type: "text", label: "Animation Duration (ms)" },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger", value: "stagger" },
+      ],
+    },
   },
   defaultProps: {
     heading: "By the Numbers",
     stats: [
-      { value: "500+", label: "Projects" },
-      { value: "50+", label: "Team Members" },
-      { value: "99%", label: "Satisfaction" },
-      { value: "24/7", label: "Support" },
+      { value: "500+", label: "Projects", icon: "rocket_launch" },
+      { value: "50+", label: "Team Members", icon: "group" },
+      { value: "99", label: "Satisfaction", suffix: "%", icon: "thumb_up" },
+      { value: "24/7", label: "Support", icon: "support_agent" },
     ],
     columns: 4,
+    animated: false,
+    duration: 2000,
+    animation: "none",
   },
   render: StatsSectionRender,
 };
@@ -412,18 +648,49 @@ const TeamSection: ComponentConfig<TeamSectionProps> = {
   fields: {
     heading: { type: "text" },
     subtext: { type: "textarea" },
+    hoverEffect: {
+      type: "select",
+      label: "Card Hover Effect",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Flip", value: "flip" },
+        { label: "Lift", value: "lift" },
+      ],
+    },
+    socialLinks: {
+      type: "radio",
+      label: "Show Social Links",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger Fade", value: "stagger-fade" },
+      ],
+    },
     members: {
       type: "array",
       arrayFields: {
         name: { type: "text" },
         role: { type: "text" },
         avatarUrl: { type: "text" },
+        socialTwitter: { type: "text", label: "Twitter/X URL" },
+        socialLinkedin: { type: "text", label: "LinkedIn URL" },
+        socialGithub: { type: "text", label: "GitHub URL" },
       },
       getItemSummary: (col) => col.name,
     },
   },
   defaultProps: {
     heading: "Our Team",
+    hoverEffect: "none",
+    socialLinks: false,
+    animation: "none",
     members: [
       { name: "Alex Rivera", role: "CEO & Founder" },
       { name: "Jordan Lee", role: "CTO" },
@@ -445,6 +712,7 @@ const BlogSection: ComponentConfig<BlogSectionProps> = {
         imageUrl: { type: "text" },
         date: { type: "text" },
         href: { type: "text" },
+        category: { type: "text" },
       },
       getItemSummary: (col) => col.title,
     },
@@ -453,6 +721,35 @@ const BlogSection: ComponentConfig<BlogSectionProps> = {
       options: [
         { label: "2", value: 2 },
         { label: "3", value: 3 },
+      ],
+    },
+    variant: {
+      type: "select",
+      options: [
+        { label: "Grid", value: "grid" },
+        { label: "Carousel", value: "carousel" },
+      ],
+    },
+    masonry: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    categoryFilter: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger Fade", value: "stagger-fade" },
       ],
     },
   },
@@ -495,6 +792,35 @@ const LogoGrid: ComponentConfig<LogoGridProps> = {
       },
       getItemSummary: (col) => col.name,
     },
+    variant: {
+      type: "select",
+      options: [
+        { label: "Grid", value: "grid" },
+        { label: "Carousel", value: "carousel" },
+      ],
+    },
+    grayscale: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    tooltip: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger Fade", value: "stagger-fade" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Trusted By",
@@ -506,6 +832,10 @@ const LogoGrid: ComponentConfig<LogoGridProps> = {
       { name: "Massive Dynamic", imageUrl: "/logos/massive-dynamic.svg" },
       { name: "Pied Piper", imageUrl: "/logos/pied-piper.svg" },
     ],
+    variant: "grid",
+    grayscale: true,
+    tooltip: false,
+    animation: "none",
   },
   render: LogoGridRender,
 };
@@ -545,11 +875,20 @@ const ContactForm: ComponentConfig<ContactFormProps> = {
 const HeaderNav: ComponentConfig<HeaderNavProps> = {
   fields: {
     logo: { type: "text" },
+    logoImageUrl: { type: "text", label: "Logo Image URL" },
     links: {
       type: "array",
       arrayFields: {
         label: { type: "text" },
         href: { type: "text" },
+        children: {
+          type: "array",
+          arrayFields: {
+            label: { type: "text" },
+            href: { type: "text" },
+          },
+          getItemSummary: (col: Record<string, unknown>) => (col.label as string) || "Sub-link",
+        },
       },
       getItemSummary: (col) => col.label,
     },
@@ -560,6 +899,27 @@ const HeaderNav: ComponentConfig<HeaderNavProps> = {
       options: [
         { label: "Yes", value: true },
         { label: "No", value: false },
+      ],
+    },
+    mobileMenu: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    transparent: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    showSearch: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
       ],
     },
   },
@@ -574,6 +934,9 @@ const HeaderNav: ComponentConfig<HeaderNavProps> = {
     ctaText: "Get Started",
     ctaHref: "#",
     sticky: true,
+    mobileMenu: true,
+    transparent: false,
+    showSearch: false,
   },
   render: HeaderNavRender,
 };
@@ -598,10 +961,42 @@ const FooterSection: ComponentConfig<FooterSectionProps> = {
       getItemSummary: (col) => col.title,
     },
     copyright: { type: "text" },
+    socialLinks: {
+      type: "array",
+      arrayFields: {
+        platform: { type: "text" },
+        url: { type: "text" },
+      },
+      getItemSummary: (col) => col.platform,
+    },
+    backToTop: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    newsletterIntegration: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    showCopyright: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
   },
   defaultProps: {
     logo: "YourBrand",
     description: "Building amazing websites",
+    backToTop: false,
+    newsletterIntegration: false,
+    showCopyright: true,
     linkGroups: [
       {
         title: "Product",
@@ -709,9 +1104,38 @@ const ImageBlock: ComponentConfig<ImageBlockProps> = {
 const Spacer: ComponentConfig<SpacerProps> = {
   fields: {
     height: { type: "number", min: 8, max: 200 },
+    showDivider: {
+      type: "radio",
+      label: "Show Divider",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    dividerStyle: {
+      type: "select",
+      label: "Divider Style",
+      options: [
+        { label: "Solid", value: "solid" },
+        { label: "Dashed", value: "dashed" },
+        { label: "Dotted", value: "dotted" },
+      ],
+    },
+    dividerColor: { type: "text", label: "Divider Color (hex)" },
+    dividerWidth: {
+      type: "select",
+      label: "Divider Width",
+      options: [
+        { label: "Full Width", value: "full" },
+        { label: "Contained", value: "contained" },
+      ],
+    },
   },
   defaultProps: {
     height: 32,
+    showDivider: false,
+    dividerStyle: "solid",
+    dividerWidth: "full",
   },
   render: SpacerRender,
 };
@@ -727,6 +1151,36 @@ const ColumnsLayout: ComponentConfig<ColumnsLayoutProps> = {
       ],
     },
     gap: { type: "number", min: 0, max: 64 },
+    gapSize: {
+      type: "select",
+      label: "Gap Size",
+      options: [
+        { label: "Small (12px)", value: "sm" },
+        { label: "Medium (24px)", value: "md" },
+        { label: "Large (32px)", value: "lg" },
+        { label: "Extra Large (48px)", value: "xl" },
+      ],
+    },
+    unequalWidths: {
+      type: "radio",
+      label: "Unequal Column Widths",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    widths: {
+      type: "text",
+      label: "Custom Widths (comma-separated, e.g. 60%,40%)",
+    },
+    stackOrder: {
+      type: "select",
+      label: "Mobile Stack Order",
+      options: [
+        { label: "Normal", value: "normal" },
+        { label: "Reverse", value: "reverse" },
+      ],
+    },
     col1: { type: "slot" },
     col2: { type: "slot" },
     col3: { type: "slot" },
@@ -735,6 +1189,8 @@ const ColumnsLayout: ComponentConfig<ColumnsLayoutProps> = {
   defaultProps: {
     columns: 2,
     gap: 24,
+    unequalWidths: false,
+    stackOrder: "normal",
   },
   render: ColumnsLayoutRender,
 };
@@ -755,6 +1211,27 @@ const NewsletterSignup: ComponentConfig<NewsletterSignupProps> = {
       ],
     },
     backgroundUrl: { type: "text", label: "Background Image URL" },
+    subscriberCount: { type: "text", label: "Subscriber Count (e.g. 10,000+)" },
+    privacyNote: { type: "text", label: "Privacy Note" },
+    bgVariant: {
+      type: "select",
+      label: "Background Variant",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Gradient", value: "gradient" },
+        { label: "Image", value: "image" },
+      ],
+    },
+    testimonialQuote: { type: "textarea", label: "Testimonial Quote" },
+    testimonialAuthor: { type: "text", label: "Quote Author" },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Zoom", value: "zoom" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Stay Updated",
@@ -762,6 +1239,8 @@ const NewsletterSignup: ComponentConfig<NewsletterSignupProps> = {
     placeholder: "Enter your email",
     buttonText: "Subscribe",
     layout: "centered",
+    bgVariant: "none",
+    animation: "none",
   },
   render: NewsletterSignupRender,
 };
@@ -769,12 +1248,35 @@ const NewsletterSignup: ComponentConfig<NewsletterSignupProps> = {
 const Gallery: ComponentConfig<GalleryProps> = {
   fields: {
     heading: { type: "text" },
+    variant: {
+      type: "select",
+      options: [
+        { label: "Grid", value: "grid" },
+        { label: "Carousel", value: "carousel" },
+        { label: "Masonry", value: "masonry" },
+      ],
+    },
     columns: {
       type: "select",
       options: [
         { label: "2", value: 2 },
         { label: "3", value: 3 },
         { label: "4", value: 4 },
+      ],
+    },
+    lightbox: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    hoverEffect: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Zoom", value: "zoom" },
+        { label: "Overlay", value: "overlay" },
       ],
     },
     images: {
@@ -790,6 +1292,9 @@ const Gallery: ComponentConfig<GalleryProps> = {
   defaultProps: {
     heading: "Gallery",
     columns: 3,
+    variant: "grid",
+    lightbox: false,
+    hoverEffect: "none",
     images: [
       { src: "/stock/features/analytics-dashboard.webp", alt: "Image 1" },
       { src: "/stock/features/collaboration.webp", alt: "Image 2" },
@@ -805,6 +1310,13 @@ const Gallery: ComponentConfig<GalleryProps> = {
 const SocialProof: ComponentConfig<SocialProofProps> = {
   fields: {
     heading: { type: "text" },
+    variant: {
+      type: "select",
+      options: [
+        { label: "Default", value: "default" },
+        { label: "Notification", value: "notification" },
+      ],
+    },
     stats: {
       type: "array",
       arrayFields: {
@@ -829,10 +1341,34 @@ const SocialProof: ComponentConfig<SocialProofProps> = {
       ],
     },
     avatarCount: { type: "number", min: 1, max: 20 },
+    avatarUrls: {
+      type: "array",
+      arrayFields: {
+        url: { type: "text", label: "Avatar Image URL" },
+      },
+      getItemSummary: (item: Record<string, unknown>) =>
+        (item.url as string) || "Avatar",
+    },
     testimonialText: { type: "textarea" },
+    animated: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Stagger Fade", value: "stagger-fade" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Trusted by Thousands",
+    variant: "default",
     stats: [
       { value: "10,000+", label: "Users" },
       { value: "98%", label: "Satisfaction" },
@@ -842,6 +1378,8 @@ const SocialProof: ComponentConfig<SocialProofProps> = {
     showAvatars: true,
     avatarCount: 5,
     testimonialText: "This product has transformed how we work. Highly recommended!",
+    animated: false,
+    animation: "none",
   },
   render: SocialProofRender,
 };
@@ -871,9 +1409,28 @@ const ComparisonTable: ComponentConfig<ComparisonTableProps> = {
       },
       getItemSummary: (col) => col.name,
     },
+    highlightedPlan: { type: "number", label: "Highlighted Plan Index (0-based)", min: 0 },
+    highlightedColor: { type: "text", label: "Highlight Color (hex, e.g. #dbeafe)" },
+    tooltipDetails: {
+      type: "radio",
+      label: "Show Tooltips on Hover",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Compare Plans",
+    tooltipDetails: false,
+    animation: "none",
     plans: [
       { name: "Free", highlighted: false },
       { name: "Pro", highlighted: true },
@@ -883,7 +1440,7 @@ const ComparisonTable: ComponentConfig<ComparisonTableProps> = {
       { name: "Projects", values: ["1", "10", "Unlimited"] },
       { name: "Storage", values: ["1GB", "50GB", "Unlimited"] },
       { name: "Support", values: ["Community", "Priority", "24/7"] },
-      { name: "Custom Domain", values: ["—", "Yes", "Yes"] },
+      { name: "Custom Domain", values: ["\u2014", "Yes", "Yes"] },
     ],
   },
   render: ComparisonTableRender,
@@ -900,6 +1457,31 @@ const ProductCards: ComponentConfig<ProductCardsProps> = {
         { label: "4", value: 4 },
       ],
     },
+    quickView: {
+      type: "radio",
+      label: "Quick View",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    saleBadge: {
+      type: "radio",
+      label: "Auto Sale Badge",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    hoverEffect: {
+      type: "select",
+      label: "Hover Effect",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Lift", value: "lift" },
+        { label: "Zoom", value: "zoom" },
+      ],
+    },
     products: {
       type: "array",
       arrayFields: {
@@ -910,6 +1492,26 @@ const ProductCards: ComponentConfig<ProductCardsProps> = {
         description: { type: "textarea" },
         badge: { type: "text" },
         href: { type: "text" },
+        rating: {
+          type: "select",
+          label: "Rating",
+          options: [
+            { label: "None", value: "" },
+            { label: "5 Stars", value: "5" },
+            { label: "4 Stars", value: "4" },
+            { label: "3 Stars", value: "3" },
+            { label: "2 Stars", value: "2" },
+            { label: "1 Star", value: "1" },
+          ],
+        },
+        inStock: {
+          type: "radio",
+          label: "In Stock",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false },
+          ],
+        },
       },
       getItemSummary: (col) => col.name,
     },
@@ -917,10 +1519,13 @@ const ProductCards: ComponentConfig<ProductCardsProps> = {
   defaultProps: {
     heading: "Our Products",
     columns: 3,
+    quickView: false,
+    saleBadge: false,
+    hoverEffect: "none",
     products: [
-      { name: "Starter Kit", price: "$29", description: "Perfect for beginners", href: "#" },
-      { name: "Pro Bundle", price: "$79", originalPrice: "$99", badge: "Sale", description: "Best value for professionals", href: "#" },
-      { name: "Enterprise Pack", price: "$199", description: "Everything you need", href: "#" },
+      { name: "Starter Kit", price: "$29", description: "Perfect for beginners", href: "#", rating: 4, inStock: true },
+      { name: "Pro Bundle", price: "$79", originalPrice: "$99", badge: "Sale", description: "Best value for professionals", href: "#", rating: 5, inStock: true },
+      { name: "Enterprise Pack", price: "$199", description: "Everything you need", href: "#", rating: 4, inStock: true },
     ],
   },
   render: ProductCardsRender,
@@ -931,11 +1536,27 @@ const FeatureShowcase: ComponentConfig<FeatureShowcaseProps> = {
     heading: { type: "text" },
     subtext: { type: "textarea" },
     imageUrl: { type: "text", label: "Image URL" },
+    videoUrl: { type: "text", label: "Video URL (replaces image)" },
     features: {
       type: "array",
       arrayFields: {
         title: { type: "text" },
         description: { type: "textarea" },
+        icon: {
+          type: "select",
+          label: "Icon",
+          options: [
+            { label: "None", value: "" },
+            { label: "Zap", value: "zap" },
+            { label: "Speed", value: "speed" },
+            { label: "Shield", value: "shield" },
+            { label: "Star", value: "star" },
+            { label: "Check", value: "check" },
+            { label: "Globe", value: "globe" },
+            { label: "Heart", value: "heart" },
+            { label: "Settings", value: "settings" },
+          ],
+        },
       },
       getItemSummary: (col) => col.title,
     },
@@ -948,19 +1569,38 @@ const FeatureShowcase: ComponentConfig<FeatureShowcaseProps> = {
     },
     ctaText: { type: "text" },
     ctaHref: { type: "text" },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
+    tabbed: {
+      type: "radio",
+      label: "Tabbed Features",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
   },
   defaultProps: {
     heading: "Why Choose Us",
     subtext: "Discover what makes our platform stand out.",
     imageUrl: "/stock/features/analytics-dashboard.webp",
     features: [
-      { title: "Lightning Fast", description: "Optimized for speed with instant load times." },
-      { title: "Secure by Default", description: "Enterprise-grade security built into every layer." },
-      { title: "Easy to Scale", description: "Grows with your business without breaking a sweat." },
+      { title: "Lightning Fast", description: "Optimized for speed with instant load times.", icon: "speed" },
+      { title: "Secure by Default", description: "Enterprise-grade security built into every layer.", icon: "shield" },
+      { title: "Easy to Scale", description: "Grows with your business without breaking a sweat.", icon: "zap" },
     ],
     imagePosition: "right",
     ctaText: "Learn More",
     ctaHref: "#",
+    animation: "none",
+    tabbed: false,
   },
   render: FeatureShowcaseRender,
 };
@@ -986,6 +1626,31 @@ const CountdownTimer: ComponentConfig<CountdownTimerProps> = {
         { label: "No", value: false },
       ],
     },
+    style: {
+      type: "select",
+      label: "Visual Style",
+      options: [
+        { label: "Default", value: "default" },
+        { label: "Flip", value: "flip" },
+        { label: "Minimal", value: "minimal" },
+      ],
+    },
+    showLabels: {
+      type: "radio",
+      label: "Show Labels",
+      options: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+      ],
+    },
+    endMessage: { type: "text", label: "End Message" },
   },
   defaultProps: {
     heading: "Limited Time Offer",
@@ -995,6 +1660,10 @@ const CountdownTimer: ComponentConfig<CountdownTimerProps> = {
     ctaHref: "#",
     showDays: true,
     showHours: true,
+    style: "default",
+    showLabels: true,
+    animation: "none",
+    endMessage: "This offer has ended!",
   },
   render: CountdownTimerRender,
 };
@@ -1010,13 +1679,33 @@ const AnnouncementBar: ComponentConfig<AnnouncementBarProps> = {
         { label: "Primary", value: "primary" },
         { label: "Dark", value: "dark" },
         { label: "Accent", value: "accent" },
+        { label: "Custom", value: "custom" },
       ],
     },
+    customBgColor: { type: "text", label: "Custom Background Color (hex)" },
     dismissible: {
       type: "radio",
       options: [
         { label: "Yes", value: true },
         { label: "No", value: false },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Slide Down", value: "slide-down" },
+        { label: "Fade In", value: "fade-in" },
+      ],
+    },
+    icon: {
+      type: "select",
+      options: [
+        { label: "None", value: "" },
+        { label: "Info", value: "info" },
+        { label: "Megaphone", value: "megaphone" },
+        { label: "Gift", value: "gift" },
+        { label: "Tag", value: "tag" },
       ],
     },
   },
@@ -1026,6 +1715,7 @@ const AnnouncementBar: ComponentConfig<AnnouncementBarProps> = {
     ctaHref: "#",
     bgColor: "primary",
     dismissible: false,
+    animation: "none",
   },
   render: AnnouncementBarRender,
 };
@@ -1042,14 +1732,39 @@ const Banner: ComponentConfig<BannerProps> = {
         { label: "Gradient", value: "gradient" },
         { label: "Image", value: "image" },
         { label: "Solid", value: "solid" },
+        { label: "Video", value: "video" },
       ],
     },
     backgroundUrl: { type: "text", label: "Background Image URL" },
+    videoUrl: { type: "text", label: "Video Background URL (mp4)" },
     align: {
       type: "select",
       options: [
         { label: "Left", value: "left" },
         { label: "Center", value: "center" },
+      ],
+    },
+    countdown: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    countdownDate: { type: "text", label: "Countdown End Date (YYYY-MM-DD)" },
+    animatedGradient: {
+      type: "radio",
+      options: [
+        { label: "Yes", value: "true" },
+        { label: "No", value: "false" },
+      ],
+    },
+    animation: {
+      type: "select",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade Up", value: "fade-up" },
+        { label: "Zoom", value: "zoom" },
       ],
     },
   },
@@ -1060,6 +1775,9 @@ const Banner: ComponentConfig<BannerProps> = {
     ctaHref: "#",
     variant: "gradient",
     align: "center",
+    countdown: false,
+    animatedGradient: false,
+    animation: "none",
   },
   render: BannerRender,
 };

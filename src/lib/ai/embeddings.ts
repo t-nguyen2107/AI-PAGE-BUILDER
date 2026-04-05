@@ -40,6 +40,11 @@ export function resolveEmbeddingConfig(): EmbeddingConfig {
   return cachedConfig;
 }
 
+/** Reset cached config — useful for testing or env var hot-reload. */
+export function resetEmbeddingConfig(): void {
+  cachedConfig = null;
+}
+
 /**
  * Generate embedding for a single text string.
  * Returns a Float32Array of the configured dimension.

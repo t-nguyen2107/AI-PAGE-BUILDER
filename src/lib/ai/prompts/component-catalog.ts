@@ -4,6 +4,7 @@
  * Used by:
  *  - system-prompt.ts (tiered catalog builder)
  *  - template-prompt.ts (compact props reference)
+ *  - output.ts, template-schema.ts (VALID_COMPONENT_TYPES)
  */
 
 export interface ComponentInfo {
@@ -189,3 +190,6 @@ export const COMPONENT_CATALOG: Record<string, ComponentInfo> = {
     propsSignature: 'html (string — full HTML with Tailwind classes), css? (string — optional scoped CSS), preview? (string — short description), minHeight? (string — default "200px")',
   },
 };
+
+/** Set of all valid Puck component type names — derived from catalog keys. */
+export const VALID_COMPONENT_TYPES: ReadonlySet<string> = new Set(Object.keys(COMPONENT_CATALOG));

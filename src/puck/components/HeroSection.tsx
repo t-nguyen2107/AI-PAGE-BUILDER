@@ -1,5 +1,52 @@
+"use client";
+
+import { useRef, useState, useEffect } from "react";
 import type { HeroSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+
+// ─── Scroll-triggered animation hook ─────────────────────────────────
+
+function useScrollAnimation(animation: string) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (animation === "none" || !ref.current) return;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      setVisible(true);
+      return;
+    }
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [animation]);
+
+  const animClasses: Record<string, string> = {
+    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
+    "fade-in": visible ? "opacity-100" : "opacity-0",
+    "slide-left": visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8",
+    "slide-right": visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8",
+    zoom: visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
+  };
+
+  return {
+    ref,
+    className: animClasses[animation] ?? "",
+    visible,
+  };
+}
+
+// ─── Render component ─────────────────────────────────────────────────
 
 export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   const {
@@ -11,22 +58,39 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
     ctaSecondaryText,
     ctaSecondaryHref,
     align,
+    layout,
     backgroundUrl,
     backgroundOverlay,
-    padding,
+    videoUrl,
+    imageUrl,
+    animation,
+    trustBadges,
+    gradientFrom,
+    gradientTo,
     className,
     ...metaRest
   } = props;
 
-  const paddingValue = padding || "96px";
+  const paddingValue = props.padding || "96px";
   const isCenter = align === "center";
+  const isSplit = layout === "split-left" || layout === "split-right";
+  const anim = useScrollAnimation(animation ?? "none");
+
+  // Determine overlay style
+  const overlayStyle = gradientFrom
+    ? `linear-gradient(135deg, ${gradientFrom}cc, ${(gradientTo ?? gradientFrom)}cc)`
+    : backgroundOverlay
+      ? "rgba(0,0,0,0.5)"
+      : undefined;
 
   const sectionStyle: React.CSSProperties = {
-    ...(backgroundUrl
+    ...(backgroundUrl && !videoUrl
       ? {
-          backgroundImage: backgroundOverlay
+          backgroundImage: backgroundOverlay && !gradientFrom
             ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`
-            : `url(${backgroundUrl})`,
+            : gradientFrom
+              ? `linear-gradient(135deg, ${gradientFrom}cc, ${(gradientTo ?? gradientFrom)}cc), url(${backgroundUrl})`
+              : `url(${backgroundUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }
@@ -36,44 +100,109 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   };
 
   const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;
+  const hasBg = !!(backgroundUrl || videoUrl || gradientFrom);
+  const textClass = hasBg && !hasBgOverride ? "text-white" : !hasBgOverride ? "bg-background text-foreground" : "";
+
+  // ─── Content block (shared between centered and split) ────────────
+
+  const contentBlock = (
+    <>
+      {badge && (
+        <span className="inline-block mb-4 px-4 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+          {badge}
+        </span>
+      )}
+      <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+        {heading}
+      </h1>
+      <p className="text-lg md:text-xl opacity-80 mb-8 max-w-2xl mx-auto">
+        {subtext}
+      </p>
+      <div className={`flex gap-4 ${isCenter ? "justify-center" : "justify-start"}`}>
+        <a
+          href={ctaHref}
+          className="inline-block bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold hover:opacity-90 transition"
+        >
+          {ctaText}
+        </a>
+        {ctaSecondaryText && ctaSecondaryHref && (
+          <a
+            href={ctaSecondaryHref}
+            className={`inline-block border rounded-lg px-6 py-3 font-semibold transition ${hasBg ? "border-white/30 text-white hover:bg-white/10" : "border-border text-foreground hover:bg-muted"}`}
+          >
+            {ctaSecondaryText}
+          </a>
+        )}
+      </div>
+      {trustBadges && trustBadges.length > 0 && (
+        <div className={`flex flex-wrap items-center gap-4 mt-6 text-sm opacity-70 ${isCenter ? "justify-center" : "justify-start"}`}>
+          {trustBadges.map((b, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+              </svg>
+              {b.text}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <section
-      className={`${backgroundUrl && !hasBgOverride ? "text-white" : !hasBgOverride ? "bg-background text-foreground" : ""} w-full ${className ?? ""}`}
+      className={`${textClass} w-full relative overflow-hidden ${className ?? ""}`}
       style={sectionStyle}
     >
-      <div
-        className={`max-w-4xl mx-auto ${isCenter ? "text-center" : "text-left"}`}
-      >
-        {badge && (
-          <span className="inline-block mb-4 px-4 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
-            {badge}
-          </span>
-        )}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-          {heading}
-        </h1>
-        <p className="text-lg md:text-xl opacity-80 mb-8 max-w-2xl mx-auto">
-          {subtext}
-        </p>
-        <div
-          className={`flex gap-4 ${isCenter ? "justify-center" : "justify-start"}`}
-        >
-          <a
-            href={ctaHref}
-            className="inline-block bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold hover:opacity-90 transition"
-          >
-            {ctaText}
-          </a>
-          {ctaSecondaryText && ctaSecondaryHref && (
-            <a
-              href={ctaSecondaryHref}
-              className={`inline-block border rounded-lg px-6 py-3 font-semibold transition ${backgroundUrl ? "border-white/30 text-white hover:bg-white/10" : "border-border text-foreground hover:bg-muted"}`}
-            >
-              {ctaSecondaryText}
-            </a>
+      {/* Video background */}
+      {videoUrl && (
+        <div className="absolute inset-0 overflow-hidden">
+          <video autoPlay muted loop playsInline className="w-full h-full object-cover">
+            <source src={videoUrl} type="video/mp4" />
+          </video>
+          {overlayStyle && (
+            <div className="absolute inset-0" style={{ background: overlayStyle }} />
           )}
         </div>
+      )}
+
+      {/* Gradient-only overlay (no video, no backgroundUrl) */}
+      {!videoUrl && !backgroundUrl && gradientFrom && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(135deg, ${gradientFrom}dd, ${(gradientTo ?? gradientFrom)}dd)`,
+          }}
+        />
+      )}
+
+      {/* Animated content wrapper */}
+      <div
+        ref={anim.ref}
+        className={`relative z-10 transition-all duration-700 ease-out ${anim.className}`}
+      >
+        {isSplit ? (
+          <div className={`max-w-6xl mx-auto grid gap-8 md:grid-cols-2 items-center ${layout === "split-right" ? "md:[direction:rtl]" : ""}`}>
+            {/* Image side */}
+            {imageUrl && (
+              <div className={layout === "split-right" ? "md:[direction:ltr]" : ""}>
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="w-full rounded-xl shadow-lg object-cover max-h-[480px]"
+                />
+              </div>
+            )}
+            {/* Text side */}
+            <div className={`${isCenter ? "text-center" : "text-left"} ${layout === "split-right" ? "md:[direction:ltr]" : ""}`}>
+              {contentBlock}
+            </div>
+          </div>
+        ) : (
+          <div className={`max-w-4xl mx-auto ${isCenter ? "text-center" : "text-left"}`}>
+            {contentBlock}
+          </div>
+        )}
       </div>
     </section>
   );

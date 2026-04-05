@@ -1,10 +1,133 @@
-import type { ProductCardsProps, ComponentMeta } from "../types";
+"use client";
+
+import { useState } from "react";
+import type { ProductCardsProps, ProductCard, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 
-export function ProductCards(props: ProductCardsProps & ComponentMeta) {
-  const { heading, columns, products, className, ...metaRest } = props;
+function StarRating({ rating }: { rating: number }) {
   return (
-    <section className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`} style={extractStyleProps(metaRest)}>
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <svg
+          key={i}
+          className={`w-4 h-4 ${i < rating ? "text-yellow-400" : "text-muted-foreground/30"}`}
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function QuickViewModal({
+  product,
+  onClose,
+}: {
+  product: ProductCard;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-background rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold">{product.name}</h3>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition p-1"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {product.imageUrl && (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="w-full aspect-video object-cover rounded-lg mb-4"
+          />
+        )}
+
+        {product.description && (
+          <p className="text-muted-foreground mb-3">{product.description}</p>
+        )}
+
+        {product.rating != null && (
+          <div className="mb-3">
+            <StarRating rating={product.rating} />
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl font-bold">{product.price}</span>
+          {product.originalPrice && (
+            <span className="text-sm text-muted-foreground line-through">
+              {product.originalPrice}
+            </span>
+          )}
+        </div>
+
+        {product.inStock === false && (
+          <p className="text-sm text-red-500 mb-4">Out of Stock</p>
+        )}
+
+        <div className="flex gap-3">
+          {product.inStock !== false && (
+            <a
+              href={product.href}
+              className="inline-block rounded-lg px-6 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition"
+            >
+              View Product
+            </a>
+          )}
+          <button
+            onClick={onClose}
+            className="inline-block rounded-lg px-6 py-2.5 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProductCards(props: ProductCardsProps & ComponentMeta) {
+  const {
+    heading,
+    columns,
+    products,
+    quickView = false,
+    saleBadge = false,
+    hoverEffect = "none",
+    className,
+    ...metaRest
+  } = props;
+
+  const [quickViewIndex, setQuickViewIndex] = useState<number | null>(null);
+
+  const hoverClasses: Record<string, string> = {
+    none: "",
+    lift: "hover:-translate-y-1 hover:shadow-lg",
+    zoom: "hover:scale-[1.02]",
+  };
+  const hoverClass = hoverClasses[hoverEffect] ?? "";
+
+  return (
+    <section
+      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
       <div className="max-w-6xl mx-auto">
         {heading && (
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
@@ -17,28 +140,53 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
           {products.map((product, i) => (
             <div
               key={i}
-              className="group rounded-lg border border-border overflow-hidden hover:shadow-md transition"
+              className={`group rounded-lg border border-border overflow-hidden transition-all duration-200 ${hoverClass} ${
+                product.inStock === false ? "opacity-60" : ""
+              }`}
             >
               {product.imageUrl && (
-                <div className="relative">
+                <div className="relative overflow-hidden">
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="w-full aspect-video object-cover"
+                    className="w-full aspect-video object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   {product.badge && (
                     <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
                       {product.badge}
                     </span>
                   )}
+                  {saleBadge && product.originalPrice && !product.badge && (
+                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                      Sale
+                    </span>
+                  )}
+                  {quickView && (
+                    <button
+                      onClick={() => setQuickViewIndex(i)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors"
+                      aria-label={`Quick view ${product.name}`}
+                    >
+                      <span className="bg-background text-foreground text-sm font-medium px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                        Quick View
+                      </span>
+                    </button>
+                  )}
                 </div>
               )}
-              {!product.imageUrl && product.badge && (
+              {!product.imageUrl && (product.badge || (saleBadge && product.originalPrice)) && (
                 <div className="relative">
                   <div className="w-full aspect-video bg-muted" />
-                  <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
-                    {product.badge}
-                  </span>
+                  {product.badge && (
+                    <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
+                      {product.badge}
+                    </span>
+                  )}
+                  {saleBadge && product.originalPrice && !product.badge && (
+                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                      Sale
+                    </span>
+                  )}
                 </div>
               )}
               <div className="p-5">
@@ -50,6 +198,11 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                     {product.description}
                   </p>
                 )}
+                {product.rating != null && (
+                  <div className="mb-3">
+                    <StarRating rating={product.rating} />
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-lg font-bold">{product.price}</span>
                   {product.originalPrice && (
@@ -58,17 +211,30 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                     </span>
                   )}
                 </div>
-                <a
-                  href={product.href}
-                  className="inline-block rounded-lg px-5 py-2 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
-                >
-                  View
-                </a>
+                {product.inStock === false ? (
+                  <span className="inline-block rounded-lg px-5 py-2 text-sm font-semibold border border-border text-muted-foreground cursor-not-allowed">
+                    Out of Stock
+                  </span>
+                ) : (
+                  <a
+                    href={product.href}
+                    className="inline-block rounded-lg px-5 py-2 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
+                  >
+                    View
+                  </a>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {quickViewIndex !== null && products[quickViewIndex] && (
+        <QuickViewModal
+          product={products[quickViewIndex]}
+          onClose={() => setQuickViewIndex(null)}
+        />
+      )}
     </section>
   );
 }

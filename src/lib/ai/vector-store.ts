@@ -156,7 +156,11 @@ export async function searchVectors(
   const topK = opts.topK ?? 5;
   const minScore = opts.minScore ?? 0.5;
   const scopes = opts.scopes ?? ['project'];
-  const scopePlaceholders = scopes.map((_, i) => `$${i + 3}`).join(', ');
+  // Validate scopes against allowlist to prevent injection
+  const VALID_SCOPES = new Set(['user', 'project', 'global']);
+  const safeScopes = scopes.filter((s) => VALID_SCOPES.has(s));
+  if (safeScopes.length === 0) return []; // No valid scopes — return empty
+  const scopePlaceholders = safeScopes.map((_, i) => `$${i + 3}`).join(', ');
 
   const sql = `
     SELECT id, content, metadata, scope, category, created_at,
@@ -164,17 +168,17 @@ export async function searchVectors(
     FROM vector_embeddings
     WHERE embedding_vec IS NOT NULL
       AND scope IN (${scopePlaceholders})
-      AND ($${scopes.length + 3}::text IS NULL OR project_id = $${scopes.length + 3})
-      AND ($${scopes.length + 4}::text IS NULL OR category = $${scopes.length + 4})
+      AND ($${safeScopes.length + 3}::text IS NULL OR project_id = $${safeScopes.length + 3})
+      AND ($${safeScopes.length + 4}::text IS NULL OR category = $${safeScopes.length + 4})
       AND 1 - (embedding_vec <=> $1::vector) >= $2
     ORDER BY embedding_vec <=> $1::vector
-    LIMIT $${scopes.length + 5}
+    LIMIT $${safeScopes.length + 5}
   `;
 
   const params: unknown[] = [
     vectorToPg(vector),  // $1
     minScore,             // $2
-    ...scopes,            // $3, $4, $5
+    ...safeScopes,        // $3, $4, $5
     opts.projectId ?? null, // project filter
     opts.category ?? null,  // category filter
     topK,                   // limit

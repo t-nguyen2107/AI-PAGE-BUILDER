@@ -62,7 +62,7 @@ export function serializeProfileForPrompt(ctx: ProjectContext): string {
         if (themes.length > 0) {
           lines.push(`Content themes: ${themes.slice(0, 5).join(', ')}.`);
         }
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[profile-serializer] Failed to parse contentThemes:', e); }
     }
 
     // Component preferences
@@ -76,7 +76,7 @@ export function serializeProfileForPrompt(ctx: ProjectContext): string {
         if (top.length > 0) {
           lines.push(`Frequently used: ${top.join(', ')}.`);
         }
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[profile-serializer] Failed to parse componentPrefs:', e); }
     }
   }
 

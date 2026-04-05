@@ -23,13 +23,26 @@ export function resolveConfig(): AIConfig {
     console.warn('[ai/config] OLLAMA_MODEL is deprecated — use AI_MODEL instead');
   }
 
+  const temperature = parseFloat(process.env.AI_TEMPERATURE ?? '0.7');
+  const maxRetries = parseInt(process.env.AI_MAX_RETRIES ?? '2', 10);
+  const maxTokens = parseInt(process.env.AI_MAX_TOKENS ?? '16384', 10);
+
+  // Validate parsed values — fall back to defaults on NaN or out-of-bounds
+  const safeTemp = Number.isFinite(temperature) && temperature >= 0 && temperature <= 2 ? temperature : 0.7;
+  const safeRetries = Number.isFinite(maxRetries) && maxRetries >= 0 && maxRetries <= 10 ? maxRetries : 2;
+  const safeTokens = Number.isFinite(maxTokens) && maxTokens > 0 && maxTokens <= 65536 ? maxTokens : 16384;
+
+  if (safeTemp !== temperature) console.warn(`[ai/config] Invalid AI_TEMPERATURE="${process.env.AI_TEMPERATURE}", using ${safeTemp}`);
+  if (safeRetries !== maxRetries) console.warn(`[ai/config] Invalid AI_MAX_RETRIES="${process.env.AI_MAX_RETRIES}", using ${safeRetries}`);
+  if (safeTokens !== maxTokens) console.warn(`[ai/config] Invalid AI_MAX_TOKENS="${process.env.AI_MAX_TOKENS}", using ${safeTokens}`);
+
   return {
     provider,
     model,
     baseUrl,
     apiKey: process.env.AI_API_KEY,
-    temperature: parseFloat(process.env.AI_TEMPERATURE ?? '0.7'),
-    maxRetries: parseInt(process.env.AI_MAX_RETRIES ?? '2', 10),
-    maxTokens: parseInt(process.env.AI_MAX_TOKENS ?? '16384', 10),
+    temperature: safeTemp,
+    maxRetries: safeRetries,
+    maxTokens: safeTokens,
   };
 }

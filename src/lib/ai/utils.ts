@@ -8,3 +8,11 @@ export function safeJsonParse(str: string | null | undefined, fallback: Record<s
   try { return JSON.parse(str) as Record<string, unknown>; } catch { return fallback; }
 }
 
+// ─── Emoji stripping (shared) ──────────────────────────────────────────────
+
+const EMOJI_RE = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+
+export function stripEmojis(text: string): string {
+  return text.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
+}
+

@@ -20,12 +20,18 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     ctaText: 'Get Started',
     ctaHref: '#',
     align: 'center',
+    layout: 'centered',
     backgroundOverlay: false,
+    animation: 'none',
     padding: '96px',
   },
   FeaturesGrid: {
     heading: 'Our Features',
     columns: 3,
+    variant: 'grid',
+    cardStyle: 'icon',
+    animation: 'none',
+    hoverEffect: 'none',
     features: [
       { title: 'Feature 1', description: 'Description for feature 1.', icon: 'zap' },
       { title: 'Feature 2', description: 'Description for feature 2.', icon: 'speed' },
@@ -34,40 +40,68 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   PricingTable: {
     heading: 'Pricing Plans',
+    pricingToggle: false,
+    highlightedBadge: 'Popular',
+    currency: '$',
+    animation: 'none',
     plans: [
       { name: 'Free', price: '$0', period: '/month', description: '', features: [{ value: 'Basic' }], ctaText: 'Start', ctaHref: '#', highlighted: false },
     ],
   },
   TestimonialSection: {
     heading: 'Testimonials',
+    variant: 'grid',
+    autoplay: false,
+    interval: 5000,
+    animation: 'none',
     testimonials: [{ quote: 'Great product!', author: 'User', role: '' }],
   },
   CTASection: {
     heading: 'Ready to Get Started?',
     ctaText: 'Get Started',
     ctaHref: '#',
+    layout: 'centered',
+    imagePosition: 'right',
+    variant: 'default',
   },
   FAQSection: {
     heading: 'FAQ',
+    accordion: true,
+    columns: 1,
+    searchable: false,
     items: [{ question: 'Question?', answer: 'Answer.' }],
   },
   StatsSection: {
     heading: 'Stats',
     stats: [{ value: '100+', label: 'Users' }],
     columns: 4,
+    animated: false,
+    duration: 2000,
+    animation: 'none',
   },
   TeamSection: {
     heading: 'Our Team',
+    hoverEffect: 'none',
+    socialLinks: false,
+    animation: 'none',
     members: [{ name: 'Team Member', role: 'Role' }],
   },
   BlogSection: {
     heading: 'Latest Posts',
-    posts: [{ title: 'Blog Post', excerpt: 'Excerpt', date: '2025-01-01', href: '#' }],
+    posts: [{ title: 'Blog Post', excerpt: 'Excerpt', date: '2025-01-01', href: '#', category: '' }],
     columns: 3,
+    variant: 'grid',
+    masonry: false,
+    categoryFilter: false,
+    animation: 'none',
   },
   LogoGrid: {
     heading: 'Trusted By',
     logos: [{ name: 'Brand', imageUrl: '/logos/placeholder.svg' }],
+    variant: 'grid',
+    grayscale: true,
+    tooltip: false,
+    animation: 'none',
   },
   ContactForm: {
     heading: 'Contact Us',
@@ -79,11 +113,18 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     logo: 'YourBrand',
     links: [{ label: 'Home', href: '#' }],
     sticky: true,
+    mobileMenu: true,
+    transparent: false,
+    showSearch: false,
   },
   FooterSection: {
     logo: 'YourBrand',
     linkGroups: [{ title: 'Links', links: [{ label: 'Home', href: '#' }] }],
     copyright: `\u00a9 ${new Date().getFullYear()} YourBrand.`,
+    socialLinks: [],
+    backToTop: false,
+    newsletterIntegration: false,
+    showCopyright: true,
   },
   TextBlock: {
     content: '<p>Enter text here...</p>',
@@ -96,48 +137,76 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     width: '100%',
     borderRadius: 'md',
   },
-  Spacer: { height: 32 },
-  ColumnsLayout: { columns: 2, gap: 24 },
+  Spacer: { height: 32, showDivider: false, dividerStyle: 'solid', dividerWidth: 'full' },
+  ColumnsLayout: { columns: 2, gap: 24, unequalWidths: false, stackOrder: 'normal' },
   // ─── New section components ─────────────────────────────────────
   NewsletterSignup: {
     heading: 'Stay Updated',
     subtext: 'Subscribe to our newsletter.',
     buttonText: 'Subscribe',
     placeholder: 'Enter your email',
+    layout: 'centered',
+    bgVariant: 'none',
+    animation: 'none',
   },
   Gallery: {
     heading: 'Gallery',
     images: [{ src: '/stock/hero/gradient-purple.webp', alt: 'Image' }],
     columns: 3,
+    variant: 'grid',
+    lightbox: false,
+    hoverEffect: 'none',
   },
   SocialProof: {
     heading: 'Trusted by Thousands',
+    variant: 'default',
     stats: [{ value: '10K+', label: 'Users' }],
+    logos: [],
+    showAvatars: true,
+    avatarCount: 5,
+    animated: false,
+    animation: 'none',
   },
   ComparisonTable: {
     heading: 'Compare Plans',
-    plans: [{ name: 'Basic', features: [{ value: 'Yes' }] }],
+    tooltipDetails: false,
+    animation: 'none',
+    plans: [{ name: 'Basic', highlighted: false, features: [{ value: 'Yes' }] }],
   },
   ProductCards: {
     heading: 'Our Products',
-    products: [{ title: 'Product', price: '$29', imageUrl: '/stock/hero/gradient-purple.webp', href: '#' }],
+    quickView: false,
+    saleBadge: false,
+    hoverEffect: 'none',
+    products: [{ name: 'Product', price: '$29', imageUrl: '/stock/hero/gradient-purple.webp', href: '#', inStock: true }],
     columns: 3,
   },
   FeatureShowcase: {
     heading: 'Why Choose Us',
     description: 'Discover what makes us different.',
     imageUrl: '/stock/hero/gradient-purple.webp',
-    features: [{ title: 'Feature', description: 'Description' }],
+    features: [{ title: 'Feature', description: 'Description', icon: 'zap' }],
+    imagePosition: 'right',
+    animation: 'none',
+    tabbed: false,
   },
   CountdownTimer: {
     heading: 'Limited Time Offer',
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    showDays: true,
+    showHours: true,
+    style: 'default',
+    showLabels: true,
+    animation: 'none',
+    endMessage: 'This offer has ended!',
   },
   AnnouncementBar: {
     message: 'Special offer! Get 20% off today.',
     ctaText: 'Learn More',
     ctaHref: '#',
-    variant: 'primary',
+    bgColor: 'primary',
+    dismissible: false,
+    animation: 'none',
   },
   Banner: {
     heading: 'Important Update',
@@ -163,11 +232,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
 
 // ─── Emoji stripping ─────────────────────────────────────────────────────────
 
-const EMOJI_RE = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
-
-function stripEmojis(text: string): string {
-  return text.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
-}
+import { stripEmojis } from './utils';
 
 // ─── ID deduplication ────────────────────────────────────────────────────────
 

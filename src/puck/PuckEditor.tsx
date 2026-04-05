@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Puck, createUsePuck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
@@ -40,6 +40,11 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const [styleguideId, setStyleguideId] = useState("");
   const [previewData, setPreviewData] = useState<Data | null>(null);
   const addToast = useToastStore((s) => s.addToast);
+
+  const aiPlugin = useMemo(
+    () => createAIPlugin({ projectId, pageId, styleguideId }),
+    [projectId, pageId, styleguideId]
+  );
 
   const handleDataSync = useCallback((d: Data) => {
     setPreviewData(d);
@@ -148,8 +153,6 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   }
 
   if (!data) return null;
-
-  const aiPlugin = createAIPlugin({ projectId, pageId, styleguideId });
 
   return (
     <>

@@ -2,6 +2,28 @@ import { HumanMessage, AIMessage, type BaseMessage } from '@langchain/core/messa
 import { prisma } from '@/lib/prisma';
 
 const MAX_HISTORY_MESSAGES = 20;
+const MAX_STORED_MESSAGES = 60; // Keep db from growing unbounded
+
+// ---------------------------------------------------------------------------
+// Trim old messages to prevent unbounded growth
+// ---------------------------------------------------------------------------
+
+async function trimSessionMessages(sessionId: string) {
+  const count = await prisma.aISessionMessage.count({ where: { sessionId } });
+  if (count > MAX_STORED_MESSAGES) {
+    const oldest = await prisma.aISessionMessage.findMany({
+      where: { sessionId },
+      orderBy: { createdAt: 'asc' },
+      take: count - MAX_STORED_MESSAGES,
+      select: { id: true },
+    });
+    if (oldest.length > 0) {
+      await prisma.aISessionMessage.deleteMany({
+        where: { id: { in: oldest.map((m) => m.id) } },
+      });
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Session management
@@ -44,6 +66,7 @@ export async function appendUserMessage(sessionId: string, content: string) {
   await prisma.aISessionMessage.create({
     data: { sessionId, role: 'user', content },
   });
+  await trimSessionMessages(sessionId);
 }
 
 export async function appendAssistantMessage(
@@ -54,6 +77,7 @@ export async function appendAssistantMessage(
   await prisma.aISessionMessage.create({
     data: { sessionId, role: 'assistant', content, action },
   });
+  await trimSessionMessages(sessionId);
 }
 
 // ---------------------------------------------------------------------------
