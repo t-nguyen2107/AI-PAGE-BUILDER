@@ -105,7 +105,11 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
 
         let accumulated = '';
         const MAX_ACCUMULATED = 100_000;
-        const streamOpts = { ...jsonCallOptions, signal: combinedSignal };
+        // Strip response_format for streaming — we parse JSON ourselves via extractJSON.
+        // Some providers (z.ai, Ollama) don't support response_format in streaming mode
+        // and may return empty content when it's set.
+        const { response_format: _rf, ...streamCallOpts } = jsonCallOptions;
+        const streamOpts = { ...streamCallOpts, signal: combinedSignal };
         const stream = await model.stream(messages, streamOpts);
 
         for await (const chunk of stream) {
