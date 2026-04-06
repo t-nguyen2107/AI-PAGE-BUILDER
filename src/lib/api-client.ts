@@ -125,6 +125,9 @@ export const apiClient = {
     onStatus?: (step: string, label: string) => void,
   ): AbortController {
     const controller = new AbortController();
+    // Combine manual abort with 120s timeout to prevent infinite wait
+    const timeoutSignal = AbortSignal.timeout(120_000);
+    const combinedSignal = AbortSignal.any([controller.signal, timeoutSignal]);
 
     (async () => {
       try {
@@ -132,7 +135,7 @@ export const apiClient = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
-          signal: controller.signal,
+          signal: combinedSignal,
         });
 
         if (!res.ok || !res.body) {

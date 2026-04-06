@@ -97,27 +97,28 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
       }
 
       if (!mountedRef.current) return;
+
+      // Run styleguide + project updates in parallel (saves ~200-500ms)
       setCurrentPhase("styleguide");
       const cssVars = generateCssVariables(s.styleguide as Parameters<typeof generateCssVariables>[0]);
       if (!cssVars || typeof cssVars !== "object") {
         throw new Error("Failed to generate CSS variables");
       }
-      // WizardStyleguide fields are structurally compatible with Styleguide at runtime
       const styleguideUpdate = {
         colors: s.styleguide.colors,
         typography: s.styleguide.typography,
         spacing: s.styleguide.spacing,
         cssVariables: cssVars,
       } as unknown as Parameters<typeof apiClient.updateStyleguide>[1];
-      await apiClient.updateStyleguide(projectId, styleguideUpdate);
 
-      if (!mountedRef.current) return;
-      setCurrentPhase("seo");
-      await apiClient.updateProject(projectId, {
-        siteName: s.general.siteName,
-        companyName: s.general.companyName,
-        language: s.general.language,
-      } as Parameters<typeof apiClient.updateProject>[1]);
+      await Promise.all([
+        apiClient.updateStyleguide(projectId, styleguideUpdate),
+        apiClient.updateProject(projectId, {
+          siteName: s.general.siteName,
+          companyName: s.general.companyName,
+          language: s.general.language,
+        } as Parameters<typeof apiClient.updateProject>[1]),
+      ]);
 
       if (!mountedRef.current) return;
       setCurrentPhase("generating");
@@ -137,10 +138,15 @@ Generate a professional landing page with all essential sections including heade
             pageId: homePageId,
             styleguideId,
           },
-          () => {},
+          () => {}, // chunks are raw JSON — not useful for UI display
           () => { resolve(); },
           (err) => {
             console.error("Homepage generation error:", err);
+            // Don't silently swallow — surface error to user
+            if (mountedRef.current) {
+              setCurrentPhase("error");
+              setErrorMessage(`AI generation failed: ${err}`);
+            }
             resolve();
           },
           (_step, label) => {
@@ -187,11 +193,40 @@ Generate a professional landing page with all essential sections including heade
           currentPhase === "done" ? "bg-success/15" : currentPhase === "error" ? "bg-error/10" : "bg-primary/10",
         )} />
 
-        {/* Spinning ring */}
+        {/* Spinning rings — layered for visual depth */}
         {currentPhase !== "done" && currentPhase !== "error" && (
-          <div className="absolute -inset-1 rounded-full">
-            <div className="w-full h-full rounded-full border-2 border-transparent border-t-primary border-r-primary/30 animate-spin" style={{ animationDuration: "2s" }} />
-          </div>
+          <>
+            {/* Outer glow pulse */}
+            <div className="absolute -inset-6 rounded-full bg-primary/5 animate-winnie-spinner-glow" />
+            {/* Primary spinner — conic gradient */}
+            <div
+              className="absolute -inset-3 rounded-full animate-spin"
+              style={{ animationDuration: "2.5s" }}
+            >
+              <div
+                className="w-full h-full rounded-full"
+                style={{
+                  background: "conic-gradient(from 0deg, transparent 0%, var(--primary) 50%, transparent 100%)",
+                  mask: "radial-gradient(farthest-side, transparent calc(100% - 2.5px), black calc(100% - 2.5px))",
+                  WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 2.5px), black calc(100% - 2.5px))",
+                }}
+              />
+            </div>
+            {/* Secondary slower ring — reversed direction */}
+            <div
+              className="absolute -inset-5 rounded-full animate-spin"
+              style={{ animationDuration: "4s", animationDirection: "reverse" }}
+            >
+              <div
+                className="w-full h-full rounded-full"
+                style={{
+                  background: "conic-gradient(from 180deg, transparent 0%, var(--primary-container) 40%, transparent 100%)",
+                  mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), black calc(100% - 1.5px))",
+                  WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), black calc(100% - 1.5px))",
+                }}
+              />
+            </div>
+          </>
         )}
 
         <WinnieAvatar
