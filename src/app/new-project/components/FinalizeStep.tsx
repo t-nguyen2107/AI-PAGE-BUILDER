@@ -39,6 +39,7 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
   const [generationProgress, setGenerationProgress] = useState<string>("");
 
   const mountedRef = useRef(true);
+  const startedRef = useRef(false);
   // Refs to avoid stale closures in finalize callback
   const projectInfoRef = useRef(projectInfo);
   const settingsRef = useRef(settings);
@@ -168,6 +169,9 @@ Generate a professional landing page with all essential sections including heade
 
   useEffect(() => {
     mountedRef.current = true;
+    // Guard against React StrictMode double-mount
+    if (startedRef.current) return;
+    startedRef.current = true;
     finalize().catch(() => {
       if (mountedRef.current) {
         setCurrentPhase("error");
