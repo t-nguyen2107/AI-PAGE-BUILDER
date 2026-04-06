@@ -72,8 +72,8 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         send({ type: 'status', step: 'generating', label: isTemplateMode ? 'Selecting templates...' : 'Generating with AI...' });
 
         const { model, jsonCallOptions } = isTemplateMode
-          ? createFastModelBundle({ maxTokens: 4096 })
-          : createModelBundle({ maxTokens: 8192 });
+          ? createFastModelBundle({ maxTokens: 16384 })
+          : createModelBundle({ maxTokens: 16384 });
 
         // Always apply timeout; combine with external signal if provided
         // Template mode: 120s (fast model), Full mode: 180s (heavy model)
@@ -113,7 +113,16 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         const stream = await model.stream(messages, streamOpts);
 
         for await (const chunk of stream) {
-          const text = typeof chunk.content === 'string' ? chunk.content : '';
+          // Handle both string and array content (Gemini returns array of content parts)
+          let text = '';
+          if (typeof chunk.content === 'string') {
+            text = chunk.content;
+          } else if (Array.isArray(chunk.content)) {
+            text = chunk.content
+              .filter((c: unknown): c is { type: string; text: string } => typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
+              .map((c) => c.text)
+              .join('');
+          }
           if (text) {
             accumulated += text;
             // Don't send raw chunks — model outputs JSON which looks ugly in UI.

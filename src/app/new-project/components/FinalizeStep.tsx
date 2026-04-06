@@ -131,6 +131,7 @@ Tone: ${info.tone}
 
 Generate a professional landing page with all essential sections including header, hero, features, and footer.`;
 
+      let generatedResult: import("@/types/ai").AIGenerationResponse | null = null;
       await new Promise<void>((resolve) => {
         apiClient.generateFromPromptStream(
           {
@@ -140,7 +141,7 @@ Generate a professional landing page with all essential sections including heade
             styleguideId,
           },
           () => {}, // chunks are raw JSON — not useful for UI display
-          () => { resolve(); },
+          (result) => { generatedResult = result; resolve(); },
           (err) => {
             console.error("Homepage generation error:", err);
             // Don't silently swallow — surface error to user
@@ -156,7 +157,19 @@ Generate a professional landing page with all essential sections including heade
         );
       });
 
-      setCurrentPhase("done");
+      // Save generated components to the page
+      const result = generatedResult as import("@/types/ai").AIGenerationResponse | null;
+      if (result?.components?.length && mountedRef.current) {
+        const treeData = {
+          root: { props: { title: "Home" } },
+          content: result.components,
+        };
+        await apiClient.savePage(projectId, homePageId, treeData);
+      }
+
+      if (mountedRef.current && currentPhase !== "error") {
+        setCurrentPhase("done");
+      }
       setTimeout(() => {
         r.push(`/builder/${projectId}`);
       }, 1500);
