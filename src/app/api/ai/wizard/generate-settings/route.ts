@@ -1,85 +1,110 @@
 import { NextRequest } from "next/server";
 import { createFastModelBundle } from "@/lib/ai/provider";
+import { generateStyleguideFromBusinessType } from "@/lib/ai/knowledge/auto-styleguide";
+
 import type { WizardProjectInfo, GenerateSettingsResponse } from "@/types/wizard";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { generateCssVariables } from "@/lib/css-variables";
 
-const GENERATE_SETTINGS_PROMPT = `You are an AI design consultant. Given a project description, generate a complete styleguide and SEO metadata for a website builder.
+// ─── Business type detection ──────────────────────────────────────────────────
 
-You MUST respond in valid JSON with this exact structure:
-{
-  "styleguide": {
-    "colors": {
-      "primary": "#hex",
-      "secondary": "#hex",
-      "accent": "#hex",
-      "background": "#hex",
-      "surface": "#hex",
-      "text": "#hex",
-      "textMuted": "#hex",
-      "border": "#hex",
-      "error": "#ef4444",
-      "success": "#22c55e",
-      "warning": "#f59e0b"
-    },
-    "typography": {
-      "headingFont": "Font Name, sans-serif",
-      "bodyFont": "Font Name, sans-serif",
-      "monoFont": "JetBrains Mono, monospace",
-      "fontSizes": {
-        "xs": "0.75rem", "sm": "0.875rem", "base": "1rem", "lg": "1.125rem",
-        "xl": "1.25rem", "2xl": "1.5rem", "3xl": "1.875rem", "4xl": "2.25rem"
-      },
-      "fontWeights": {
-        "light": "300", "normal": "400", "medium": "500", "semibold": "600", "bold": "700"
-      }
-    },
-    "spacing": {
-      "values": {
-        "0": "0", "1": "0.25rem", "2": "0.5rem", "3": "0.75rem", "4": "1rem",
-        "5": "1.25rem", "6": "1.5rem", "8": "2rem", "10": "2.5rem",
-        "12": "3rem", "16": "4rem", "20": "5rem", "24": "6rem"
-      }
-    },
-    "cssVariables": {}
-  },
-  "seo": {
-    "seoTitle": "under 60 chars",
-    "seoDescription": "under 160 chars",
-    "seoKeywords": "keyword1, keyword2, keyword3",
-    "ogTitle": "under 60 chars",
-    "ogDescription": "under 160 chars"
-  },
-  "general": {
-    "siteName": "site name",
-    "companyName": "company name",
-    "language": "en or vi or other code"
+const BUSINESS_KEYWORDS: Array<{ type: string; keywords: string[] }> = [
+  { type: "restaurant/dining", keywords: ["restaurant", "nhà hàng", "ẩm thực", "dining", "food"] },
+  { type: "bakery/pastry shop", keywords: ["bakery", "tiệm bánh", "bánh", "pastry", "cake"] },
+  { type: "coffee shop/cafe", keywords: ["coffee", "cafe", "cà phê", "quán cà phê", "espresso"] },
+  { type: "spa/wellness", keywords: ["spa", "massage", "wellness", "yoga", "thư giãn"] },
+  { type: "fitness/gym", keywords: ["gym", "fitness", "thể hình", "workout", "training"] },
+  { type: "SaaS/technology", keywords: ["saas", "software", "app", "platform", "tool", "dashboard", "api"] },
+  { type: "e-commerce/store", keywords: ["shop", "store", "ecommerce", "bán hàng", "cửa hàng", "retail"] },
+  { type: "e-commerce/luxury", keywords: ["luxury", "cao cấp", "premium", "boutique"] },
+  { type: "real estate", keywords: ["real estate", "bất động sản", "property", "nhà đất"] },
+  { type: "education/training", keywords: ["education", "course", "đào tạo", "học", "training", "academy"] },
+  { type: "healthcare/medical", keywords: ["healthcare", "medical", "y tế", "phòng khám", "clinic", "hospital"] },
+  { type: "fashion/clothing", keywords: ["fashion", "thời trang", "clothing", "áo", "quần"] },
+  { type: "travel/hospitality", keywords: ["travel", "du lịch", "hotel", "khách sạn", "tour"] },
+  { type: "law firm/legal", keywords: ["law", "legal", "luật", "pháp lý", "attorney"] },
+  { type: "construction/architecture", keywords: ["construction", "xây dựng", "architecture", "kiến trúc"] },
+  { type: "personal portfolio", keywords: ["portfolio", "cv", "resume", "personal", "cá nhân"] },
+  { type: "creative agency", keywords: ["agency", "creative", "design", "thiết kế", "studio"] },
+  { type: "blog/media", keywords: ["blog", "news", "tạp chí", "media", "magazine"] },
+  { type: "nonprofit/charity", keywords: ["nonprofit", "charity", "từ thiện", "community"] },
+  { type: "event/conference", keywords: ["event", "conference", "sự kiện", "hội nghị"] },
+  { type: "crypto/web3", keywords: ["crypto", "blockchain", "web3", "nft", "defi"] },
+  { type: "B2B/service", keywords: ["b2b", "enterprise", "consulting", "tư vấn"] },
+  { type: "food/delivery", keywords: ["delivery", "giao đồ ăn", "food delivery", "ship đồ ăn"] },
+  { type: "music/podcast", keywords: ["music", "podcast", "nhạc", "âm nhạc"] },
+  { type: "AI/chatbot", keywords: ["ai", "chatbot", "machine learning", "ml"] },
+  { type: "productivity/tool", keywords: ["productivity", "tool", "automation", "workflow"] },
+];
+
+function detectBusinessType(projectInfo: WizardProjectInfo): string {
+  const text = [
+    projectInfo.idea,
+    projectInfo.name,
+    projectInfo.style,
+    projectInfo.targetAudience,
+  ].join(" ").toLowerCase();
+
+  let bestMatch = "";
+  let bestScore = 0;
+
+  for (const { type, keywords } of BUSINESS_KEYWORDS) {
+    const score = keywords.reduce((acc, kw) => acc + (text.includes(kw) ? 1 : 0), 0);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = type;
+    }
   }
+
+  return bestMatch;
 }
 
-## Color Selection Rules
-- Restaurant/Cafe: warm tones (deep reds, oranges, cream, brown)
-- SaaS/Tech: clean blues, grays, white, with one accent
-- Creative/Portfolio: bold accent, dark or light neutral base
-- Ecommerce: trust-building blues or energetic oranges
-- Blog: clean, readable, minimal contrast
-- Agency: sophisticated, often dark with bright accent
-- Health/Wellness: greens, blues, soft neutrals
-- Education: blues, warm accents, approachable
-- Fashion/Luxury: black/gold/dark tones or minimal white with accent
-- Playful/Kids: bright primary colors, fun accents
+// ─── Fallback styleguide (when no business type match) ────────────────────────
 
-## Font Selection Rules
-- Available fonts: Inter, Poppins, Montserrat, Playfair Display, Lora, Merriweather, Roboto, Open Sans, Raleway, Nunito, Space Grotesk, DM Sans, Manrope, Outfit, Sora
-- Sans-serif for modern/business/SaaS: Inter, DM Sans, Space Grotesk
-- Serif for elegant/luxury/editorial: Playfair Display, Lora, Merriweather
-- Friendly/approachable: Poppins, Nunito, Outfit
-- Bold/creative: Montserrat, Sora, Raleway
+function buildFallbackStyleguide(): GenerateSettingsResponse["styleguide"] {
+  const colors = {
+    primary: "#2563EB",
+    secondary: "#3B82F6",
+    accent: "#EA580C",
+    background: "#F8FAFC",
+    surface: "#FFFFFF",
+    text: "#1E293B",
+    textMuted: "#64748B",
+    border: "#E2E8F0",
+    error: "#EF4444",
+    success: "#22C55E",
+    warning: "#F59E0B",
+  };
+  const typography = {
+    headingFont: "Inter, sans-serif",
+    bodyFont: "Inter, sans-serif",
+    monoFont: "JetBrains Mono, monospace",
+    fontSizes: {
+      xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem",
+      xl: "1.25rem", "2xl": "1.5rem", "3xl": "1.875rem", "4xl": "2.25rem",
+    },
+    fontWeights: { light: "300", normal: "400", medium: "500", semibold: "600", bold: "700" },
+  };
+  const spacing = {
+    values: {
+      "0": "0", "1": "0.25rem", "2": "0.5rem", "3": "0.75rem", "4": "1rem",
+      "5": "1.25rem", "6": "1.5rem", "8": "2rem", "10": "2.5rem",
+      "12": "3rem", "16": "4rem", "20": "5rem", "24": "6rem",
+    },
+  };
+  const sg = { colors, typography, spacing, cssVariables: {} as Record<string, string> };
+  sg.cssVariables = generateCssVariables(sg) ?? {};
+  return sg;
+}
 
-## SEO Rules
-- seoTitle: under 60 characters, includes business name and value proposition
-- seoDescription: 120-160 characters, compelling, includes target audience keywords
-- seoKeywords: 5-8 relevant keywords, comma-separated
-- Match the language of the project`;
+// ─── SEO prompt (tiny — only metadata text) ────────────────────────────────────
+
+const SEO_PROMPT = `Generate SEO metadata for a website. Respond in valid JSON only:
+{"seoTitle":"under 60 chars","seoDescription":"120-160 chars","seoKeywords":"5-8 keywords, comma-separated","ogTitle":"under 60 chars","ogDescription":"under 160 chars"}
+
+Rules: match the project's language. Include business name in titles. Make descriptions compelling.`;
+
+// ─── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,61 +118,72 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 4096 });
+    // 1. Generate styleguide deterministically (instant — no LLM)
+    const businessType = detectBusinessType(projectInfo);
+    const autoResult = businessType ? generateStyleguideFromBusinessType(businessType) : null;
 
-    const userPrompt = `Generate a styleguide and SEO metadata for this website project:
-- Name: ${projectInfo.name}
-- Idea: ${projectInfo.idea}
-- Style: ${projectInfo.style || "modern"}
-- Target audience: ${projectInfo.targetAudience || "general"}
-- Tone: ${projectInfo.tone || "professional"}
-- Language: ${projectInfo.language || "en"}
+    let styleguide: GenerateSettingsResponse["styleguide"];
+    if (autoResult?.styleguide) {
+      const sg = autoResult.styleguide;
+      styleguide = {
+        colors: sg.colors,
+        typography: sg.typography,
+        spacing: sg.spacing,
+        cssVariables: (sg.cssVariables ?? {}) as Record<string, string>,
+      };
+    } else {
+      styleguide = buildFallbackStyleguide();
+    }
 
-Generate appropriate colors, fonts, spacing, and SEO metadata.`;
+    // 2. General info — derived directly from projectInfo (no LLM)
+    const general: GenerateSettingsResponse["general"] = {
+      siteName: projectInfo.name,
+      companyName: projectInfo.name,
+      language: projectInfo.language || "en",
+    };
 
-    const response = await model.invoke(
-      [new SystemMessage(GENERATE_SETTINGS_PROMPT), new HumanMessage(userPrompt)],
+    // 3. SEO — small LLM call for creative text only
+    const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 1024 });
+
+    const seoPrompt = `Website: "${projectInfo.name}". Business: ${projectInfo.idea}. Audience: ${projectInfo.targetAudience || "general"}. Language: ${projectInfo.language || "en"}.`;
+
+    const seoResponse = await model.invoke(
+      [new SystemMessage(SEO_PROMPT), new HumanMessage(seoPrompt)],
       jsonCallOptions,
     );
 
-    const text =
-      typeof response.content === "string"
-        ? response.content
-        : Array.isArray(response.content)
-          ? response.content
+    const seoText =
+      typeof seoResponse.content === "string"
+        ? seoResponse.content
+        : Array.isArray(seoResponse.content)
+          ? seoResponse.content
               .filter((c): c is { type: string; text: string } => typeof c === "object" && c.type === "text")
               .map((c) => c.text)
               .join("")
           : "";
 
-    // Clean and parse JSON
-    const cleaned = text.replace(/<think[\s\S]*?<\/think>/g, "").trim();
+    const cleanedSeo = seoText.replace(/<think[\s\S]*?<\/think>/g, "").trim();
 
-    let settings: GenerateSettingsResponse;
+    let seo: GenerateSettingsResponse["seo"];
     try {
-      // Try direct parse
-      settings = JSON.parse(cleaned) as GenerateSettingsResponse;
+      const parsed = JSON.parse(cleanedSeo) as GenerateSettingsResponse["seo"];
+      seo = parsed;
     } catch {
-      // Try extracting from code fence
-      const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenceMatch) {
-        settings = JSON.parse(fenceMatch[1].trim()) as GenerateSettingsResponse;
-      } else {
-        // Try brace matching
-        const braceStart = cleaned.indexOf("{");
-        const braceEnd = cleaned.lastIndexOf("}");
-        if (braceStart !== -1 && braceEnd > braceStart) {
-          settings = JSON.parse(cleaned.slice(braceStart, braceEnd + 1)) as GenerateSettingsResponse;
-        } else {
-          throw new Error("Could not parse AI response as JSON");
+      // Try extracting JSON from response
+      const braceStart = cleanedSeo.indexOf("{");
+      const braceEnd = cleanedSeo.lastIndexOf("}");
+      if (braceStart !== -1 && braceEnd > braceStart) {
+        try {
+          seo = JSON.parse(cleanedSeo.slice(braceStart, braceEnd + 1)) as GenerateSettingsResponse["seo"];
+        } catch {
+          seo = buildFallbackSeo(projectInfo);
         }
+      } else {
+        seo = buildFallbackSeo(projectInfo);
       }
     }
 
-    // Ensure cssVariables is populated
-    if (settings.styleguide && !settings.styleguide.cssVariables) {
-      settings.styleguide.cssVariables = {};
-    }
+    const settings: GenerateSettingsResponse = { styleguide, seo, general };
 
     return Response.json({
       success: true,
@@ -161,4 +197,15 @@ Generate appropriate colors, fonts, spacing, and SEO metadata.`;
       { status: 500 },
     );
   }
+}
+
+function buildFallbackSeo(info: WizardProjectInfo): GenerateSettingsResponse["seo"] {
+  const name = info.name || "Website";
+  return {
+    seoTitle: `${name} — ${info.idea?.slice(0, 40) || "Welcome"}`.slice(0, 60),
+    seoDescription: `${info.idea || "Discover what we offer"}. ${info.targetAudience ? `Serving ${info.targetAudience}.` : ""}`.slice(0, 160),
+    seoKeywords: [info.name, info.idea?.split(" ").slice(0, 3).join(" ")].filter(Boolean).join(", "),
+    ogTitle: name.slice(0, 60),
+    ogDescription: (info.idea || "").slice(0, 160),
+  };
 }
