@@ -143,7 +143,7 @@ describe('E2E: Stage 3 — LLM Template Mode', () => {
 
     // 3d. Call LLM
     const { result: response, ms: llmMs } = await time('  LLM invoke (template mode)', async () => {
-      const { model, jsonCallOptions } = createModelBundle();
+      const { model, jsonCallOptions } = createModelBundle({ maxTokens: 4096 });
       const messages = await tmplPrompt.formatMessages({ input: optimized.enrichedPrompt });
       return model.invoke(messages, jsonCallOptions);
     });
@@ -288,7 +288,7 @@ describe('E2E: Stage 6 — Full Pipeline', () => {
       );
 
       const { result: llmResp, ms: s7 } = await time('  Step 7: LLM invoke', async () => {
-        const { model, jsonCallOptions } = createModelBundle();
+        const { model, jsonCallOptions } = createModelBundle({ maxTokens: 4096 });
         const messages = await tmplPrompt.formatMessages({ input: optimized.enrichedPrompt });
         return model.invoke(messages, jsonCallOptions);
       });
