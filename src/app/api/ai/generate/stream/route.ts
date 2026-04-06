@@ -12,6 +12,7 @@ import type { AIGenerationResponse } from '@/types/ai';
 import type { BaseMessage } from '@langchain/core/messages';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes for AI generation
 
 export async function POST(request: NextRequest) {
   const body = await request.json();

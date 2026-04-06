@@ -1,5 +1,5 @@
 import type { BaseMessage } from '@langchain/core/messages';
-import { createModelBundle } from './provider';
+import { createModelBundle, createFastModelBundle } from './provider';
 import { buildChainPrompt } from './prompts/system-prompt';
 import { buildTemplatePrompt } from './prompts/template-prompt';
 import { validateOutput } from './output';
@@ -71,10 +71,13 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         // Status: generating
         send({ type: 'status', step: 'generating', label: isTemplateMode ? 'Selecting templates...' : 'Generating with AI...' });
 
-        const { model, jsonCallOptions } = createModelBundle();
+        const { model, jsonCallOptions } = isTemplateMode
+          ? createFastModelBundle({ maxTokens: 4096 })
+          : createModelBundle({ maxTokens: 8192 });
 
         // Always apply timeout; combine with external signal if provided
-        const timeoutMs = options.timeoutMs ?? 90_000;
+        // Template mode: 120s (fast model), Full mode: 180s (heavy model)
+        const timeoutMs = options.timeoutMs ?? (isTemplateMode ? 120_000 : 180_000);
         const timeoutSignal = AbortSignal.timeout(timeoutMs);
         const combinedSignal = options.signal
           ? AbortSignal.any([options.signal, timeoutSignal])
