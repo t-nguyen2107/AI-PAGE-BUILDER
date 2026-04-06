@@ -13,7 +13,7 @@ import { generatePuckComponent } from '@/features/ai/component-generator';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { validateTemplateResponse } from '@/lib/ai/prompts/template-schema';
 import { buildTemplatePrompt } from '@/lib/ai/prompts/template-prompt';
-import { createModelBundle } from '@/lib/ai/provider';
+import { createFastModelBundle } from '@/lib/ai/provider';
 import { extractJSON } from '@/lib/ai/streaming';
 import { orderPuckComponents } from '@/lib/ai/puck-adapter';
 import { generateId } from '@/lib/id';
@@ -123,8 +123,8 @@ export async function POST(request: NextRequest) {
   // --- Template mode for full-page generation ---
   if (intent === 'create_page') {
     try {
-      // Template mode: override maxTokens to 4096 (page JSON is ~3KB, no need for 16384)
-      const { model, jsonCallOptions } = createModelBundle({ maxTokens: 4096 });
+      // Template mode: use fast model (glm-4-flash) with reduced maxTokens
+      const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 4096 });
       const tmplPrompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData, designContext: mergedDesignContext ?? undefined });
       const messages = await tmplPrompt.formatMessages({ input: enrichedPrompt });
       const response = await model.invoke(messages, jsonCallOptions);
