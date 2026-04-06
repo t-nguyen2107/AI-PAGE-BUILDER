@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
-import { createModelBundle } from "@/lib/ai/provider";
+import { createFastModelBundle } from "@/lib/ai/provider";
 import { buildWinnieSystemPrompt } from "@/lib/ai/prompts/winnie-system-prompt";
 import type { WizardChatMessage, WinnieResponse } from "@/types/wizard";
 import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { model, jsonCallOptions } = createModelBundle();
+    const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 4096 });
     const systemPrompt = buildWinnieSystemPrompt(
       collectedSoFar ? { collectedSoFar } : undefined,
     );
