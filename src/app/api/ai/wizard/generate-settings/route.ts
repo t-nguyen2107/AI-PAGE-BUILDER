@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createModelBundle } from "@/lib/ai/provider";
+import { createFastModelBundle } from "@/lib/ai/provider";
 import type { WizardProjectInfo, GenerateSettingsResponse } from "@/types/wizard";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { model, jsonCallOptions } = createModelBundle();
+    const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 4096 });
 
     const userPrompt = `Generate a styleguide and SEO metadata for this website project:
 - Name: ${projectInfo.name}
