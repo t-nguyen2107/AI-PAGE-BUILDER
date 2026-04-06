@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { resolveConfig } from '../config';
-import { createModelBundle } from '../provider';
+import { createFastModelBundle } from '../provider';
 import { buildTemplatePrompt } from '../prompts/template-prompt';
 import { optimizePrompt } from '../prompts/prompt-optimizer';
 import { resolveDesignGuidance, formatDesignGuidance } from '../knowledge/design-knowledge';
@@ -143,7 +143,7 @@ describe('E2E: Stage 3 — LLM Template Mode', () => {
 
     // 3d. Call LLM
     const { result: response, ms: llmMs } = await time('  LLM invoke (template mode)', async () => {
-      const { model, jsonCallOptions } = createModelBundle({ maxTokens: 4096 });
+      const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 4096 });
       const messages = await tmplPrompt.formatMessages({ input: optimized.enrichedPrompt });
       return model.invoke(messages, jsonCallOptions);
     });
@@ -288,7 +288,7 @@ describe('E2E: Stage 6 — Full Pipeline', () => {
       );
 
       const { result: llmResp, ms: s7 } = await time('  Step 7: LLM invoke', async () => {
-        const { model, jsonCallOptions } = createModelBundle({ maxTokens: 4096 });
+        const { model, jsonCallOptions } = createFastModelBundle({ maxTokens: 4096 });
         const messages = await tmplPrompt.formatMessages({ input: optimized.enrichedPrompt });
         return model.invoke(messages, jsonCallOptions);
       });
