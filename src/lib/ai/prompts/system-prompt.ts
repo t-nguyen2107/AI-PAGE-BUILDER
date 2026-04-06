@@ -2,10 +2,435 @@ import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts
 import { SystemMessage } from '@langchain/core/messages';
 import type { ComponentTierPlan } from './prompt-optimizer';
 import { COMPONENT_CATALOG } from './component-catalog';
+import type { DesignGuidance } from '../knowledge/design-knowledge';
+import {
+  LANDING_PATTERNS,
+  PRODUCT_REASONING,
+  PRODUCT_COLOR_PALETTES,
+  type LandingPattern,
+  type ProductReasoning,
+} from '../knowledge/design-knowledge';
+
+// ---------------------------------------------------------------------------
+// Parsed styleguide tokens
+// ---------------------------------------------------------------------------
+
+interface ParsedColors {
+  primary?: string;
+  secondary?: string;
+  accent?: string;
+  background?: string;
+  foreground?: string;
+  muted?: string;
+  border?: string;
+}
+
+interface ParsedTypography {
+  headingFont?: string;
+  bodyFont?: string;
+  headingWeight?: string;
+  bodyWeight?: string;
+}
+
+/**
+ * Parse raw styleguide JSON strings into actionable design tokens.
+ * Handles both stringified JSON and pre-parsed objects.
+ */
+function parseStyleguideColors(raw: string | undefined): ParsedColors {
+  if (!raw) return {};
+  try {
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!data || typeof data !== 'object') return {};
+
+    // Support various styleguide formats: flat tokens, nested "colors" object, or CSS-var style
+    const flat = data.colors ?? data;
+
+    return {
+      primary: flat.primary ?? flat['--color-primary'] ?? undefined,
+      secondary: flat.secondary ?? flat['--color-secondary'] ?? undefined,
+      accent: flat.accent ?? flat['--color-accent'] ?? undefined,
+      background: flat.background ?? flat['--color-background'] ?? flat.surface ?? undefined,
+      foreground: flat.foreground ?? flat['--color-foreground'] ?? flat.text ?? undefined,
+      muted: flat.muted ?? flat['--color-muted'] ?? flat.mutedBg ?? undefined,
+      border: flat.border ?? flat['--color-border'] ?? undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function parseStyleguideTypography(raw: string | undefined): ParsedTypography {
+  if (!raw) return {};
+  try {
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!data || typeof data !== 'object') return {};
+
+    const flat = data.typography ?? data;
+
+    return {
+      headingFont: flat.headingFont ?? flat.headingFontFamily ?? flat.heading?.fontFamily ?? undefined,
+      bodyFont: flat.bodyFont ?? flat.bodyFontFamily ?? flat.body?.fontFamily ?? undefined,
+      headingWeight: flat.headingWeight ?? flat.heading?.fontWeight ?? undefined,
+      bodyWeight: flat.bodyWeight ?? flat.body?.fontWeight ?? undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Business-type detection from designContext text
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract a canonical business type from the designContext text blob.
+ * The designContext contains lines like "Business type: restaurant/dining"
+ * which are injected by the prompt optimizer.
+ */
+function extractBusinessType(designContext?: string): string | null {
+  if (!designContext) return null;
+  // Match "[Business Type] SaaS/technology" from formatDesignGuidance output
+  const match = designContext.match(/\[Business Type\]\s*(.+)/);
+  if (match) return match[1].trim();
+
+  // Fallback: scan for known palette keys in the text
+  for (const key of Object.keys(PRODUCT_COLOR_PALETTES)) {
+    if (designContext.toLowerCase().includes(key.toLowerCase())) {
+      return key;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve landing pattern + reasoning from a business type string.
+ * Returns null if no matching entry exists.
+ */
+function resolveBusinessPattern(businessType: string): {
+  pattern: LandingPattern;
+  reasoning: ProductReasoning;
+} | null {
+  const pattern = LANDING_PATTERNS[PRODUCT_REASONING[businessType]?.recommendedPattern ?? ''];
+  const reasoning = PRODUCT_REASONING[businessType];
+  if (!pattern || !reasoning) return null;
+  return { pattern, reasoning };
+}
+
+// ---------------------------------------------------------------------------
+// Styleguide section builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Build an actionable styleguide section from parsed tokens + optional
+ * design guidance palette. Merges both sources, with styleguide values
+ * taking priority and guidance palette filling in gaps.
+ */
+function buildStyleguideSection(
+  colorsRaw: string | undefined,
+  typographyRaw: string | undefined,
+  spacingRaw: string | undefined,
+  cssVariablesRaw: string | undefined,
+  guidance?: DesignGuidance,
+): string {
+  const parsed = parseStyleguideColors(colorsRaw);
+  const parsedTypo = parseStyleguideTypography(typographyRaw);
+
+  // Merge: guidance palette fills in anything the styleguide lacks
+  const palette = guidance?.colorPalette;
+  const tokens: ParsedColors = {
+    primary: parsed.primary ?? palette?.primary,
+    secondary: parsed.secondary ?? palette?.secondary,
+    accent: parsed.accent ?? palette?.accent,
+    background: parsed.background ?? palette?.background,
+    foreground: parsed.foreground ?? palette?.foreground,
+    muted: parsed.muted ?? palette?.muted,
+    border: parsed.border ?? palette?.border,
+  };
+
+  const typoTokens: ParsedTypography = {
+    headingFont: parsedTypo.headingFont ?? guidance?.typography.heading,
+    bodyFont: parsedTypo.bodyFont ?? guidance?.typography.body,
+    headingWeight: parsedTypo.headingWeight,
+    bodyWeight: parsedTypo.bodyWeight,
+  };
+
+  // Only emit if we have at least some values
+  const hasColors = Object.values(tokens).some(Boolean);
+  const hasTypo = Object.values(typoTokens).some(Boolean);
+  if (!hasColors && !hasTypo && !spacingRaw && !cssVariablesRaw) return '';
+
+  const parts: string[] = ['\n## Styleguide Constraints\n', 'You MUST follow these design constraints:\n'];
+
+  if (hasColors) {
+    parts.push('### Color Tokens');
+    if (tokens.primary) parts.push(`- Primary (CTAs, nav highlights, key interactive): ${tokens.primary}`);
+    if (tokens.secondary) parts.push(`- Secondary (secondary actions, hover states): ${tokens.secondary}`);
+    if (tokens.accent) parts.push(`- Accent (badges, tags, highlights): ${tokens.accent}`);
+    if (tokens.background) parts.push(`- Background (page bg): ${tokens.background}`);
+    if (tokens.foreground) parts.push(`- Foreground (main text): ${tokens.foreground}`);
+    if (tokens.muted) parts.push(`- Muted (subtle bg, cards): ${tokens.muted}`);
+    if (tokens.border) parts.push(`- Border (dividers, outlines): ${tokens.border}`);
+    parts.push('');
+    parts.push('### Color Application Rules');
+    parts.push('- HeroSection gradient: use gradientFrom=primary, gradientTo=secondary');
+    parts.push('- CTASection: use variant="gradient" with primary→secondary gradient');
+    parts.push('- Alternate section backgrounds: background → muted → background → dark');
+    parts.push('- PricingTable highlighted card: border in primary, bg slightly tinted');
+    parts.push('- TestimonialSection: muted background with foreground text');
+    parts.push('- Dark sections (FooterSection, some HeroSection): foreground/onPrimary for text');
+    parts.push('- Never use raw black (#000) or raw white (#FFF) — always use token values');
+  }
+
+  if (hasTypo) {
+    parts.push('\n### Typography Rules');
+    if (typoTokens.headingFont) parts.push(`- Heading font: "${typoTokens.headingFont}" — use for all h1-h6`);
+    if (typoTokens.bodyFont) parts.push(`- Body font: "${typoTokens.bodyFont}" — use for paragraphs, descriptions, labels`);
+    if (typoTokens.headingWeight) parts.push(`- Heading weight: ${typoTokens.headingWeight}`);
+    if (typoTokens.bodyWeight) parts.push(`- Body weight: ${typoTokens.bodyWeight}`);
+    parts.push('- HeroSection heading: large (48-64px equivalent), bold');
+    parts.push('- Section headings: consistent size across FeaturesGrid, PricingTable, FAQSection');
+    parts.push('- Body text: comfortable reading size (16-18px equivalent)');
+  }
+
+  // Parsed spacing scale (not raw JSON)
+  if (spacingRaw) {
+    parts.push('\n### Spacing Scale');
+    try {
+      const spacing = typeof spacingRaw === 'string' ? JSON.parse(spacingRaw) : spacingRaw;
+      if (typeof spacing === 'object' && spacing !== null) {
+        const entries = Object.entries(spacing as Record<string, unknown>);
+        if (entries.length > 0) {
+          for (const [key, val] of entries.slice(0, 8)) {
+            parts.push(`- ${key}: ${val}`);
+          }
+        }
+      } else {
+        parts.push(String(spacing));
+      }
+    } catch {
+      parts.push(spacingRaw);
+    }
+  }
+
+  // CSS variables as token reference (compact)
+  if (cssVariablesRaw) {
+    parts.push('\n### CSS Variable Tokens');
+    try {
+      const cssVars = typeof cssVariablesRaw === 'string' ? JSON.parse(cssVariablesRaw) : cssVariablesRaw;
+      if (typeof cssVars === 'object' && cssVars !== null) {
+        const entries = Object.entries(cssVars as Record<string, unknown>);
+        if (entries.length > 0) {
+          for (const [key, val] of entries.slice(0, 12)) {
+            parts.push(`- --${key}: ${val}`);
+          }
+          if (entries.length > 12) {
+            parts.push(`- ... and ${entries.length - 12} more variables`);
+          }
+        }
+      } else {
+        parts.push(String(cssVars));
+      }
+    } catch {
+      parts.push(cssVariablesRaw);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Landing pattern → recommended page layout
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the RECOMMENDED PAGE LAYOUT section.
+ *
+ * Resolution order:
+ * 1. designGuidance.pattern (full object from prompt-optimizer)
+ * 2. designContext text → extract business type → look up from knowledge base
+ * 3. Fallback: smart generic order based on page type heuristics
+ */
+function buildRecommendedLayoutSection(
+  guidance?: DesignGuidance,
+  designContext?: string,
+): string {
+  // Source 1: direct guidance object
+  let pattern = guidance?.pattern;
+  let reasoning = guidance?.reasoning;
+
+  // Source 2: resolve from designContext text when guidance object is missing
+  if (!pattern && designContext) {
+    const businessType = extractBusinessType(designContext);
+    if (businessType) {
+      const resolved = resolveBusinessPattern(businessType);
+      if (resolved) {
+        pattern = resolved.pattern;
+        reasoning = resolved.reasoning;
+      }
+    }
+  }
+
+  // Source 3: smart generic fallback (no fixed 10-component list)
+  if (!pattern) {
+    const defaultPattern = LANDING_PATTERNS['hero_features_cta']!;
+    const defaultReasoning: ProductReasoning = {
+      recommendedPattern: 'hero_features_cta',
+      stylePriority: 'Clean Minimal',
+      colorMood: 'Brand primary + Neutral tones',
+      typographyMood: 'Professional + Clean',
+      keyEffects: 'Subtle hover + Smooth transitions',
+      antiPatterns: 'Excessive animation + Dark mode by default',
+    };
+    return buildPatternLayout(defaultPattern, defaultReasoning);
+  }
+
+  return buildPatternLayout(pattern, reasoning);
+}
+
+/**
+ * Render a landing pattern + reasoning into the RECOMMENDED PAGE LAYOUT section.
+ */
+function buildPatternLayout(
+  pattern: LandingPattern,
+  reasoning?: ProductReasoning,
+): string {
+  const lines: string[] = ['## RECOMMENDED PAGE LAYOUT'];
+  lines.push('');
+  lines.push('Follow this section order precisely for the detected business type:');
+  lines.push('');
+
+  pattern.sectionOrder.forEach((section, i) => {
+    lines.push(`${i + 1}. **${section}**`);
+  });
+
+  lines.push('');
+  lines.push(`**CTA placement:** ${pattern.ctaPlacement}`);
+  lines.push(`**Color strategy:** ${pattern.colorStrategy}`);
+  lines.push(`**Conversion tip:** ${pattern.conversionTip}`);
+
+  if (reasoning) {
+    lines.push('');
+    lines.push('### Design Reasoning');
+    if (reasoning.stylePriority) lines.push(`- **Style priority:** ${reasoning.stylePriority}`);
+    if (reasoning.typographyMood) lines.push(`- **Typography mood:** ${reasoning.typographyMood}`);
+    if (reasoning.antiPatterns) lines.push(`- **Anti-patterns (AVOID):** ${reasoning.antiPatterns}`);
+  }
+
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Per-section generation instructions
+// ---------------------------------------------------------------------------
+
+const SECTION_INSTRUCTIONS: Record<string, string> = {
+  AnnouncementBar: 'Attention-grabbing message with optional CTA. Keep under 60 chars. Use variant "gradient".',
+  HeaderNav: 'Logo + 4-5 nav links matching page sections + CTA button. Set sticky: true. Link labels should match section headings.',
+  HeroSection: 'DRAMATIC heading, compelling subtext, TWO CTA buttons (primary + secondary), gradient/image background. Set animation "fade-up". Use gradientFrom/gradientTo with palette colors.',
+  FeaturesGrid: '3-6 feature cards with specific descriptions tied to business type. Use cardStyle "elevated", hoverEffect "lift", animation "stagger".',
+  StatsSection: '4 impressive but believable stats with count-up animation (animated: true). Choose numbers relevant to the industry.',
+  LogoGrid: '5-6 partner/client logos with "Trusted by" heading. Use for social proof.',
+  TestimonialSection: '3-4 testimonials with full names, realistic company names, specific quotes. Use variant "carousel", animation "stagger-fade".',
+  PricingTable: '2-3 pricing tiers with believable prices and specific features. Highlight middle tier (highlightedBadge: "Most Popular"). Include pricingToggle with yearly discount.',
+  FAQSection: '4-6 genuine questions customers would ask. Match business type concerns. Set animation "fade-up".',
+  CTASection: 'Bold heading, compelling subtext, prominent CTA button. Use variant "gradient" or "dark" for contrast. Set animation "fade-up".',
+  ContactForm: 'Contact form with showPhone and showCompany. Button text matches business type ("Send Message" / "Book a Demo" / "Reserve a Table").',
+  FooterSection: 'Dark background, 3-4 link groups (Product/Company/Support/Legal), logo description, copyright with current year.',
+  NewsletterSignup: 'Email form with compelling heading and benefit-focused subtext. buttonText "Subscribe".',
+  Gallery: '6+ images in 3-column grid. Use for visual businesses (food, real estate, portfolio). Animation "stagger".',
+  ProductCards: '4-6 products with prices, images, descriptions. Use hoverEffect "lift", animation "stagger".',
+  FeatureShowcase: 'Split layout: image on one side + feature list on other. Use for product/app demos. Animation "fade-up".',
+  CountdownTimer: 'Countdown to event/launch date. Use with event-specific heading.',
+  TeamSection: '3-4 team members with realistic names, specific roles. Animation "stagger".',
+  BlogSection: '3 recent blog post cards with thumbnails, dates, realistic titles. Animation "stagger".',
+  ComparisonTable: 'Side-by-side feature comparison. Use for SaaS/product comparison.',
+  SocialProof: 'Trust indicators with user counts and credibility stats.',
+  Banner: 'Full-width promotional banner with urgency heading. Use variant "gradient".',
+};
+
+/**
+ * Build the FULL PAGE GENERATION instruction block.
+ *
+ * When design guidance with a landing pattern is available, the section
+ * list is derived from the pattern's `sectionOrder` enriched with
+ * conversion tips and anti-patterns. Otherwise falls back to a generic
+ * default list.
+ */
+function buildFullPageGeneration(guidance?: DesignGuidance, designContext?: string): string {
+  let pattern = guidance?.pattern;
+  let reasoning = guidance?.reasoning;
+
+  // Resolve from designContext text when guidance object is missing
+  if (!pattern && designContext) {
+    const businessType = extractBusinessType(designContext);
+    if (businessType) {
+      const resolved = resolveBusinessPattern(businessType);
+      if (resolved) {
+        pattern = resolved.pattern;
+        reasoning = resolved.reasoning;
+      }
+    }
+  }
+
+  const lines: string[] = [];
+  lines.push('## FULL PAGE GENERATION');
+  lines.push('');
+
+  if (pattern) {
+    lines.push('When asked for "landing page", "website", "complete page" — generate action "full_page" using the section order from RECOMMENDED PAGE LAYOUT above.');
+    lines.push('');
+    lines.push('Section-by-section instructions:');
+    lines.push('');
+
+    const order = pattern.sectionOrder;
+    for (const section of order) {
+      const instruction = SECTION_INSTRUCTIONS[section];
+      if (instruction) {
+        lines.push(`- **${section}** — ${instruction}`);
+      }
+    }
+
+    lines.push('');
+    lines.push(`**CTA strategy:** ${pattern.ctaPlacement}`);
+    lines.push(`**Conversion focus:** ${pattern.conversionTip}`);
+
+    if (reasoning) {
+      lines.push('');
+      if (reasoning.stylePriority) {
+        lines.push(`**Style priority:** ${reasoning.stylePriority}`);
+      }
+      if (reasoning.typographyMood) {
+        lines.push(`**Typography mood:** ${reasoning.typographyMood}`);
+      }
+      if (reasoning.antiPatterns) {
+        lines.push(`**AVOID these anti-patterns:** ${reasoning.antiPatterns}`);
+      }
+    }
+  } else {
+    // Default fallback — use the most versatile pattern
+    const defaultPattern = LANDING_PATTERNS['hero_features_cta']!;
+    lines.push('When asked for "landing page", "website", "complete page" — generate action "full_page" with these components in order:');
+    lines.push('');
+    for (const section of defaultPattern.sectionOrder) {
+      const instruction = SECTION_INSTRUCTIONS[section];
+      if (instruction) {
+        lines.push(`- **${section}** — ${instruction}`);
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Interface
+// ---------------------------------------------------------------------------
 
 interface StyleguideData {
   colors?: string;
   typography?: string;
+  spacing?: string;
+  cssVariables?: string;
 }
 
 interface PromptContext {
@@ -17,6 +442,8 @@ interface PromptContext {
   componentTiers?: ComponentTierPlan;
   /** Compact design guidance text from knowledge base (colors, styles, patterns, typography) */
   designContext?: string;
+  /** Resolved design guidance object (palette, style, pattern, typography, reasoning) */
+  designGuidance?: DesignGuidance;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,19 +505,14 @@ function buildDynamicCatalog(tiers?: ComponentTierPlan): string {
  *   human — user prompt
  */
 export function buildChainPrompt(ctx?: PromptContext): ChatPromptTemplate {
-  const styleguideSection = ctx?.styleguideData
-    ? `
-## Styleguide Constraints
-
-You MUST follow these design constraints:
-
-### Colors
-${ctx.styleguideData.colors ?? '{}'}
-
-### Typography
-${ctx.styleguideData.typography ?? '{}'}
-`
-    : '';
+  // --- Parsed styleguide section (actionable tokens, not raw JSON) ---
+  const styleguideSection = buildStyleguideSection(
+    ctx?.styleguideData?.colors,
+    ctx?.styleguideData?.typography,
+    ctx?.styleguideData?.spacing,
+    ctx?.styleguideData?.cssVariables,
+    ctx?.designGuidance,
+  );
 
   const contextSection = ctx?.miniContext
     ? `
@@ -109,6 +531,12 @@ ${ctx.treeSummary}
 When the user asks to modify or add to the page, take the existing structure into account. Do NOT regenerate components that already exist unless explicitly asked. Prefer \`insert_component\` to append new components.
 `
     : 'The page is currently empty. Generate a complete page from scratch.';
+
+  // --- Recommended page layout from landing patterns ---
+  const layoutSection = buildRecommendedLayoutSection(ctx?.designGuidance, ctx?.designContext);
+
+  // --- Full page generation instructions using pattern ---
+  const fullPageGeneration = buildFullPageGeneration(ctx?.designGuidance, ctx?.designContext);
 
   const systemContent = `You are a world-class UI/UX designer and frontend developer. You create STUNNING, MODERN, PROFESSIONAL websites. Every page must look like it was crafted by a senior design team.
 
@@ -187,20 +615,9 @@ When generating pages, follow these enhanced design rules:
 - Dense section → breathing room (spacer or simpler section) → dense section
 ${ctx?.designContext ? '### Active Design Guidance\n' + ctx.designContext : ''}
 
-## FULL PAGE GENERATION
+${layoutSection}
 
-When asked for "landing page", "website", "complete page" — generate action "full_page" with these components in order:
-
-1. **HeaderNav** — logo + nav links + CTA button
-2. **HeroSection** — DRAMATIC heading, subtext, TWO CTA buttons, gradient/image background
-3. **FeaturesGrid** — 3-6 feature cards
-4. **StatsSection** or **LogoGrid** — social proof (alternating background)
-5. **TestimonialSection** — 3 testimonials
-6. **PricingTable** — 2-3 pricing tiers with highlighted popular plan
-7. **FAQSection** — 4-6 questions
-8. **CTASection** — bold heading, prominent button
-9. **ContactForm** — optional
-10. **FooterSection** — dark background, multi-column links, copyright
+${fullPageGeneration}
 
 ## CLARIFICATION RULES
 

@@ -4,14 +4,20 @@ import { buildChainPrompt } from './prompts/system-prompt';
 import { createStructuredModel, validateOutput } from './output';
 import { sanitizeAIResponse } from './output-sanitizer';
 import type { AIGenerationResponse } from '@/types/ai';
+import type { DesignGuidance } from './knowledge/design-knowledge';
+import type { ComponentTierPlan } from './prompts/prompt-optimizer';
 
 interface ChainOptions {
-  styleguideData?: { colors?: string; typography?: string };
+  styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
   miniContext?: string;
   history?: BaseMessage[];
   treeSummary?: string;
   projectProfile?: string;
   designContext?: string;
+  /** Resolved design guidance object for dynamic layout resolution */
+  designGuidance?: DesignGuidance;
+  /** Pre-computed component tiers for dynamic catalog */
+  componentTiers?: ComponentTierPlan;
 }
 
 /**
@@ -31,6 +37,8 @@ export async function invokeAIChain(
     treeSummary: options.treeSummary,
     projectProfile: options.projectProfile,
     designContext: options.designContext,
+    designGuidance: options.designGuidance,
+    componentTiers: options.componentTiers,
   });
 
   const chain = prompt.pipe(structuredModel);

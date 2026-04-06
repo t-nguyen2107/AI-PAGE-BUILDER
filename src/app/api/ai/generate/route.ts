@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Load context in parallel ---
-  let styleguideData: { colors?: string; typography?: string } | undefined;
+  let styleguideData: { colors?: string; typography?: string; spacing?: string; cssVariables?: string } | undefined;
   let miniContext = '';
   let sessionId = '';
   let history: BaseMessage[] = [];
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       if (styleguideId) {
         const styleguide = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
         if (styleguide) {
-          styleguideData = { colors: styleguide.colors, typography: styleguide.typography };
+          styleguideData = { colors: styleguide.colors, typography: styleguide.typography, spacing: styleguide.spacing, cssVariables: styleguide.cssVariables };
         }
       }
     })(),
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
   ]);
 
   // --- Optimize prompt with context ---
-  const { enrichedPrompt, nameRefs, intent, businessType, designContext } = optimizePrompt(prompt);
+  const { enrichedPrompt, nameRefs, intent, businessType, designContext, designGuidance } = optimizePrompt(prompt);
 
   // --- RAG: vector knowledge lookup (non-fatal, runs after businessType is resolved) ---
   try {
@@ -173,6 +173,7 @@ export async function POST(request: NextRequest) {
       treeSummary,
       projectProfile: projectProfile || undefined,
       designContext: mergedDesignContext ?? undefined,
+      designGuidance: designGuidance ?? undefined,
     });
   } catch (err) {
     chainError = err instanceof Error ? err.message : 'Unknown error from AI chain';

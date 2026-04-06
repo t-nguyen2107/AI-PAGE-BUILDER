@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
         // STEP 2: Optimize prompt
         send({ type: 'status', step: 'optimizing', label: 'Optimizing prompt...' });
-        const { enrichedPrompt, intent, businessType } = optimizePrompt(prompt);
+        const { enrichedPrompt, intent, businessType, designGuidance } = optimizePrompt(prompt);
 
         // Select component catalog tiers based on intent + business type
         const componentTiers = selectRelevantComponents(intent, businessType, treeSummary);
@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
             mode: useTemplateMode ? 'template' : 'full',
             businessType: businessType ?? undefined,
             componentTiers,
+            designGuidance: designGuidance ?? undefined,
             signal: request.signal,
           });
         } catch (streamError) {

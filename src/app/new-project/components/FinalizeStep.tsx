@@ -8,6 +8,7 @@ import { generateCssVariables } from "@/lib/css-variables";
 import { WinnieAvatar } from "./WinnieAvatar";
 import type { WizardProjectInfo, WizardSettings } from "@/types/wizard";
 import { useWizardStore } from "@/store/wizard-store";
+import type { AIGenerationResponse } from "@/types/ai";
 
 interface FinalizeStepProps {
   projectInfo: WizardProjectInfo;
@@ -40,6 +41,7 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
 
   const mountedRef = useRef(true);
   const startedRef = useRef(false);
+  const errorRef = useRef(false);
   // Refs to avoid stale closures in finalize callback
   const projectInfoRef = useRef(projectInfo);
   const settingsRef = useRef(settings);
@@ -131,8 +133,7 @@ Tone: ${info.tone}
 
 Generate a professional landing page with all essential sections including header, hero, features, and footer.`;
 
-      let generatedResult: import("@/types/ai").AIGenerationResponse | null = null;
-      await new Promise<void>((resolve) => {
+      const generatedResult = await new Promise<AIGenerationResponse | null>((resolve) => {
         apiClient.generateFromPromptStream(
           {
             prompt,
@@ -141,15 +142,15 @@ Generate a professional landing page with all essential sections including heade
             styleguideId,
           },
           () => {}, // chunks are raw JSON — not useful for UI display
-          (result) => { generatedResult = result; resolve(); },
+          (result) => resolve(result),
           (err) => {
             console.error("Homepage generation error:", err);
-            // Don't silently swallow — surface error to user
+            errorRef.current = true;
             if (mountedRef.current) {
               setCurrentPhase("error");
               setErrorMessage(`AI generation failed: ${err}`);
             }
-            resolve();
+            resolve(null);
           },
           (_step, label) => {
             setGenerationProgress(label);
@@ -158,21 +159,20 @@ Generate a professional landing page with all essential sections including heade
       });
 
       // Save generated components to the page
-      const result = generatedResult as import("@/types/ai").AIGenerationResponse | null;
-      if (result?.components?.length && mountedRef.current) {
+      if (generatedResult?.components?.length && mountedRef.current) {
         const treeData = {
           root: { props: { title: "Home" } },
-          content: result.components,
+          content: generatedResult.components,
         };
         await apiClient.savePage(projectId, homePageId, treeData);
       }
 
-      if (mountedRef.current && currentPhase !== "error") {
+      if (mountedRef.current && !errorRef.current) {
         setCurrentPhase("done");
+        setTimeout(() => {
+          r.push(`/builder/${projectId}`);
+        }, 1500);
       }
-      setTimeout(() => {
-        r.push(`/builder/${projectId}`);
-      }, 1500);
     } catch (err) {
       console.error("Finalize error:", err);
       setCurrentPhase("error");

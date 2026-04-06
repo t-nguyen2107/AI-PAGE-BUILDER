@@ -701,19 +701,23 @@ export function resolveDesignGuidance(businessType: string | null): DesignGuidan
 }
 
 /**
- * Format design guidance as a compact text block for prompt injection.
- * Target: under 500 chars for prompt efficiency.
+ * Format design guidance as a multi-section text block for prompt injection.
+ * Includes business type, full color palette, typography, layout pattern, effects, and anti-patterns.
  */
-export function formatDesignGuidance(guidance: DesignGuidance): string {
+export function formatDesignGuidance(guidance: DesignGuidance, businessType?: string): string {
   const { colorPalette: p, style: s, pattern: pat, typography: t, reasoning: r } = guidance;
 
-  return [
-    `Design Direction: ${r.stylePriority}`,
-    `Colors: primary=${p.primary}, accent=${p.accent}, bg=${p.background}, text=${p.foreground}`,
-    `Effects: ${r.keyEffects}`,
-    `Layout: ${pat.sectionOrder.join(' → ')}`,
-    `Typography: ${t.heading} (headings) + ${t.body} (body)`,
-    `Style hints: ${s.promptHint}`,
-    `Avoid: ${r.antiPatterns}`,
-  ].join('. ');
+  const lines: string[] = [];
+
+  if (businessType) lines.push(`[Business Type] ${businessType}`);
+  lines.push(`[Design Direction] ${r.stylePriority}`);
+  lines.push(`[Color Palette] primary=${p.primary}, secondary=${p.secondary}, accent=${p.accent}, onAccent=${p.onAccent}, background=${p.background}, foreground/text=${p.foreground}, card=${p.card}, muted=${p.muted}, mutedText=${p.mutedForeground}, border=${p.border}`);
+  lines.push(`[Effects] ${r.keyEffects}`);
+  lines.push(`[Page Layout] ${pat.sectionOrder.join(' → ')}`);
+  lines.push(`[Typography] ${t.heading} (headings) + ${t.body} (body). Mood: ${t.mood.join(', ')}`);
+  lines.push(`[Style] ${s.promptHint}`);
+  lines.push(`[Conversion Tips] ${pat.conversionTip}`);
+  lines.push(`[Anti-Patterns] ${r.antiPatterns}`);
+
+  return lines.join('\n');
 }

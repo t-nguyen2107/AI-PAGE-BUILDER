@@ -182,7 +182,7 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
 
   // Resolve design guidance from knowledge base
   const designGuidance = resolveDesignGuidance(businessType);
-  const designContext = designGuidance ? formatDesignGuidance(designGuidance) : null;
+  const designContext = designGuidance ? formatDesignGuidance(designGuidance, businessType ?? undefined) : null;
 
   // Build context prefix
   const contextParts: string[] = [];

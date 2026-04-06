@@ -11,9 +11,10 @@ import type { AIGenerationResponse } from '@/types/ai';
 import { AIAction } from '@/types/enums';
 import type { ComponentData } from '@puckeditor/core';
 import type { ComponentTierPlan } from './prompts/prompt-optimizer';
+import type { DesignGuidance } from './knowledge/design-knowledge';
 
 interface StreamOptions {
-  styleguideData?: { colors?: string; typography?: string };
+  styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
   miniContext?: string;
   history?: BaseMessage[];
   treeSummary?: string;
@@ -29,6 +30,8 @@ interface StreamOptions {
   timeoutMs?: number;
   /** Pre-computed component tiers for dynamic catalog (reduces prompt size) */
   componentTiers?: ComponentTierPlan;
+  /** Resolved design guidance object for dynamic layout resolution */
+  designGuidance?: DesignGuidance;
 }
 
 export interface SSEEvent {
@@ -95,6 +98,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
               treeSummary: options.treeSummary,
               projectProfile: options.projectProfile,
               componentTiers: options.componentTiers,
+              designGuidance: options.designGuidance,
             });
 
         // Build messages manually for streaming (no withStructuredOutput)
