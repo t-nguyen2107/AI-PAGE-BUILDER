@@ -51,8 +51,8 @@ export function resolveConfig(): AIConfig {
 }
 
 export function resolveFastConfig(): AIFastConfig {
-  const model = process.env.AI_FAST_MODEL ?? process.env.AI_MODEL ?? 'qwen3.5';
-  const baseUrl = process.env.AI_FAST_BASE_URL ?? process.env.AI_BASE_URL ?? 'http://localhost:11434';
-  const apiKey = process.env.AI_FAST_API_KEY ?? process.env.AI_API_KEY;
+  const model = process.env.AI_FAST_MODEL || process.env.AI_MODEL || 'qwen3.5';
+  const baseUrl = process.env.AI_FAST_BASE_URL || process.env.AI_BASE_URL || 'http://localhost:11434';
+  const apiKey = process.env.AI_FAST_API_KEY || process.env.AI_API_KEY;
   return { model, baseUrl, apiKey };
 }

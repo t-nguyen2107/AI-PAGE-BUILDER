@@ -109,14 +109,14 @@ export function createModelBundle(override?: Partial<AIConfig>): ModelBundle {
  */
 export function createFastModelBundle(override?: Partial<AIConfig>): ModelBundle {
   const fast = resolveFastConfig();
-  const config = { ...resolveConfig(), ...override };
 
-  // Override model/baseUrl/apiKey with fast config
+  // Fast config overrides model/baseUrl/apiKey, but caller override wins over everything
   const merged = {
-    ...config,
+    ...resolveConfig(),
     model: fast.model,
     baseUrl: fast.baseUrl,
     ...(fast.apiKey ? { apiKey: fast.apiKey } : {}),
+    ...override,
   };
 
   let jsonCallOptions: Record<string, unknown> = {};
