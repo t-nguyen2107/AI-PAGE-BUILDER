@@ -23,7 +23,7 @@ export async function invokeAIChain(
   input: string,
   options: ChainOptions = {},
 ): Promise<{ data: AIGenerationResponse | null; error: string | null; raw: unknown }> {
-  const model = createModel();
+  const model = createModel({ maxTokens: 8192 }); // Component-level generation needs less than default 16384
   const structuredModel = createStructuredModel(model);
   const prompt = buildChainPrompt({
     styleguideData: options.styleguideData,

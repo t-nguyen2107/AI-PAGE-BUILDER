@@ -118,10 +118,12 @@ export async function seedDesignKnowledge(): Promise<SeedResult> {
     });
   }
 
-  // Batch insert — 10 at a time to avoid overwhelming the embedding API
-  const BATCH_SIZE = 10;
+  // Batch insert — 2 at a time (Jina rate limit: 2 concurrent requests)
+  // Add 500ms delay between batches to respect rate limits
+  const BATCH_SIZE = 2;
   for (let i = 0; i < entries.length; i += BATCH_SIZE) {
     const batch = entries.slice(i, i + BATCH_SIZE);
+    if (i > 0) await new Promise((r) => setTimeout(r, 500)); // rate limit pause
     try {
       const ids = await storeVectorBatch(batch);
       const cat = batch[0]!.category;

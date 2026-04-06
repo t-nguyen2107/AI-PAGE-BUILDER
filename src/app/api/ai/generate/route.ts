@@ -123,7 +123,8 @@ export async function POST(request: NextRequest) {
   // --- Template mode for full-page generation ---
   if (intent === 'create_page') {
     try {
-      const { model, jsonCallOptions } = createModelBundle();
+      // Template mode: override maxTokens to 4096 (page JSON is ~3KB, no need for 16384)
+      const { model, jsonCallOptions } = createModelBundle({ maxTokens: 4096 });
       const tmplPrompt = buildTemplatePrompt({ businessType: businessType ?? undefined, styleguideData, designContext: mergedDesignContext ?? undefined });
       const messages = await tmplPrompt.formatMessages({ input: enrichedPrompt });
       const response = await model.invoke(messages, jsonCallOptions);
