@@ -10,6 +10,66 @@ import { searchVectors, storeVector, type VectorSearchResult } from './vector-st
 import { serializeProfileForPrompt, type ProjectContext } from './profile-serializer';
 import { safeJsonParse } from './utils';
 
+// ─── Profile Cache ───────────────────────────────────────────────────────────
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+/**
+ * Simple in-memory TTL cache for project profiles.
+ * Avoids repeated DB + vector queries when the same project generates
+ * multiple AI requests in quick succession.
+ */
+class ProfileCache {
+  private store = new Map<string, CacheEntry<ProjectContext>>();
+  private readonly ttlMs: number;
+
+  constructor(ttlMs = 60_000) {
+    this.ttlMs = ttlMs;
+  }
+
+  get(key: string): ProjectContext | null {
+    const entry = this.store.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.store.delete(key);
+      return null;
+    }
+    return entry.value;
+  }
+
+  set(key: string, value: ProjectContext): void {
+    this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs });
+  }
+
+  invalidate(key: string): void {
+    this.store.delete(key);
+  }
+
+  /** Invalidate all cache entries whose key starts with the given prefix. */
+  invalidatePrefix(prefix: string): void {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) {
+        this.store.delete(key);
+      }
+    }
+  }
+
+  /** Prune all expired entries. Call periodically or before reads. */
+  prune(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      if (now > entry.expiresAt) {
+        this.store.delete(key);
+      }
+    }
+  }
+}
+
+const profileCache = new ProfileCache(60_000); // 60s TTL
+
 export interface Insight {
   category: 'preference' | 'correction' | 'pattern' | 'fact' | 'instruction';
   content: string;
@@ -34,8 +94,16 @@ export interface ProjectProfileData {
 
 /**
  * Get project profile and relevant memories for prompt injection.
+ * Results are cached in-memory for 60s to avoid repeated DB + vector queries.
  */
 export async function getProjectContext(projectId: string, userQuery?: string): Promise<ProjectContext> {
+  // Prune expired entries periodically
+  profileCache.prune();
+
+  const cacheKey = userQuery ? `${projectId}:q:${userQuery}` : `${projectId}:recent`;
+  const cached = profileCache.get(cacheKey);
+  if (cached) return cached;
+
   const [profile, relevantMemories] = await Promise.all([
     prisma.projectAIProfile.findUnique({ where: { projectId } }),
     userQuery
@@ -48,7 +116,7 @@ export async function getProjectContext(projectId: string, userQuery?: string): 
       : getRecentMemories(projectId),
   ]);
 
-  return {
+  const result: ProjectContext = {
     profile: profile
       ? {
           businessType: profile.businessType || undefined,
@@ -65,6 +133,9 @@ export async function getProjectContext(projectId: string, userQuery?: string): 
       : null,
     relevantMemories: relevantMemories.map(memoryToItem),
   };
+
+  profileCache.set(cacheKey, result);
+  return result;
 }
 
 /**
@@ -118,6 +189,7 @@ export async function updateProfile(
   projectId: string,
   data: Partial<ProjectProfileData>,
 ) {
+  profileCache.invalidatePrefix(projectId);
   return prisma.projectAIProfile.upsert({
     where: { projectId },
     update: { ...data },
@@ -129,6 +201,7 @@ export async function updateProfile(
  * Reset project profile to defaults.
  */
 export async function resetProfile(projectId: string) {
+  profileCache.invalidatePrefix(projectId);
   await prisma.projectAIProfile.deleteMany({ where: { projectId } });
 }
 
