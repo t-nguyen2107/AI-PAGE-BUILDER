@@ -34,6 +34,8 @@ interface StreamOptions {
   componentTiers?: ComponentTierPlan;
   /** Resolved design guidance object for dynamic layout resolution */
   designGuidance?: DesignGuidance;
+  /** Formatted design context text (RAG knowledge + guidance) for prompt injection */
+  designContext?: string;
 }
 
 export interface SSEEvent {
@@ -119,6 +121,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
           ? buildTemplatePrompt({
               businessType: options.businessType,
               styleguideData: options.styleguideData,
+              designContext: options.designContext,
             })
           : buildChainPrompt({
               styleguideData: options.styleguideData,

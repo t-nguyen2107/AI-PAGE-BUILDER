@@ -57,14 +57,8 @@ const CONFETTI = [
 
 const CHAT_CONTEXT_LIMIT = 10;
 
-// ── Greeting fast path: respond instantly without API call ──
-const GREETING_RE = /^(hi+|hello+|hey+|good\s*(morning|afternoon|evening)|chào|xin\s*chào|em\s*chào|anh\s*chào|chị\s*chào|alo|yo|sup|what'?s\s*up|howdy)\b/i;
-const GREETING_REPLIES = [
-  "Hey! I'm Winnie, your website design consultant. What kind of website are you looking to build today?",
-  "Hi there! Ready to create something amazing. Tell me about your project — what's the idea?",
-  "Hello! Let's design your dream website. What type of site do you have in mind?",
-  "Hey! Great to meet you. Describe your ideal website and I'll help bring it to life!",
-];
+// ── Greeting warm-up: greetings go through the real API to warm the model ──
+// (Removed canned response — model warm-up on first interaction improves subsequent latency)
 
 export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   const [messages, setMessages] = useState<DisplayMessage[]>([
@@ -172,19 +166,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
         ...prev,
         { id: `user-${msgId}`, role: "user", content: text, timestamp: Date.now(), status: "done" },
       ]);
-
-      // ── Greeting fast path ──
-      if (GREETING_RE.test(text) && text.split(/\s+/).length <= 4) {
-        const reply = GREETING_REPLIES[Math.floor(Math.random() * GREETING_REPLIES.length)];
-        chatHistory.current.push({ role: "user", content: text });
-        chatHistory.current.push({ role: "assistant", content: reply });
-        setMessages((prev) => [
-          ...prev,
-          { id: `assistant-${msgId}`, role: "assistant", content: reply, timestamp: Date.now(), status: "done" },
-        ]);
-        inputRef.current?.focus();
-        return;
-      }
 
       setIsStreaming(true);
 

@@ -123,6 +123,7 @@ All API responses use: `ApiResponse<T> { success, data?, error?, meta }`
 - **Commit often:** Break work into logical commits. Don't let uncommitted changes accumulate across unrelated features.
 
 ## Working Rules
+- **English-first:** This is an international product. All UI copy, AI prompts, default content, and code comments default to English. Vietnamese is only used when the user explicitly writes in Vietnamese.
 - **Push before starting large tasks:** Before beginning any complex or multi-file task (refactors, migrations, new features), commit and push all pending changes first. This ensures a clean checkpoint to revert to if things go wrong.
 - **Commit often:** Break work into logical commits. Don't let uncommitted changes accumulate across unrelated features.
 

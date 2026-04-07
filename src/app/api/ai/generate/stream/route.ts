@@ -5,6 +5,8 @@ import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
 import * as aiMemory from '@/lib/ai/memory';
 import { getProjectProfileText } from '@/lib/ai/memory-manager';
 import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
+import { searchDesignKnowledge } from '@/lib/ai/knowledge/knowledge-search';
+import { formatDesignGuidance } from '@/lib/ai/knowledge/design-knowledge';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generatePuckComponent } from '@/features/ai/component-generator';
 import { prisma } from '@/lib/prisma';
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
         // STEP 1: Load context
         send({ type: 'status', step: 'loading_context', label: 'Loading page context...' });
 
-        let styleguideData: { colors?: string; typography?: string } | undefined;
+        let styleguideData: { colors?: string; typography?: string; spacing?: string; cssVariables?: string } | undefined;
         let treeSummary: string | undefined;
         let miniContext = '';
         let history: BaseMessage[] = [];
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
           (async () => {
             if (styleguideId) {
               const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
-              if (sg) styleguideData = { colors: sg.colors, typography: sg.typography };
+              if (sg) styleguideData = { colors: sg.colors, typography: sg.typography, spacing: sg.spacing, cssVariables: sg.cssVariables };
             }
           })(),
           getProjectProfileText(projectId, prompt).then((t) => { projectProfile = t ?? ''; }),
@@ -144,6 +146,21 @@ export async function POST(request: NextRequest) {
         // Route: create_page → template mode, everything else → full AI mode
         const useTemplateMode = intent === 'create_page';
 
+        // STEP 2b: RAG — vector knowledge lookup (non-fatal)
+        let ragContext = '';
+        try {
+          const ragResult = await searchDesignKnowledge({ query: prompt, businessType: businessType ?? undefined });
+          ragContext = ragResult.contextText;
+        } catch (e) {
+          console.warn('[ai-stream] RAG lookup failed (non-fatal):', e);
+        }
+
+        // Format design guidance + merge with RAG knowledge
+        const designContextFromGuidance = designGuidance
+          ? formatDesignGuidance(designGuidance, businessType ?? undefined)
+          : '';
+        const mergedDesignContext = [designContextFromGuidance, ragContext].filter(Boolean).join('\n') || undefined;
+
         // STEP 3-6: Create AI stream
         let aiStream: ReadableStream<Uint8Array>;
         try {
@@ -157,6 +174,7 @@ export async function POST(request: NextRequest) {
             businessType: businessType ?? undefined,
             componentTiers,
             designGuidance: designGuidance ?? undefined,
+            designContext: mergedDesignContext,
             signal: request.signal,
           });
         } catch (streamError) {
