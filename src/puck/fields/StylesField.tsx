@@ -6,7 +6,7 @@ import { TypographyField, type TypographyValue } from "./TypographyField";
 import { BorderField, type BorderValue } from "./BorderField";
 import { ShadowField, shadowToCss, type ShadowValue } from "./ShadowField";
 import { ColorPickerField } from "./ColorPickerField";
-import { GradientField, gradientToCss, type GradientValue } from "./GradientField";
+// GradientValue type removed — gradient feature no longer supported
 import { AnimationField, animationToCss, type AnimationValue } from "./AnimationField";
 import { MediaManager } from "./MediaManager";
 
@@ -31,7 +31,7 @@ export type StylesValue = {
   border?: BorderValue;
   shadow?: ShadowValue;
   backgroundColor?: string;
-  gradient?: GradientValue;
+  gradient?: string; // kept for backward compat
   backgroundImageUrl?: string;
   backgroundSize?: string;
   backgroundPosition?: string;
@@ -130,9 +130,6 @@ export function stylesToCss(s: StylesValue | undefined): CSSProperties {
     if (s.backgroundSize) css.backgroundSize = s.backgroundSize;
     if (s.backgroundPosition) css.backgroundPosition = s.backgroundPosition;
     if (s.backgroundRepeat) css.backgroundRepeat = s.backgroundRepeat;
-  } else {
-    const gradient = gradientToCss(s.gradient);
-    if (gradient) css.backgroundImage = gradient;
   }
 
   if (s.opacity !== undefined && s.opacity !== 100) {
@@ -505,12 +502,6 @@ export function StylesField({
               </div>
             )}
 
-            {/* Gradient (default mode only) */}
-            {!isHover && (
-              <div className="pt-1">
-                <GradientField value={v.gradient} onChange={(val) => onChange({ ...v, gradient: val })} />
-              </div>
-            )}
           </Accordion>
         )}
 

@@ -41,6 +41,8 @@ import { Blank } from "./components/Blank";
 import { Flex } from "./components/Flex";
 import { Grid } from "./components/Grid";
 import { SectionBlockConfig } from "./components/SectionBlock";
+import { MediaPickerField } from "./fields/MediaPickerField";
+import { ColorPickerField } from "./fields/ColorPickerField";
 
 // ─── Type imports ──────────────────────────────────────────────────────
 import type {
@@ -71,13 +73,6 @@ import type {
   AnnouncementBarProps,
   BannerProps,
   CustomSectionProps,
-  ButtonBlockProps,
-  CardBlockProps,
-  HeadingBlockProps,
-  TextBlockProps,
-  BlankProps,
-  FlexProps,
-  GridProps,
 } from "./types";
 
 // ─── Root ──────────────────────────────────────────────────────────────
@@ -103,17 +98,28 @@ const Root: RootConfig<{ props: RootProps }> = {
   },
 };
 
+// ─── Reusable custom field: Image picker ───────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const imgPicker = ({ value, onChange }: any) => (
+  <MediaPickerField value={value} onChange={onChange} />
+);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const colorPicker = (label: string) => ({ value, onChange }: any) => (
+  <ColorPickerField value={value} onChange={onChange} label={label} />
+);
+
 // ─── Sections ──────────────────────────────────────────────────────────
 
 const HeroSection: ComponentConfig<HeroSectionProps> = {
   fields: {
-    heading: { type: "text", contentEditable: true },
-    subtext: { type: "textarea", contentEditable: true },
-    badge: { type: "text" },
-    ctaText: { type: "text", contentEditable: true },
-    ctaHref: { type: "text" },
-    ctaSecondaryText: { type: "text" },
-    ctaSecondaryHref: { type: "text" },
+    heading: { type: "text", label: "Heading", contentEditable: true },
+    subtext: { type: "textarea", label: "Sub Text", contentEditable: true },
+    badge: { type: "text", label: "Badge" },
+    ctaText: { type: "text", label: "CTA Text", contentEditable: true },
+    ctaHref: { type: "text", label: "CTA URL" },
+    ctaSecondaryText: { type: "text", label: "Secondary CTA Text" },
+    ctaSecondaryHref: { type: "text", label: "Secondary CTA URL" },
     align: {
       type: "radio",
       options: [
@@ -129,7 +135,7 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
         { label: "Split \u2014 Image Right", value: "split-right" },
       ],
     },
-    backgroundUrl: { type: "text", label: "Background Image URL" },
+    backgroundUrl: { type: "custom" as const, render: imgPicker },
     backgroundOverlay: {
       type: "radio",
       options: [
@@ -137,8 +143,8 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
         { label: "Off", value: false },
       ],
     },
-    videoUrl: { type: "text", label: "Video Background URL (mp4)" },
-    imageUrl: { type: "text", label: "Hero Image URL" },
+    videoUrl: { type: "custom" as const, render: imgPicker },
+    imageUrl: { type: "custom" as const, render: imgPicker },
     animation: {
       type: "select",
       options: [
@@ -155,8 +161,8 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
       arrayFields: { text: { type: "text" } },
       getItemSummary: (item: Record<string, unknown>) => (item.text as string) || "Badge",
     },
-    gradientFrom: { type: "text", label: "Gradient From (hex)" },
-    gradientTo: { type: "text", label: "Gradient To (hex)" },
+    gradientFrom: { type: "custom" as const, render: colorPicker("Gradient From") },
+    gradientTo: { type: "custom" as const, render: colorPicker("Gradient To") },
     gradientPreset: {
       type: "select",
       label: "Gradient Preset",
@@ -196,8 +202,8 @@ const HeroSection: ComponentConfig<HeroSectionProps> = {
 
 const FeaturesGrid: ComponentConfig<FeaturesGridProps> = {
   fields: {
-    heading: { type: "text", contentEditable: true },
-    subtext: { type: "textarea" },
+    heading: { type: "text", label: "Heading", contentEditable: true },
+    subtext: { type: "textarea", label: "Sub Text" },
     columns: {
       type: "select",
       options: [
@@ -245,7 +251,7 @@ const FeaturesGrid: ComponentConfig<FeaturesGridProps> = {
         title: { type: "text" },
         description: { type: "textarea" },
         icon: { type: "text" },
-        imageUrl: { type: "text", label: "Image URL" },
+        imageUrl: { type: "custom" as const, render: imgPicker },
       },
       getItemSummary: (col) => col.title,
     },
@@ -280,8 +286,8 @@ const FeaturesGrid: ComponentConfig<FeaturesGridProps> = {
 
 const PricingTable: ComponentConfig<PricingTableProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
     pricingToggle: {
       type: "radio",
       options: [
@@ -296,7 +302,7 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
         price: { type: "text" },
         period: { type: "text" },
         description: { type: "textarea" },
-        savePercentage: { type: "text" },
+        savePercentage: { type: "text", label: "Save Percentage" },
         features: {
           type: "array",
           arrayFields: {
@@ -304,8 +310,8 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
           },
           getItemSummary: (col: Record<string, unknown>) => String(col.value ?? ""),
         },
-        ctaText: { type: "text" },
-        ctaHref: { type: "text" },
+        ctaText: { type: "text", label: "CTA Text" },
+        ctaHref: { type: "text", label: "CTA URL" },
         highlighted: {
           type: "radio",
           options: [
@@ -316,8 +322,8 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
       },
       getItemSummary: (col) => col.name,
     },
-    highlightedBadge: { type: "text" },
-    currency: { type: "text" },
+    highlightedBadge: { type: "text", label: "Highlighted Badge" },
+    currency: { type: "text", label: "Currency" },
     animation: {
       type: "select",
       options: [
@@ -332,7 +338,7 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
         name: { type: "text" },
         price: { type: "text" },
         period: { type: "text" },
-        description: { type: "textarea" },
+        description: { type: "textarea", label: "Description" },
         features: {
           type: "array",
           arrayFields: {
@@ -340,8 +346,8 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
           },
           getItemSummary: (col: Record<string, unknown>) => String(col.value ?? ""),
         },
-        ctaText: { type: "text" },
-        ctaHref: { type: "text" },
+        ctaText: { type: "text", label: "CTA Text" },
+        ctaHref: { type: "text", label: "CTA URL" },
         highlighted: {
           type: "radio",
           options: [
@@ -408,7 +414,7 @@ const PricingTable: ComponentConfig<PricingTableProps> = {
 
 const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     variant: {
       type: "select",
       options: [
@@ -447,7 +453,7 @@ const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
         quote: { type: "textarea" },
         author: { type: "text" },
         role: { type: "text" },
-        avatarUrl: { type: "text" },
+        avatarUrl: { type: "text", label: "Avatar URL" },
         rating: {
           type: "select",
           label: "Rating",
@@ -496,10 +502,10 @@ const TestimonialSection: ComponentConfig<TestimonialSectionProps> = {
 
 const CTASection: ComponentConfig<CTASectionProps> = {
   fields: {
-    heading: { type: "text", contentEditable: true },
-    subtext: { type: "textarea" },
-    ctaText: { type: "text", contentEditable: true },
-    ctaHref: { type: "text" },
+    heading: { type: "text", label: "Heading", contentEditable: true },
+    subtext: { type: "textarea", label: "Sub Text" },
+    ctaText: { type: "text", label: "CTA Text", contentEditable: true },
+    ctaHref: { type: "text", label: "CTA URL" },
     ctaSecondaryText: { type: "text", label: "Secondary Button Text" },
     ctaSecondaryHref: { type: "text", label: "Secondary Button Link" },
     layout: {
@@ -510,7 +516,7 @@ const CTASection: ComponentConfig<CTASectionProps> = {
         { label: "Split", value: "split" },
       ],
     },
-    imageUrl: { type: "text", label: "Image URL (for split layout)" },
+    imageUrl: { type: "custom" as const, render: imgPicker },
     imagePosition: {
       type: "select",
       label: "Image Position",
@@ -528,7 +534,7 @@ const CTASection: ComponentConfig<CTASectionProps> = {
         { label: "Dark", value: "dark" },
       ],
     },
-    backgroundUrl: { type: "text", label: "Background Image URL" },
+    backgroundUrl: { type: "custom" as const, render: imgPicker },
     trustText: { type: "text", label: "Trust Text" },
     animation: {
       type: "select",
@@ -555,8 +561,8 @@ const CTASection: ComponentConfig<CTASectionProps> = {
 
 const FAQSection: ComponentConfig<FAQSectionProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
     accordion: {
       type: "radio",
       label: "Accordion Mode",
@@ -624,7 +630,7 @@ const FAQSection: ComponentConfig<FAQSectionProps> = {
 
 const StatsSection: ComponentConfig<StatsSectionProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     stats: {
       type: "array",
       arrayFields: {
@@ -688,8 +694,8 @@ const StatsSection: ComponentConfig<StatsSectionProps> = {
 
 const TeamSection: ComponentConfig<TeamSectionProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
     hoverEffect: {
       type: "select",
       label: "Card Hover Effect",
@@ -720,7 +726,7 @@ const TeamSection: ComponentConfig<TeamSectionProps> = {
       arrayFields: {
         name: { type: "text" },
         role: { type: "text" },
-        avatarUrl: { type: "text" },
+        avatarUrl: { type: "text", label: "Avatar URL" },
         socialTwitter: { type: "text", label: "Twitter/X URL" },
         socialLinkedin: { type: "text", label: "LinkedIn URL" },
         socialGithub: { type: "text", label: "GitHub URL" },
@@ -745,13 +751,13 @@ const TeamSection: ComponentConfig<TeamSectionProps> = {
 
 const BlogSection: ComponentConfig<BlogSectionProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     posts: {
       type: "array",
       arrayFields: {
         title: { type: "text" },
         excerpt: { type: "textarea" },
-        imageUrl: { type: "text" },
+        imageUrl: { type: "custom" as const, render: imgPicker },
         date: { type: "text" },
         href: { type: "text" },
         category: { type: "text" },
@@ -825,12 +831,12 @@ const BlogSection: ComponentConfig<BlogSectionProps> = {
 
 const LogoGrid: ComponentConfig<LogoGridProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     logos: {
       type: "array",
       arrayFields: {
         name: { type: "text" },
-        imageUrl: { type: "text" },
+        imageUrl: { type: "custom" as const, render: imgPicker },
       },
       getItemSummary: (col) => col.name,
     },
@@ -884,8 +890,8 @@ const LogoGrid: ComponentConfig<LogoGridProps> = {
 
 const ContactForm: ComponentConfig<ContactFormProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
     showPhone: {
       type: "radio",
       options: [
@@ -900,7 +906,7 @@ const ContactForm: ComponentConfig<ContactFormProps> = {
         { label: "No", value: false },
       ],
     },
-    buttonText: { type: "text" },
+    buttonText: { type: "text", label: "Button Text" },
   },
   defaultProps: {
     heading: "Get in Touch",
@@ -916,8 +922,8 @@ const ContactForm: ComponentConfig<ContactFormProps> = {
 
 const HeaderNav: ComponentConfig<HeaderNavProps> = {
   fields: {
-    logo: { type: "text" },
-    logoImageUrl: { type: "text", label: "Logo Image URL" },
+    logo: { type: "text", label: "Logo Text" },
+    logoImageUrl: { type: "custom" as const, render: imgPicker },
     links: {
       type: "array",
       arrayFields: {
@@ -934,8 +940,8 @@ const HeaderNav: ComponentConfig<HeaderNavProps> = {
       },
       getItemSummary: (col) => col.label,
     },
-    ctaText: { type: "text" },
-    ctaHref: { type: "text" },
+    ctaText: { type: "text", label: "CTA Text" },
+    ctaHref: { type: "text", label: "CTA URL" },
     sticky: {
       type: "radio",
       options: [
@@ -985,8 +991,8 @@ const HeaderNav: ComponentConfig<HeaderNavProps> = {
 
 const FooterSection: ComponentConfig<FooterSectionProps> = {
   fields: {
-    logo: { type: "text" },
-    description: { type: "textarea" },
+    logo: { type: "text", label: "Logo Text" },
+    description: { type: "textarea", label: "Description" },
     linkGroups: {
       type: "array",
       arrayFields: {
@@ -1002,7 +1008,7 @@ const FooterSection: ComponentConfig<FooterSectionProps> = {
       },
       getItemSummary: (col) => col.title,
     },
-    copyright: { type: "text" },
+    copyright: { type: "text", label: "Copyright Text" },
     socialLinks: {
       type: "array",
       arrayFields: {
@@ -1118,9 +1124,9 @@ const RichTextBlock: ComponentConfig<RichTextBlockProps> = {
 
 const ImageBlock: ComponentConfig<ImageBlockProps> = {
   fields: {
-    src: { type: "text", label: "Image URL" },
-    alt: { type: "text" },
-    width: { type: "text" },
+    src: { type: "custom" as const, render: imgPicker },
+    alt: { type: "text", label: "Alt Text" },
+    width: { type: "text", label: "Width" },
     borderRadius: {
       type: "select",
       options: [
@@ -1241,10 +1247,10 @@ const ColumnsLayout: ComponentConfig<ColumnsLayoutProps> = {
 
 const NewsletterSignup: ComponentConfig<NewsletterSignupProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
-    placeholder: { type: "text" },
-    buttonText: { type: "text" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
+    placeholder: { type: "text", label: "Placeholder" },
+    buttonText: { type: "text", label: "Button Text" },
     layout: {
       type: "select",
       options: [
@@ -1252,7 +1258,7 @@ const NewsletterSignup: ComponentConfig<NewsletterSignupProps> = {
         { label: "Split", value: "split" },
       ],
     },
-    backgroundUrl: { type: "text", label: "Background Image URL" },
+    backgroundUrl: { type: "custom" as const, render: imgPicker },
     subscriberCount: { type: "text", label: "Subscriber Count (e.g. 10,000+)" },
     privacyNote: { type: "text", label: "Privacy Note" },
     bgVariant: {
@@ -1289,7 +1295,7 @@ const NewsletterSignup: ComponentConfig<NewsletterSignupProps> = {
 
 const Gallery: ComponentConfig<GalleryProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     variant: {
       type: "select",
       options: [
@@ -1324,7 +1330,7 @@ const Gallery: ComponentConfig<GalleryProps> = {
     images: {
       type: "array",
       arrayFields: {
-        src: { type: "text" },
+        src: { type: "custom" as const, render: imgPicker },
         alt: { type: "text" },
         caption: { type: "text" },
       },
@@ -1351,7 +1357,7 @@ const Gallery: ComponentConfig<GalleryProps> = {
 
 const SocialProof: ComponentConfig<SocialProofProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     variant: {
       type: "select",
       options: [
@@ -1371,7 +1377,7 @@ const SocialProof: ComponentConfig<SocialProofProps> = {
       type: "array",
       arrayFields: {
         name: { type: "text" },
-        imageUrl: { type: "text" },
+        imageUrl: { type: "custom" as const, render: imgPicker },
       },
       getItemSummary: (col) => col.name,
     },
@@ -1391,7 +1397,7 @@ const SocialProof: ComponentConfig<SocialProofProps> = {
       getItemSummary: (item: Record<string, unknown>) =>
         (item.url as string) || "Avatar",
     },
-    testimonialText: { type: "textarea" },
+    testimonialText: { type: "textarea", label: "Testimonial Text" },
     animated: {
       type: "radio",
       options: [
@@ -1428,7 +1434,7 @@ const SocialProof: ComponentConfig<SocialProofProps> = {
 
 const ComparisonTable: ComponentConfig<ComparisonTableProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     plans: {
       type: "array",
       arrayFields: {
@@ -1490,7 +1496,7 @@ const ComparisonTable: ComponentConfig<ComparisonTableProps> = {
 
 const ProductCards: ComponentConfig<ProductCardsProps> = {
   fields: {
-    heading: { type: "text" },
+    heading: { type: "text", label: "Heading" },
     columns: {
       type: "select",
       options: [
@@ -1530,7 +1536,7 @@ const ProductCards: ComponentConfig<ProductCardsProps> = {
         name: { type: "text" },
         price: { type: "text" },
         originalPrice: { type: "text" },
-        imageUrl: { type: "text" },
+        imageUrl: { type: "custom" as const, render: imgPicker },
         description: { type: "textarea" },
         badge: { type: "text" },
         href: { type: "text" },
@@ -1575,10 +1581,10 @@ const ProductCards: ComponentConfig<ProductCardsProps> = {
 
 const FeatureShowcase: ComponentConfig<FeatureShowcaseProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
-    imageUrl: { type: "text", label: "Image URL" },
-    videoUrl: { type: "text", label: "Video URL (replaces image)" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
+    imageUrl: { type: "custom" as const, render: imgPicker },
+    videoUrl: { type: "custom" as const, render: imgPicker },
     features: {
       type: "array",
       arrayFields: {
@@ -1609,8 +1615,8 @@ const FeatureShowcase: ComponentConfig<FeatureShowcaseProps> = {
         { label: "Right", value: "right" },
       ],
     },
-    ctaText: { type: "text" },
-    ctaHref: { type: "text" },
+    ctaText: { type: "text", label: "CTA Text" },
+    ctaHref: { type: "text", label: "CTA URL" },
     animation: {
       type: "select",
       options: [
@@ -1649,11 +1655,11 @@ const FeatureShowcase: ComponentConfig<FeatureShowcaseProps> = {
 
 const CountdownTimer: ComponentConfig<CountdownTimerProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
     endDate: { type: "text", label: "End Date (ISO)" },
-    ctaText: { type: "text" },
-    ctaHref: { type: "text" },
+    ctaText: { type: "text", label: "CTA Text" },
+    ctaHref: { type: "text", label: "CTA URL" },
     showDays: {
       type: "radio",
       options: [
@@ -1712,11 +1718,12 @@ const CountdownTimer: ComponentConfig<CountdownTimerProps> = {
 
 const AnnouncementBar: ComponentConfig<AnnouncementBarProps> = {
   fields: {
-    message: { type: "text" },
-    ctaText: { type: "text" },
-    ctaHref: { type: "text" },
+    message: { type: "text", label: "Message" },
+    ctaText: { type: "text", label: "CTA Text" },
+    ctaHref: { type: "text", label: "CTA URL" },
     bgColor: {
       type: "select",
+      label: "Background Color",
       options: [
         { label: "Primary", value: "primary" },
         { label: "Dark", value: "dark" },
@@ -1764,10 +1771,10 @@ const AnnouncementBar: ComponentConfig<AnnouncementBarProps> = {
 
 const Banner: ComponentConfig<BannerProps> = {
   fields: {
-    heading: { type: "text" },
-    subtext: { type: "textarea" },
-    ctaText: { type: "text" },
-    ctaHref: { type: "text" },
+    heading: { type: "text", label: "Heading" },
+    subtext: { type: "textarea", label: "Sub Text" },
+    ctaText: { type: "text", label: "CTA Text" },
+    ctaHref: { type: "text", label: "CTA URL" },
     variant: {
       type: "select",
       options: [
@@ -1777,8 +1784,8 @@ const Banner: ComponentConfig<BannerProps> = {
         { label: "Video", value: "video" },
       ],
     },
-    backgroundUrl: { type: "text", label: "Background Image URL" },
-    videoUrl: { type: "text", label: "Video Background URL (mp4)" },
+    backgroundUrl: { type: "custom" as const, render: imgPicker },
+    videoUrl: { type: "custom" as const, render: imgPicker },
     align: {
       type: "select",
       options: [
