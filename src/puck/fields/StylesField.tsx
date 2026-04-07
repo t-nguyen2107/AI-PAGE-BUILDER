@@ -193,7 +193,7 @@ function Accordion({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50/80 transition-colors"
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-gray-600 hover:text-gray-900 hover:bg-[var(--puck-color-grey-01)] transition-colors"
       >
         {icon && <span className="text-xs opacity-70">{icon}</span>}
         <span className="flex-1 text-left uppercase tracking-wider">{title}</span>
@@ -317,7 +317,7 @@ export function StylesField({
 
       {/* ── Quick-access bar ── */}
       {!isHover && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50/60 border-b border-gray-100">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--puck-color-grey-01)] border-b border-gray-100">
           {/* Background color */}
           <div className="flex items-center gap-1.5">
             <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">BG</label>
@@ -436,7 +436,7 @@ export function StylesField({
               <div className="space-y-2">
                 <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Image</div>
                 {v.backgroundImageUrl ? (
-                  <div className="relative w-full h-20 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                  <div className="relative w-full h-20 rounded-lg border border-gray-200 overflow-hidden bg-[var(--puck-color-grey-01)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={v.backgroundImageUrl} alt="" className="w-full h-full object-cover" />
                     <button
@@ -451,7 +451,7 @@ export function StylesField({
                 <button
                   type="button"
                   onClick={() => setMediaOpen(true)}
-                  className="w-full text-[11px] py-2 rounded-md border border-dashed border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50/30 font-medium transition-all"
+                  className="w-full text-[11px] py-2 rounded-md border border-dashed border-gray-300 text-gray-500 hover:border-[var(--puck-color-azure-04)] hover:text-[var(--puck-color-azure-05)] hover:bg-[var(--puck-color-azure-01)] font-medium transition-all"
                 >
                   {v.backgroundImageUrl ? "Change Image" : "Select Image"}
                 </button>
