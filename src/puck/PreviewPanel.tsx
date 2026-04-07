@@ -85,7 +85,7 @@ export function PreviewPanel({ open, onClose, data, projectId, pageId }: Preview
             href={previewUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 bg-[var(--puck-color-grey-01)] hover:bg-[var(--puck-color-grey-10)] rounded-lg border border-gray-200 transition-colors"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
@@ -97,7 +97,7 @@ export function PreviewPanel({ open, onClose, data, projectId, pageId }: Preview
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-[var(--puck-color-grey-10)] transition-colors"
             title="Close preview (Esc)"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -109,7 +109,7 @@ export function PreviewPanel({ open, onClose, data, projectId, pageId }: Preview
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 bg-gray-100 overflow-auto">
+      <div className="flex-1 bg-[var(--puck-color-grey-01)] overflow-auto">
         <div className="flex justify-center py-6 min-h-full">
           {cfg.frame ? (
             <DeviceFrame device={device} width={cfg.width}>
@@ -167,8 +167,8 @@ function DeviceToggle({ active, onClick, label, children }: { active: boolean; o
       title={label}
       className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
         active
-          ? "bg-indigo-100 text-indigo-600"
-          : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+          ? "bg-[var(--puck-color-azure-01)] text-[var(--puck-color-azure-05)]"
+          : "text-gray-400 hover:text-gray-600 hover:bg-[var(--puck-color-grey-10)]"
       }`}
     >
       {children}

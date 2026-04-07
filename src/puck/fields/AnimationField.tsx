@@ -73,8 +73,8 @@ export function AnimationField({
             onClick={() => update("name", p.value)}
             className={`flex flex-col items-center gap-0.5 py-1.5 rounded-md text-[10px] font-medium transition-all ${
               v.name === p.value
-                ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300"
-                : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                ? "bg-[var(--puck-color-azure-01)] text-[var(--puck-color-azure-05)] ring-1 ring-[var(--puck-color-azure-03)]"
+                : "bg-[var(--puck-color-grey-01)] text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             }`}
             title={p.label}
           >
@@ -165,7 +165,7 @@ export function AnimationField({
             {previewKey > 0 && cssValue && (
               <div
                 key={previewKey}
-                className="ml-3 w-8 h-8 bg-indigo-200 rounded-md"
+                className="ml-3 w-8 h-8 bg-[var(--puck-color-azure-03)] rounded-md"
                 style={{ animation: cssValue }}
               />
             )}
