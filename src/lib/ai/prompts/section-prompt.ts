@@ -21,6 +21,8 @@ export interface SectionPromptContext {
   businessType: string;
   designGuidance?: DesignGuidance;
   styleguideData?: StyleguideTokens;
+  /** RAG + design guidance text for prompt injection */
+  designContext?: string;
   /** Position context: which section out of how many */
   position: { index: number; total: number };
 }
@@ -67,7 +69,7 @@ export function buildSectionPrompt(
   catalogEntry: ComponentInfo,
   context: SectionPromptContext,
 ): ChatPromptTemplate {
-  const { position, businessType, designGuidance, styleguideData } = context;
+  const { position, businessType, designGuidance, styleguideData, designContext } = context;
 
   // ── Build design tokens block ──
   const designTokensBlock = buildDesignTokensBlock(designGuidance, styleguideData);
@@ -89,6 +91,7 @@ ${catalogEntry.variantTips ? `Variant Tips: ${catalogEntry.variantTips}` : ''}
 
 ${designTokensBlock}
 
+${designContext ? `## Design Intelligence\n${designContext}\n` : ''}
 ## Response Format
 
 Return JSON with this exact structure (do NOT include "type" or "id" — those are auto-generated):

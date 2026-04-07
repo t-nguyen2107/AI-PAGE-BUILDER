@@ -6,7 +6,6 @@ import * as aiMemory from '@/lib/ai/memory';
 import { getProjectProfileText } from '@/lib/ai/memory-manager';
 import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
 import { searchDesignKnowledge } from '@/lib/ai/knowledge/knowledge-search';
-import { formatDesignGuidance } from '@/lib/ai/knowledge/design-knowledge';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generatePuckComponent } from '@/features/ai/component-generator';
 import { prisma } from '@/lib/prisma';
@@ -138,7 +137,7 @@ export async function POST(request: NextRequest) {
 
         // STEP 2: Optimize prompt
         send({ type: 'status', step: 'optimizing', label: 'Optimizing prompt...' });
-        const { enrichedPrompt, intent, businessType, designGuidance } = optimizePrompt(prompt);
+        const { enrichedPrompt, intent, businessType, designContext, designGuidance } = optimizePrompt(prompt);
 
         // Select component catalog tiers based on intent + business type
         const componentTiers = selectRelevantComponents(intent, businessType, treeSummary);
@@ -156,10 +155,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Format design guidance + merge with RAG knowledge
-        const designContextFromGuidance = designGuidance
-          ? formatDesignGuidance(designGuidance, businessType ?? undefined)
-          : '';
-        const mergedDesignContext = [designContextFromGuidance, ragContext].filter(Boolean).join('\n') || undefined;
+        const mergedDesignContext = [designContext, ragContext].filter(Boolean).join('\n') || undefined;
 
         // STEP 3-6: Create AI stream
         let aiStream: ReadableStream<Uint8Array>;

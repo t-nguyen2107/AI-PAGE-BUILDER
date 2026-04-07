@@ -425,6 +425,7 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
               businessType: options.businessType ?? 'general',
               designGuidance: options.designGuidance,
               styleguideData: options.styleguideData,
+              designContext: options.designContext,
               position: { index, total: plan.components.length },
             });
 
