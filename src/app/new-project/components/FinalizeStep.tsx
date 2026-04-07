@@ -38,10 +38,12 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
   const [currentPhase, setCurrentPhase] = useState<FinalizePhase>("creating");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<string>("");
+  const [componentProgress, setComponentProgress] = useState<string>("");
 
   const mountedRef = useRef(true);
   const startedRef = useRef(false);
   const errorRef = useRef(false);
+  const progressiveComponentsRef = useRef<unknown[]>([]);
   // Refs to avoid stale closures in finalize callback
   const projectInfoRef = useRef(projectInfo);
   const settingsRef = useRef(settings);
@@ -125,6 +127,7 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
 
       if (!mountedRef.current) return;
       setCurrentPhase("generating");
+      progressiveComponentsRef.current = [];
       const prompt = `Create a complete homepage for "${info.name}".
 Business: ${info.idea}
 Target audience: ${info.targetAudience}
@@ -154,6 +157,11 @@ Generate a professional landing page with all essential sections including heade
           },
           (_step, label) => {
             setGenerationProgress(label);
+          },
+          // onComponent — progressive component tracking
+          (component, index, total) => {
+            progressiveComponentsRef.current.push(component);
+            setComponentProgress(`${index + 1}/${total} components`);
           },
         );
       });
@@ -330,7 +338,9 @@ Generate a professional landing page with all essential sections including heade
                   {phase.label}
                 </p>
                 <p className="text-[10px] text-on-surface-outline mt-0.5 truncate">
-                  {isActive && phase.phase === "generating" && generationProgress
+                  {isActive && phase.phase === "generating" && componentProgress
+                    ? componentProgress
+                    : isActive && phase.phase === "generating" && generationProgress
                     ? generationProgress
                     : phase.description}
                 </p>

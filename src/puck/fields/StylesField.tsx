@@ -192,7 +192,7 @@ function Accordion({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className={`group border-l-2 transition-colors ${open ? "border-l-indigo-400 bg-indigo-50/30" : "border-l-transparent"}`}>
+    <div className={`group border-l-2 transition-colors ${open ? "border-l-[var(--puck-color-azure-04)] bg-[var(--puck-color-grey-01)]" : "border-l-transparent"}`}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -317,6 +317,58 @@ export function StylesField({
           Hover
         </button>
       </div>
+
+      {/* ── Quick-access bar ── */}
+      {!isHover && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50/60 border-b border-gray-100">
+          {/* Background color */}
+          <div className="flex items-center gap-1.5">
+            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">BG</label>
+            <ColorPickerField
+              value={v.backgroundColor || ""}
+              onChange={(val) => onChange({ ...v, backgroundColor: val })}
+            />
+          </div>
+
+          {/* Opacity */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">OP</label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={v.opacity ?? 100}
+              onChange={(e) => onChange({ ...v, opacity: Number(e.target.value) })}
+              className="flex-1 h-1 accent-indigo-500 cursor-pointer"
+            />
+            <span className="text-[10px] font-mono text-gray-500 w-7 text-right">{v.opacity ?? 100}%</span>
+          </div>
+
+          {/* Border radius */}
+          <div className="flex items-center gap-1">
+            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">R</label>
+            <input
+              type="text"
+              value={v.border?.radius?.tl ?? ""}
+              onChange={(e) => {
+                const r = e.target.value;
+                onChange({
+                  ...v,
+                  border: {
+                    radius: { tl: r, tr: r, br: r, bl: r },
+                    width: v.border?.width ?? "0px",
+                    style: v.border?.style ?? "solid",
+                    color: v.border?.color ?? "#000000",
+                  },
+                });
+              }}
+              placeholder="0px"
+              className="w-12 text-[11px] border border-gray-200 rounded px-1.5 py-0.5 text-center font-mono bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Accordion Sections ── */}
       <div className="divide-y divide-gray-100">

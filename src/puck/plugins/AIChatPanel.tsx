@@ -213,6 +213,7 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
   const abortRef = useRef<AbortController | null>(null);
   const liveRenderTimersRef = useRef<number[]>([]);
   const lastPromptRef = useRef<string>("");
+  const progressiveComponentsRef = useRef<import("@puckeditor/core").ComponentData[]>([]);
 
   const dispatch = usePuckSelector((s) => s.dispatch);
   const componentCount = usePuckSelector(
@@ -252,6 +253,7 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
       setLoading(true);
       setPipelineSteps([]);
       liveRenderTimersRef.current = [];
+      progressiveComponentsRef.current = [];
       lastPromptRef.current = prompt;
 
       const now = Date.now();
@@ -280,7 +282,7 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
         },
         // onChunk — keep pipeline active
         () => {},
-        // onDone — apply result to canvas
+        // onDone — finalize result
         (result: AIGenerationResponse) => {
           const total = result.components?.length ?? 0;
           setLoading(false);
@@ -304,9 +306,32 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
             return;
           }
 
+          const typeList = result.components
+            .map((c) => c.type)
+            .filter((v, i, a) => a.indexOf(v) === i)
+            .join(", ");
+
+          // If components were already applied progressively via onComponent,
+          // just update the message — skip liveRenderToPuck
+          const alreadyApplied = progressiveComponentsRef.current.length;
+          if (alreadyApplied >= total) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id
+                  ? {
+                      ...m,
+                      content: `Đã tạo xong ${total} thành phần (${typeList}). Bạn có thể chỉnh sửa trực tiếp trên canvas!`,
+                      status: "success",
+                      action: result.action as string,
+                    }
+                  : m,
+              ),
+            );
+            return;
+          }
+
           // Show plan message
-          const planMsg =
-            result.message || `Đang tạo ${total} thành phần...`;
+          const planMsg = result.message || `Đang tạo ${total} thành phần...`;
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsg.id
@@ -320,16 +345,13 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
             ),
           );
 
-          // Live render
+          // Live render remaining components not yet applied
+          const remaining = { ...result, components: result.components.slice(alreadyApplied) };
           const timers = liveRenderToPuck(
-            result,
+            remaining,
             dispatch,
-            (applied: number, total: number) => {
-              if (applied >= total) {
-                const typeList = result
-                  .components!.map((c) => c.type)
-                  .filter((v, i, a) => a.indexOf(v) === i)
-                  .join(", ");
+            (applied: number, remTotal: number) => {
+              if (applied >= remTotal) {
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantMsg.id
@@ -348,10 +370,6 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
           liveRenderTimersRef.current = timers;
 
           if (timers.length === 0) {
-            const typeList = result
-              .components!.map((c) => c.type)
-              .filter((v, i, a) => a.indexOf(v) === i)
-              .join(", ");
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMsg.id
@@ -393,6 +411,27 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
               ...updated,
               { step: _step, label, status: "active" as const },
             ];
+          });
+        },
+        // onComponent — progressive component rendering
+        (component, index, total) => {
+          const puckComponent = component as import("@puckeditor/core").ComponentData;
+          progressiveComponentsRef.current.push(puckComponent);
+          // Apply immediately to canvas
+          dispatch({
+            type: "setData",
+            data: (prev: Data) => {
+              const content = [...(prev.content || [])];
+              if (index === 0 && total > 1) {
+                // First component of a full-page: reset canvas
+                return {
+                  root: { props: { title: "Untitled" } },
+                  content: [puckComponent],
+                };
+              }
+              content.push(puckComponent);
+              return { ...prev, content };
+            },
           });
         },
       );

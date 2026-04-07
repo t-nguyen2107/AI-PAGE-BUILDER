@@ -2,6 +2,7 @@ import { forwardRef, type CSSProperties, type ReactNode } from "react";
 import type { ComponentConfig, ObjectField } from "@puckeditor/core";
 import type { ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { stylesToCss, type StylesValue } from "../fields/StylesField";
 
 // ─── Layout field props ────────────────────────────────────────────────
 
@@ -64,15 +65,18 @@ type LayoutProps = WithLayout<{
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+  styles?: StylesValue;
 }> & Partial<ComponentMeta>;
 
 const Layout = forwardRef<HTMLDivElement, LayoutProps>(
-  ({ children, className, layout, style, ...metaRest }, ref) => {
+  ({ children, className, layout, style, styles, ...metaRest }, ref) => {
+    const cssStyles = stylesToCss(styles);
     return (
       <div
         className={className}
         style={{
           ...extractStyleProps(metaRest),
+          ...cssStyles,
           gridColumn: layout?.spanCol
             ? `span ${Math.max(Math.min(layout.spanCol, 12), 1)}`
             : undefined,

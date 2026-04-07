@@ -1,48 +1,29 @@
 import type { ComponentConfig } from "@puckeditor/core";
 import {
-  StylesField,
   stylesToCss,
   hoverToCss,
   type StylesValue,
-  type StylesFieldOptions,
 } from "./StylesField";
 
-export type { StylesValue, StylesFieldOptions };
+export type { StylesValue };
 export { stylesToCss };
 
 export type WithStyles<P extends Record<string, unknown>> = P & {
   styles?: StylesValue;
 };
 
-export type WithStylesOptions = StylesFieldOptions & {
-  /** Position in field list to insert styles field (default: last) */
-  fieldPosition?: number;
-};
-
 /**
- * HOC that adds a comprehensive "Styles" accordion panel to any Puck component.
- * Supports Default + Hover states, background images, and CSS transitions.
- *
- * Usage:
- *   const StyledButton = withLayout(withStyles(ButtonInner));
- *   const StyledCard  = withStyles(CardInner, { disableTypography: true });
+ * HOC that wraps a component's render to apply StylesValue as inline CSS.
+ * Style editing is now handled by UnifiedInspector's Style tab.
  */
 export function withStyles<C extends ComponentConfig<any>>(
   config: C,
-  options?: WithStylesOptions,
 ): C {
-  const stylesField = {
-    type: "custom" as const,
-    render: ({ value, onChange }: { value: StylesValue; onChange: (val: StylesValue) => void }) => (
-      <StylesField value={value} onChange={onChange} options={options} />
-    ),
-  };
-
   return {
     ...config,
     fields: {
       ...config.fields,
-      styles: stylesField,
+      // NOTE: "styles" field removed from config — now managed by UnifiedInspector Style tab
     },
     defaultProps: {
       ...config.defaultProps,

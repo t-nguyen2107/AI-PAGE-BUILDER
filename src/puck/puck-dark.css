@@ -1,0 +1,92 @@
+/* Puck Editor — Dark Mode Overrides
+ *
+ * Loaded AFTER "@puckeditor/core/puck.css" in PuckEditor.tsx.
+ * Uses !important on custom property overrides to guarantee
+ * they win over Puck's :root definitions regardless of
+ * Next.js CSS bundling order.
+ */
+
+/* ═─ Variable overrides ── */
+.dark {
+  /* Grey scale: backgrounds (light numbers = dark values) */
+  --puck-color-grey-01: #091519 !important;
+  --puck-color-grey-02: #0d1f24 !important;
+  --puck-color-grey-03: #ffffff !important;
+  --puck-color-grey-10: #1f383f !important;
+  --puck-color-grey-11: #152a30 !important;
+  --puck-color-grey-12: #0d1f24 !important;
+
+  /* Grey scale: text (high numbers = light values) */
+  --puck-color-grey-04: #dfe8ea !important;
+  --puck-color-grey-06: #bfccd0 !important;
+  --puck-color-grey-07: #8a9b9f !important;
+  --puck-color-grey-08: #bfccd0 !important;
+
+  /* Grey scale: borders */
+  --puck-color-grey-05: #344a4f !important;
+  --puck-color-grey-09: #344a4f !important;
+
+  /* Absolute colors — swap white/black */
+  --puck-color-white: #111b1f !important;
+  --puck-color-black: #dfe8ea !important;
+
+  /* Azure → teal primary */
+  --puck-color-azure-01: #0a2a30 !important;
+  --puck-color-azure-02: #0d3040 !important;
+  --puck-color-azure-03: #1a4e48 !important;
+  --puck-color-azure-04: #5ec4b8 !important;
+  --puck-color-azure-05: #5ec4b8 !important;
+  --puck-color-azure-06: #88d4cc !important;
+  --puck-color-azure-07: #3aaa9e !important;
+  --puck-color-azure-08: #5ec4b8 !important;
+  --puck-color-azure-09: #2d918a !important;
+  --puck-color-azure-10: #1a5c56 !important;
+  --puck-color-azure-11: #1a3a47 !important;
+  --puck-color-azure-12: #152a30 !important;
+}
+
+/* ═─ Hardcoded element fixes ── */
+
+/* Canvas: hardcoded "background: white" */
+.dark [class*="Canvas-root"] {
+  background: #0d1f24 !important;
+  outline-color: #344a4f !important;
+}
+
+/* All Puck buttons, tabs, nav items — ensure visible text */
+.dark [class*="Puck"] button,
+.dark [class*="Puck"] a,
+.dark [class*="Puck"] [role="tab"],
+.dark [class*="Puck"] [role="button"] {
+  color: var(--on-surface, #dfe8ea);
+}
+
+/* Hover states */
+.dark [class*="Puck"] button:hover,
+.dark [class*="Puck"] [role="tab"]:hover {
+  color: #ffffff !important;
+}
+
+/* Active/selected tab */
+.dark [class*="Puck"] button[class*="active"],
+.dark [class*="Puck"] [class*="selected"],
+.dark [class*="Puck"] [role="tab"][aria-selected="true"] {
+  color: var(--primary, #5ec4b8) !important;
+}
+
+/* Panel backgrounds */
+.dark [class*="Drawer"],
+.dark [class*="Outline"],
+.dark [class*="DrawerPanel"],
+.dark [class*="SideBar"] {
+  background-color: #111b1f !important;
+}
+
+/* Input/select inside Puck panels */
+.dark [class*="Puck"] input,
+.dark [class*="Puck"] select,
+.dark [class*="Puck"] textarea {
+  background-color: #152a30 !important;
+  color: #dfe8ea !important;
+  border-color: #344a4f !important;
+}

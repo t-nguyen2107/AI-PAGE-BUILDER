@@ -1,0 +1,174 @@
+/* ── Unified Inspector ─────────────────────────────────────────────── */
+
+.unified-inspector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 13px;
+}
+
+/* ── Header ── */
+.inspector-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--puck-color-grey-08);
+}
+
+.inspector-header-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--puck-color-grey-04);
+}
+
+/* ── Tabs ── */
+.inspector-tabs {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--puck-color-grey-08);
+  padding: 0 8px;
+}
+
+.inspector-tabs-track {
+  display: flex;
+  position: relative;
+}
+
+.inspector-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--puck-color-grey-04);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.15s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.inspector-tab:hover {
+  color: var(--puck-color-grey-03);
+}
+
+.inspector-tab--active {
+  color: var(--puck-color-black);
+  font-weight: 600;
+}
+
+.inspector-tab-icon {
+  font-size: 15px;
+}
+
+.inspector-tab-label {
+  line-height: 1;
+}
+
+.inspector-tabs-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--puck-color-black);
+  border-radius: 1px;
+  transition: transform 0.2s ease;
+}
+
+/* ── Content area ── */
+.inspector-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.tab-panel {
+  padding: 12px 0;
+}
+
+.tab-panel--advanced .puck-field {
+  padding: 0 16px;
+  margin-bottom: 12px;
+}
+
+.tab-panel--advanced .puck-field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--puck-color-grey-03);
+}
+
+.tab-panel--advanced .puck-field-text-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--puck-color-grey-08);
+  border-radius: 6px;
+  background: var(--puck-color-grey-01);
+  color: var(--puck-color-grey-04);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.tab-panel--advanced .puck-field-text-input:focus {
+  border-color: var(--puck-color-azure-04);
+}
+
+.tab-panel--advanced .puck-field-description {
+  font-size: 10px;
+  color: var(--puck-color-grey-04);
+  margin-top: 3px;
+  opacity: 0.7;
+}
+
+/* ── Empty state ── */
+.inspector-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+  text-align: center;
+}
+
+/* ── Loading state ── */
+.inspector-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+/* ── Dark mode ── */
+.dark .inspector-tab--active {
+  color: var(--puck-color-grey-04);
+}
+
+.dark .inspector-tab {
+  color: var(--puck-color-grey-04, #8a9fa6);
+}
+
+.dark .inspector-tab:hover {
+  color: #ffffff;
+}
+
+.dark .inspector-tabs-indicator {
+  background: var(--puck-color-azure-04, #5ec4b8);
+}
+
+.dark .tab-panel--advanced .puck-field-text-input {
+  background: var(--puck-color-grey-01, #091519);
+  border-color: var(--puck-color-grey-08, #1c3338);
+  color: var(--puck-color-grey-04, #dfe8ea);
+}
+
+.dark .tab-panel--advanced .puck-field-label {
+  color: var(--puck-color-grey-04, #8a9fa6);
+}

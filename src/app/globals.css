@@ -819,12 +819,17 @@ h1, h2, h3, h4, h5, h6,
 
 /* ── Wizard animations ── */
 @keyframes winnie-float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
+  0%   { transform: translateY(0px) rotate(0deg); }
+  25%  { transform: translateY(-3px) rotate(1deg); }
+  50%  { transform: translateY(-6px) rotate(0deg); }
+  75%  { transform: translateY(-3px) rotate(-1deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
 }
 @keyframes winnie-wing {
-  0%, 100% { transform: scaleX(1) rotate(0deg); }
-  50% { transform: scaleX(0.85) rotate(-8deg); }
+  0%, 100% { transform: scaleX(1) scaleY(1) rotate(0deg); }
+  25%  { transform: scaleX(0.75) scaleY(0.9) rotate(-12deg); }
+  50%  { transform: scaleX(1) scaleY(1) rotate(0deg); }
+  75%  { transform: scaleX(0.75) scaleY(0.9) rotate(-12deg); }
 }
 @keyframes wizard-fade-up {
   from { opacity: 0; transform: translateY(10px); }
@@ -848,8 +853,8 @@ h1, h2, h3, h4, h5, h6,
   100% { transform: translateX(400%); }
 }
 
-.animate-winnie-float { animation: winnie-float 3s ease-in-out infinite; }
-.animate-winnie-wing { animation: winnie-wing 0.6s ease-in-out infinite; }
+.animate-winnie-float { animation: winnie-float 2.5s ease-in-out infinite; }
+.animate-winnie-wing { animation: winnie-wing 0.8s ease-in-out infinite; }
 .animate-wizard-fade-up { animation: wizard-fade-up 0.4s var(--ease-out) forwards; }
 .animate-cursor-blink { animation: cursor-blink 1s step-end infinite; }
 .animate-dot-wave { animation: dot-wave 1.4s ease-in-out infinite; }
@@ -887,6 +892,80 @@ h1, h2, h3, h4, h5, h6,
 }
 .animate-hero-glow {
   animation: hero-glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── Spinner glow pulse (FinalizeStep) ── */
+@keyframes winnie-spinner-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+.animate-winnie-spinner-glow {
+  animation: winnie-spinner-glow 2.5s ease-in-out infinite;
+}
+
+/* ── WinnieChat enhancements ── */
+
+/* Floating ambient particles in hero */
+@keyframes float-particle {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.15; }
+  25% { transform: translateY(-20px) translateX(8px); opacity: 0.35; }
+  50% { transform: translateY(-35px) translateX(-5px); opacity: 0.2; }
+  75% { transform: translateY(-15px) translateX(12px); opacity: 0.3; }
+}
+.animate-float-particle {
+  animation: float-particle 6s ease-in-out infinite;
+}
+
+/* Confetti celebration burst */
+@keyframes confetti-burst {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(-80px) rotate(360deg) scale(0); opacity: 0; }
+}
+.animate-confetti-burst {
+  animation: confetti-burst 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Shimmer border for suggestion cards */
+@keyframes shimmer-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-shimmer-border {
+  background: linear-gradient(135deg, var(--primary), var(--tertiary), var(--primary));
+  background-size: 200% 200%;
+  animation: shimmer-border 3s ease infinite;
+}
+
+/* Expand ring behind avatar */
+@keyframes ring-expand {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  50% { transform: scale(1.15); opacity: 0.1; }
+  100% { transform: scale(0.8); opacity: 0.4; }
+}
+.animate-ring-expand {
+  animation: ring-expand 3s ease-in-out infinite;
+}
+
+/* Typewriter text reveal */
+@keyframes text-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0% 0 0); }
+}
+
+/* Subtle bounce for suggestion cards on hover */
+@keyframes card-hover-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Celebration sparkle */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+.animate-sparkle {
+  animation: sparkle 0.8s ease-in-out forwards;
 }
 
 /* Reduced motion — respect user preference */

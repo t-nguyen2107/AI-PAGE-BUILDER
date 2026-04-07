@@ -8,13 +8,16 @@ import { useScrollAnimation } from "../hooks/useScrollAnimation";
 // ─── Gradient presets ────────────────────────────────────────────────
 
 const GRADIENT_PRESETS: Record<string, { from: string; to: string }> = {
-  sunset:  { from: "#f97316", to: "#ec4899" },
-  ocean:   { from: "#0ea5e9", to: "#6366f1" },
-  forest:  { from: "#059669", to: "#065f46" },
-  aurora:  { from: "#7c3aed", to: "#06b6d4" },
-  midnight:{ from: "#1e1b4b", to: "#312e81" },
-  berry:   { from: "#be185d", to: "#7c3aed" },
-  ember:   { from: "#dc2626", to: "#f97316" },
+  teal:     { from: "#22746e", to: "#1a5c56" },
+  navy:     { from: "#081b22", to: "#0d2f3a" },
+  gold:     { from: "#e39c37", to: "#c47f1a" },
+  sunset:   { from: "#f97316", to: "#ec4899" },
+  ocean:    { from: "#0ea5e9", to: "#6366f1" },
+  forest:   { from: "#059669", to: "#065f46" },
+  aurora:   { from: "#7c3aed", to: "#06b6d4" },
+  midnight: { from: "#1e1b4b", to: "#312e81" },
+  berry:    { from: "#be185d", to: "#7c3aed" },
+  ember:    { from: "#dc2626", to: "#f97316" },
 };
 
 // ─── Render component ─────────────────────────────────────────────────

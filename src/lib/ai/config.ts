@@ -1,4 +1,6 @@
-export type AIProvider = 'ollama' | 'openai' | 'anthropic';
+export type AIProvider = 'ollama' | 'openai' | 'anthropic' | 'gemini';
+import { getCachedAIConfig, setCachedAIConfig, getCachedFastConfig, setCachedFastConfig, resetConfigCache } from './cache';
+export { getCachedAIConfig, setCachedAIConfig, getCachedFastConfig, setCachedFastConfig, resetConfigCache };
 
 export interface AIConfig {
   provider: AIProvider;
@@ -18,6 +20,9 @@ export interface AIFastConfig {
 }
 
 export function resolveConfig(): AIConfig {
+  const cached = getCachedAIConfig();
+  if (cached) return cached;
+
   const provider = (process.env.AI_PROVIDER ?? 'ollama') as AIProvider;
   const model = process.env.AI_MODEL ?? process.env.OLLAMA_MODEL ?? 'qwen3.5';
   const baseUrl = process.env.AI_BASE_URL ?? process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
@@ -39,7 +44,8 @@ export function resolveConfig(): AIConfig {
   if (safeTemp !== temperature) console.warn(`[ai/config] Invalid AI_TEMPERATURE="${process.env.AI_TEMPERATURE}", using ${safeTemp}`);
   if (safeRetries !== maxRetries) console.warn(`[ai/config] Invalid AI_MAX_RETRIES="${process.env.AI_MAX_RETRIES}", using ${safeRetries}`);
   if (safeTokens !== maxTokens) console.warn(`[ai/config] Invalid AI_MAX_TOKENS="${process.env.AI_MAX_TOKENS}", using ${safeTokens}`);
-  return {
+
+  const config: AIConfig = {
     provider,
     model,
     baseUrl,
@@ -48,11 +54,18 @@ export function resolveConfig(): AIConfig {
     maxRetries: safeRetries,
     maxTokens: safeTokens,
   };
+  setCachedAIConfig(config);
+  return config;
 }
 
 export function resolveFastConfig(): AIFastConfig {
+  const cached = getCachedFastConfig();
+  if (cached) return cached;
+
   const model = process.env.AI_FAST_MODEL || process.env.AI_MODEL || 'qwen3.5';
   const baseUrl = process.env.AI_FAST_BASE_URL || process.env.AI_BASE_URL || 'http://localhost:11434';
   const apiKey = process.env.AI_FAST_API_KEY || process.env.AI_API_KEY;
-  return { model, baseUrl, apiKey };
+  const config: AIFastConfig = { model, baseUrl, apiKey };
+  setCachedFastConfig(config);
+  return config;
 }

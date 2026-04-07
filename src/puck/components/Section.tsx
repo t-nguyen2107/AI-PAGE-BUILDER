@@ -1,5 +1,6 @@
 import { forwardRef, type CSSProperties, type ReactNode } from "react";
 import type { ComponentMeta } from "../types";
+import { stylesToCss, type StylesValue } from "../fields/StylesField";
 
 export type SectionProps = {
   className?: string;
@@ -7,10 +8,11 @@ export type SectionProps = {
   maxWidth?: string;
   style?: CSSProperties;
   padding?: string;
+  styles?: StylesValue;
 } & Partial<ComponentMeta>;
 
 export const Section = forwardRef<HTMLDivElement, SectionProps>(
-  ({ children, className, maxWidth = "1280px", style, padding, ...metaRest }, ref) => {
+  ({ children, className, maxWidth = "1280px", style, padding, styles, ...metaRest }, ref) => {
     // Merge any ComponentMeta style props (bgColor, textColor, etc.) into style
     const metaStyle: CSSProperties = {};
     if (metaRest.bgColor) metaStyle.backgroundColor = metaRest.bgColor;
@@ -21,10 +23,12 @@ export const Section = forwardRef<HTMLDivElement, SectionProps>(
       metaStyle.opacity = Math.max(0, Math.min(1, metaRest.opacity));
     }
 
+    const cssStyles = stylesToCss(styles);
+
     return (
       <div
         className={`w-full ${className ?? ""}`}
-        style={{ ...style, ...metaStyle, paddingTop: padding, paddingBottom: padding }}
+        style={{ ...style, ...metaStyle, ...cssStyles, paddingTop: padding, paddingBottom: padding }}
         ref={ref}
       >
         <div className="mx-auto px-6" style={{ maxWidth }}>

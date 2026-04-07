@@ -1,43 +1,101 @@
 # Changelog
 
-## [2026-04-05] Unit Tests + Bug Fixes
+All notable changes to LoomWeave AI Page Builder.
+
+## [2026-04-06] — Gemini Integration + Branding Polish
 
 ### Added
-- **Vitest test infrastructure** — `vitest.config.ts` (jsdom, globals, @/ alias)
-- **14 test files, 188 tests** covering the AI pipeline:
-  - `ai/output.test.ts` (20 tests) — validateOutput: null/invalid input, actions, think-tag stripping, emoji removal, ID auto-assign, unknown types
-  - `ai/output-sanitizer.test.ts` (15 tests) — sanitizeAIResponse: emoji stripping, ID dedup/generation, defaults fill, type coercion, legacy nodes
-  - `ai/embeddings.test.ts` (10 tests) — vectorToPg, resetEmbeddingConfig, config resolution
-  - `ai/session-analyzer.test.ts` (18 tests) — isVietnamese, extractComponentTypes
-  - `ai/config.test.ts` (9 tests) — resolveConfig: defaults, bounds clamping, deprecated env vars
-  - `ai/component-catalog.test.ts` (5 tests) — VALID_COMPONENT_TYPES matches catalog keys
-  - `ai/template-schema.test.ts` (15 tests) — validateTemplateResponse
-  - `ai/utils.test.ts` (12 tests) — stripEmojis, safeJsonParse
-  - `auth.test.ts` (2 tests) — requireAuth, canAccessProject placeholders
-- `"test": "vitest run"` script in package.json
-- `VALID_COMPONENT_TYPES` exported set in `component-catalog.ts`
-- `isVietnamese` and `extractComponentTypes` exported from `session-analyzer.ts`
+- **Gemini AI provider** — `ChatGoogleGenerativeAI` via `@langchain/google-genai`
+  - New provider type `'gemini'` in `AIProvider` union
+  - Gemini case in all 3 model factory functions (`createModel`, `createModelBundle`, `createFastModelBundle`)
+  - Token usage test script (`scripts/test-token-usage.ts`)
+- **Brand gradient presets** — Added teal, navy, gold presets to HeroSection (alongside creative options)
+- **Missing CSS tokens** — `--on-secondary-container` (light + dark), `--color-primary-text`, `--color-on-secondary`, `--color-on-secondary-container` in `@theme inline`
 
 ### Fixed
-- **output.ts** — Think-tag regex now allows optional whitespace before `>` (`/<think[\s\S]*?<\/think\s*>/gi`)
-- **vector-store.ts** — Raw SQL column names corrected from snake_case to quoted camelCase to match Prisma-generated schema:
-  - `created_at` → `"createdAt"`
-  - `project_id` → `"projectId"`
-  - `times_referenced` → `"timesReferenced"`
-  - `referenced_at` → `"referencedAt"`
+- **Banner animated gradient** — Fallback changed from indigo `#6366f1` to brand teal `var(--primary)`
+- **WinnieChat.tsx** — Added missing state declarations for `setFollowUpAsked` and `confirmedReady`/`setConfirmedReady`
+- **FinalizeStep.tsx** — TypeScript `never` narrowing fix for closure-based `generatedResult`
+- **globals.css comment** — Corrected brand color order in header comment
+- **Gemini model name** — `gemini-3-flash-preview` (was `gemini-3.1-flash-live-preview` which only works with Live API)
 
-### Commits
-- `d6e47b5` feat: add unit test suite (188 tests) + UI improvements + think-tag regex fix
-- `1ec40a7` fix: vector-store raw SQL — snake_case columns → quoted camelCase
+### Performance
+- Gemini 3 Flash: ~7s full generation, ~3s fast model — **$0.0003–0.0004/request**
+- Token usage: ~85 input + ~500–660 output per generation
 
 ---
 
-## [2026-04-04] Code Review Fixes
+## [2026-04-05] — LoomWeave Branding & UI Overhaul
 
-### Fixed (commit `55461a0`)
-- `prisma.ts` — Proxy with `Reflect.get`, typed `ExtendedClient`
-- `ai/generate/route.ts` — Fixed `as any` → `as ComponentCategory`, added error logging
-- `PuckEditor.tsx` — Memoized `createAIPlugin` with `useMemo`
-- `context-loader.ts` / `profile-serializer.ts` — Added console.warn to swallowed catches
-- `output.ts` / `template-schema.ts` — Shared `VALID_COMPONENT_TYPES` from component-catalog
-- `auth.ts` — New auth placeholder file
+### Added
+- **LoomWeave brand identity** — Renamed from "PageBuilder"
+  - Brand colors: Primary `#22746e` (teal), Secondary `#081b22` (navy), Accent `#e39c37` (amber)
+  - Fonts: Poppins (heading) + Inter (body) via `next/font/google`
+  - Logo: `public/assets/images/logo-full-color.png` in dashboard nav
+  - Favicon: `public/assets/images/fav.png`
+- **Dark mode** — Full theme toggle via `next-themes`
+  - `ThemeProvider` wrapper in root layout
+  - `ThemeToggle` button in dashboard header (Material Symbols sun/moon icons)
+  - Complete `.dark` CSS token overrides (Material Design 3 inspired)
+- **LogoSpinner component** — Animated spinner from `fav.png` (1.5s rotation, accessible)
+- **Wizard animations** — Winnie float, wing flap, fade-up, cursor blink, dot wave, pulse ring keyframes
+
+### Fixed
+- **Puck component color cleanup** (12 components) — Replaced hardcoded colors with semantic design tokens:
+  - `bg-gray-900` → `bg-inverse-surface`, `text-yellow-400` → `text-tertiary`, `text-red-500` → `text-error`, etc.
+  - Stars in TestimonialSection: `text-yellow-400 fill-yellow-400` → `text-tertiary fill-tertiary`
+  - ProductCards: `bg-red-500 text-white` → `bg-error text-on-error`
+  - SocialProof: `bg-green-500` → `bg-success`
+  - CTASection decorative blobs → `bg-primary-foreground/5`
+
+### Design System
+- Full Material Design 3 token system in `globals.css` (~900 lines)
+- Surface hierarchy (5 levels), on-colors, containers, inverse tokens
+- shadcn/ui token aliases mapped to Material equivalents
+- Tailwind v4 `@theme inline` mapping all CSS vars to Tailwind utilities
+
+---
+
+## [2026-04-04] — AI Pipeline Quality + Performance
+
+### Added
+- **AI UI Generation Quality Overhaul** (4 phases)
+  - Phase 1: Static design knowledge (25+ color palettes, 11 styles, 10 landing patterns, 14 typography pairings)
+  - Phase 2: Vector RAG knowledge base (pgvector search + seed API endpoint)
+  - Phase 3: Component visual improvements (StatsSection cards, CTASection animation, `useScrollAnimation` hook)
+  - Phase 4: Auto-styleguide generation (business type → project colors/typography/CSS vars)
+- **Fast model routing** — `createFastModelBundle()` for template mode, `createModelBundle()` for heavy chain
+  - New env vars: `AI_FAST_MODEL`, `AI_FAST_BASE_URL`, `AI_FAST_API_KEY`
+- **Unit test suite** — 188 tests across 14 files (Vitest + jsdom)
+- **E2E AI pipeline tests** — 11 real API calls testing full generation flow
+- **CustomSection** — Custom HTML/CSS component with DOMPurify sanitization
+- **Winnie wizard improvements** — WinnieAvatar component, animated avatar, suggestion chips
+- **Shared component catalog** — `component-catalog.ts` as single source of truth
+
+### Fixed
+- **Streaming** — Strip `response_format` for streaming (fixes empty response from some providers)
+- **FinalizeStep** — Prevent double finalize from React StrictMode with `startedRef` guard
+- **Code review fixes** — 13 issues: override order, empty string env fallback, dedup, error logging
+- **Security** — Block CSS `@import` in CustomSection, DOMPurify sanitization for scripts
+- **Vector store** — Raw SQL snake_case columns → quoted camelCase for Prisma compatibility
+
+### Performance
+- Wizard chat: **26s → ~2s** (fast model)
+- Styleguide generation: **36s → ~2s** (deterministic + LLM only for SEO)
+- maxTokens reduced: template 4096, chain 8192
+- Parallel API calls in FinalizeStep (styleguide + project update)
+- Seed batch rate limiting (2 concurrent + 500ms delay)
+
+---
+
+## [2026-04-03] — Foundation
+
+### Added
+- AI chain overhaul — prompts, catalog, context transfer
+- Prisma schema with pgvector support
+- Puck visual editor integration (36 components)
+- SSE streaming pipeline
+- AI memory system (3 layers: profile, vectors, sessions)
+- New project wizard (Winnie AI)
+- SEO suite (audit, JSON-LD, meta generator, heading validator)
+- REST API (22 routes)

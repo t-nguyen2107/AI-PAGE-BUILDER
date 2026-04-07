@@ -2,8 +2,9 @@ import type { BaseMessage } from '@langchain/core/messages';
 import { createModelBundle, createFastModelBundle } from './provider';
 import { buildChainPrompt } from './prompts/system-prompt';
 import { buildTemplatePrompt } from './prompts/template-prompt';
+import { buildSectionPrompt } from './prompts/section-prompt';
 import { validateOutput } from './output';
-import { validateTemplateResponse } from './prompts/template-schema';
+import { validateTemplateResponse, validateSingleComponent } from './prompts/template-schema';
 import { sanitizeAIResponse } from './output-sanitizer';
 import { convertAIResponseNodes, orderPuckComponents } from './puck-adapter';
 import { generateId } from '@/lib/id';
@@ -12,6 +13,7 @@ import { AIAction } from '@/types/enums';
 import type { ComponentData } from '@puckeditor/core';
 import type { ComponentTierPlan } from './prompts/prompt-optimizer';
 import type { DesignGuidance } from './knowledge/design-knowledge';
+import { COMPONENT_CATALOG } from './prompts/component-catalog';
 
 interface StreamOptions {
   styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
@@ -35,12 +37,38 @@ interface StreamOptions {
 }
 
 export interface SSEEvent {
-  type: 'chunk' | 'done' | 'error' | 'status';
+  type: 'chunk' | 'done' | 'error' | 'status' | 'component_stream';
   content?: string;
   result?: AIGenerationResponse;
   message?: string;
   step?: string;
   label?: string;
+  /** Individual component for progressive rendering (component_stream events) */
+  component?: ComponentData;
+  /** Running count of streamed components (component_stream events) */
+  componentIndex?: number;
+  /** Total expected components (component_stream events) */
+  componentTotal?: number;
+}
+
+/**
+ * Emit individual components as component_stream events for progressive rendering.
+ * Clients can apply components to the canvas one-by-one before the final done event.
+ */
+function emitComponentStream(
+  send: (event: SSEEvent) => void,
+  components: ComponentData[],
+): void {
+  const total = components.length;
+  send({ type: 'status', step: 'rendering', label: `Streaming ${total} components...` });
+  for (let i = 0; i < total; i++) {
+    send({
+      type: 'component_stream',
+      component: components[i],
+      componentIndex: i,
+      componentTotal: total,
+    });
+  }
 }
 
 /**
@@ -183,11 +211,13 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
           }));
           const ordered = orderPuckComponents(components);
 
+          // Progressive: emit each component individually before done
           const result: AIGenerationResponse = {
             action: AIAction.FULL_PAGE,
             components: ordered,
             message: `Generated page with ${ordered.length} components`,
           };
+          emitComponentStream(send, ordered);
           send({ type: 'done', result });
         } else {
           // Full mode: sanitize + validate Puck component response
@@ -209,6 +239,10 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
             return; // finally will close
           }
 
+          // Progressive: emit each component individually before done
+          if (data.components?.length) {
+            emitComponentStream(send, data.components);
+          }
           send({ type: 'done', result: data });
         }
       } catch (err) {
@@ -283,4 +317,184 @@ export function extractJSON(text: string): unknown {
 
   console.error('[streaming/extractJSON] Failed to parse. Total length:', cleaned.length, 'First 300 chars:', cleaned.substring(0, 300));
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Two-Pass Streaming — Pass 1: component plan, Pass 2: per-section props
+// ---------------------------------------------------------------------------
+
+interface TwoPassStreamOptions {
+  styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
+  /** Business type for template assembler */
+  businessType?: string;
+  /** Design context / RAG knowledge text */
+  designContext?: string;
+  /** Resolved design guidance for per-section prompts */
+  designGuidance?: DesignGuidance;
+  /** AbortSignal to cancel streaming */
+  signal?: AbortSignal;
+  /** Max time per pass in ms (default: 90_000) */
+  timeoutMs?: number;
+}
+
+/**
+ * Create a two-pass streaming ReadableStream.
+ *
+ * Pass 1 (fast model): Get a component plan — which types in what order.
+ * Pass 2 (fast model, parallel): For each component type in the plan, generate
+ *   richer props using a focused section prompt with design tokens.
+ *
+ * Emits component_stream events as each section completes in pass 2,
+ * giving the UI progressive rendering.
+ */
+export function createTwoPassStream(input: string, options: TwoPassStreamOptions = {}): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      let closed = false;
+      const send = (event: SSEEvent) => {
+        if (closed) return;
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try { controller.close(); } catch { /* already closed */ }
+      };
+
+      try {
+        // ── PASS 1: Component plan via template prompt ──
+        send({ type: 'status', step: 'planning', label: 'Planning page layout...' });
+
+        const planTimeout = options.timeoutMs ?? 90_000;
+        const planSignal = options.signal
+          ? AbortSignal.any([options.signal, AbortSignal.timeout(planTimeout)])
+          : AbortSignal.timeout(planTimeout);
+
+        const { model: planModel, jsonCallOptions: planOpts } = createFastModelBundle({ maxTokens: 4096 });
+        const planPrompt = buildTemplatePrompt({
+          businessType: options.businessType,
+          styleguideData: options.styleguideData,
+          designContext: options.designContext,
+        });
+
+        const planMessages = await planPrompt.formatMessages({ input });
+        // Use invoke (not stream) for pass 1 — it is a small structured response
+        const { response_format: _rf, ...invokeOpts } = planOpts;
+        const planResponse = await planModel.invoke(planMessages, { ...invokeOpts, signal: planSignal });
+
+        const planText = typeof planResponse.content === 'string'
+          ? planResponse.content
+          : Array.isArray(planResponse.content)
+            ? planResponse.content
+                .filter((c: unknown): c is { type: string; text: string } =>
+                  typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
+                .map((c) => c.text)
+                .join('')
+            : '';
+
+        const planParsed = extractJSON(planText);
+        if (!planParsed) {
+          send({ type: 'error', message: 'Pass 1 failed: could not parse component plan' });
+          return;
+        }
+
+        const { data: plan, error: planError } = validateTemplateResponse(planParsed);
+        if (planError || !plan) {
+          send({ type: 'error', message: planError ?? 'Component plan validation failed' });
+          return;
+        }
+
+        send({ type: 'status', step: 'generating', label: `Generating ${plan.components.length} sections...` });
+
+        // ── PASS 2: Parallel per-section generation ──
+        const sectionResults = await Promise.allSettled(
+          plan.components.map(async (comp, index) => {
+            const catalogEntry = COMPONENT_CATALOG[comp.type];
+            if (!catalogEntry) {
+              // Unknown type — use pass 1 props as-is
+              return { type: comp.type, props: comp.props };
+            }
+
+            const sectionPrompt = buildSectionPrompt(comp.type, catalogEntry, {
+              userPrompt: input,
+              businessType: options.businessType ?? 'general',
+              designGuidance: options.designGuidance,
+              styleguideData: options.styleguideData,
+              position: { index, total: plan.components.length },
+            });
+
+            const { model: sectionModel, jsonCallOptions: sectionOpts } = createFastModelBundle({ maxTokens: 4096 });
+            const sectionMessages = await sectionPrompt.formatMessages({ input });
+            const { response_format: _rf2, ...sectionInvokeOpts } = sectionOpts;
+            const sectionResponse = await sectionModel.invoke(sectionMessages, {
+              ...sectionInvokeOpts,
+              signal: AbortSignal.timeout(60_000),
+            });
+
+            const sectionText = typeof sectionResponse.content === 'string'
+              ? sectionResponse.content
+              : Array.isArray(sectionResponse.content)
+                ? sectionResponse.content
+                    .filter((c: unknown): c is { type: string; text: string } =>
+                      typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
+                    .map((c) => c.text)
+                    .join('')
+                : '';
+
+            const sectionParsed = extractJSON(sectionText);
+            if (sectionParsed) {
+              const { data: validated } = validateSingleComponent(sectionParsed);
+              if (validated) {
+                return {
+                  type: comp.type,
+                  props: { ...comp.props, ...validated.props },
+                };
+              }
+            }
+
+            // Fallback: use pass 1 props
+            return { type: comp.type, props: comp.props };
+          }),
+        );
+
+        // ── Assemble final components ──
+        const components: ComponentData[] = sectionResults.map((result, i) => {
+          const fallback = plan.components[i];
+          if (result.status === 'fulfilled' && result.value) {
+            return {
+              type: result.value.type,
+              props: { id: generateId(), ...result.value.props },
+            };
+          }
+          // Fallback to pass 1 data
+          return {
+            type: fallback.type,
+            props: { id: generateId(), ...fallback.props },
+          };
+        });
+
+        const ordered = orderPuckComponents(components);
+
+        // Progressive: emit each component
+        emitComponentStream(send, ordered);
+
+        const finalResult: AIGenerationResponse = {
+          action: AIAction.FULL_PAGE,
+          components: ordered,
+          message: `Generated page with ${ordered.length} components`,
+        };
+
+        send({ type: 'done', result: finalResult });
+      } catch (err) {
+        send({
+          type: 'error',
+          message: err instanceof Error ? err.message : 'Unknown two-pass streaming error',
+        });
+      } finally {
+        close();
+      }
+    },
+  });
 }

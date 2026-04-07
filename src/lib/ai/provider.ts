@@ -1,6 +1,7 @@
 import { ChatOllama } from '@langchain/ollama';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { resolveConfig, resolveFastConfig, type AIConfig } from './config';
 
@@ -43,8 +44,17 @@ export function createModel(override?: Partial<AIConfig>): BaseChatModel {
         maxTokens: config.maxTokens,
       });
 
+    case 'gemini':
+      return new ChatGoogleGenerativeAI({
+        model: config.model,
+        apiKey: config.apiKey,
+        temperature: config.temperature,
+        maxRetries: config.maxRetries,
+        maxOutputTokens: config.maxTokens,
+      });
+
     default:
-      throw new Error(`Unknown AI provider: "${config.provider}". Use: ollama, openai, or anthropic`);
+      throw new Error(`Unknown AI provider: "${config.provider}". Use: ollama, openai, anthropic, or gemini`);
   }
 }
 
@@ -93,8 +103,17 @@ export function createModelBundle(override?: Partial<AIConfig>): ModelBundle {
           maxTokens: config.maxTokens,
         });
 
+      case 'gemini':
+        return new ChatGoogleGenerativeAI({
+          model: config.model,
+          apiKey: config.apiKey,
+          temperature: config.temperature,
+          maxRetries: config.maxRetries,
+          maxOutputTokens: config.maxTokens,
+        });
+
       default:
-        throw new Error(`Unknown AI provider: "${config.provider}". Use: ollama, openai, or anthropic`);
+        throw new Error(`Unknown AI provider: "${config.provider}". Use: ollama, openai, anthropic, or gemini`);
     }
   };
 
@@ -155,8 +174,17 @@ export function createFastModelBundle(override?: Partial<AIConfig>): ModelBundle
           maxTokens: merged.maxTokens,
         });
 
+      case 'gemini':
+        return new ChatGoogleGenerativeAI({
+          model: merged.model,
+          apiKey: merged.apiKey,
+          temperature: merged.temperature,
+          maxRetries: merged.maxRetries,
+          maxOutputTokens: merged.maxTokens,
+        });
+
       default:
-        throw new Error(`Unknown AI provider: "${merged.provider}". Use: ollama, openai, or anthropic`);
+        throw new Error(`Unknown AI provider: "${merged.provider}". Use: ollama, openai, anthropic, or gemini`);
     }
   };
 

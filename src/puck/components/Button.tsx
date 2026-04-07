@@ -84,4 +84,4 @@ const ButtonInner: ComponentConfig<ButtonProps> = {
   },
 };
 
-export const Button = withLayout(withStyles(ButtonInner, { disableTypography: true }));
+export const Button = withLayout(withStyles(ButtonInner));

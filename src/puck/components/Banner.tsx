@@ -104,7 +104,7 @@ export function Banner(props: BannerProps & ComponentMeta) {
   }
 
   if (animatedGradient) {
-    sectionStyle.background = "linear-gradient(-45deg, var(--color-primary, #6366f1), var(--color-primary-foreground, #ffffff), var(--color-primary, #6366f1))";
+    sectionStyle.background = "linear-gradient(-45deg, var(--primary, #22746e), var(--primary-light, #2d918a), var(--primary, #22746e))";
     sectionStyle.backgroundSize = "400% 400%";
     sectionStyle.animation = "gradientShift 8s ease infinite";
   }

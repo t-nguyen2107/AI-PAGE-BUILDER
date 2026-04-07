@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/lib/api-client";
 import { Modal } from "@/components/ui/modal";
@@ -49,7 +49,7 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
   const [error, setError] = useState<string | null>(null);
   const [hasEdits, setHasEdits] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-
+  const hasFetchedRef = useRef(false);
   const [styleguide, setStyleguide] = useState<WizardStyleguide>({
     colors: {},
     typography: {},
@@ -69,7 +69,10 @@ export function ProjectSettingsStep({ projectInfo, onSettingsReady, onBack }: Pr
     language: projectInfo.language || "en",
   });
 
+
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     async function load() {
       setLoading(true);
       setError(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Puck, createUsePuck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
@@ -10,6 +10,9 @@ import { useToastStore } from "@/store/toast-store";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { PreviewPanel } from "./PreviewPanel";
 import { createAIPlugin } from "./plugins/ai-plugin";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import "./puck-dark.css";
+import { UnifiedInspector } from "./inspector/UnifiedInspector";
 
 // Puck data sync hook — reads live data from Puck context
 const usePuckData = createUsePuck();
@@ -168,6 +171,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
             { width: 375, label: "Mobile" },
           ]}
           plugins={[aiPlugin]}
+          iframe={{ enabled: false }}
           overrides={{
             headerActions: ({ children }) => (
               <>
@@ -182,6 +186,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
                 >
                   <span className="material-symbols-outlined text-[18px]">visibility</span>
                 </button>
+                <ThemeToggle />
                 <button
                   type="button"
                   onClick={() => setSettingsOpen(true)}
@@ -192,6 +197,13 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
                   <span className="material-symbols-outlined text-[18px]">settings</span>
                 </button>
               </>
+            ),
+            fields: ({ children, isLoading, itemSelector }) => (
+              <UnifiedInspector
+                children={children}
+                isLoading={isLoading}
+                itemSelector={itemSelector}
+              />
             ),
           }}
         />

@@ -180,5 +180,50 @@ function convertLegacySections(sections: Record<string, unknown>[]): { data: Puc
   return { data: { components }, error: null };
 }
 
-/** @deprecated Use PuckComponentPlanRaw instead */
-export type TemplatePagePlanRaw = PuckComponentPlanRaw;
+/**
+ * Validate a single component from AI response.
+ * Used by the two-pass streaming pipeline for per-section validation.
+ */
+export function validateSingleComponent(raw: unknown): { data: PuckComponentRaw | null; error: string | null } {
+  if (!raw || typeof raw !== 'object') {
+    return { data: null, error: 'Component must be a JSON object' };
+  }
+
+  const obj = raw as Record<string, unknown>;
+
+  // If the AI wrapped it in { props: {...} }, unwrap it
+  if (obj.props && typeof obj.props === 'object' && !obj.type) {
+    // Per-section response format: { props: { heading: "...", ... } }
+    // Reconstruct as { type: "unknown", props: {...} } — caller sets type
+    return {
+      data: {
+        type: '',
+        props: obj.props as Record<string, unknown>,
+      },
+      error: null,
+    };
+  }
+
+  // Standard format: { type: "HeroSection", props: {...} }
+  if (typeof obj.type !== 'string' || obj.type.length === 0) {
+    return { data: null, error: 'Component must have a non-empty "type" field' };
+  }
+
+  if (!VALID_COMPONENT_TYPES.has(obj.type)) {
+    console.warn(`[template-schema] Unknown component type "${obj.type}" in single validation`);
+  }
+
+  const props = obj.props !== undefined ? obj.props : {};
+  if (typeof props !== 'object' || props === null) {
+    return { data: null, error: 'Component "props" must be an object' };
+  }
+
+  return {
+    data: {
+      type: obj.type,
+      props: props as Record<string, unknown>,
+    },
+    error: null,
+  };
+}
+

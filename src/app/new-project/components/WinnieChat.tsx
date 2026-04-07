@@ -5,6 +5,11 @@ import { cn } from "@/lib/utils";
 import type { WizardChatMessage, WinnieResponse, WizardProjectInfo } from "@/types/wizard";
 import { WinnieAvatar } from "./WinnieAvatar";
 import { ImportPlaceholders } from "./ImportPlaceholders";
+import {
+  StylePalettePicker,
+  buildProjectInfoFromPalette,
+  type StylePalette,
+} from "./StylePalettePicker";
 
 interface WinnieChatProps {
   onComplete: (info: WizardProjectInfo) => void;
@@ -19,11 +24,35 @@ interface DisplayMessage {
   status?: "streaming" | "done";
 }
 
-const SUGGESTION_CHIPS = [
-  { icon: "local_cafe", title: "Coffee Shop", prompt: "A modern coffee shop website with menu showcase and online ordering" },
-  { icon: "cloud", title: "SaaS Landing", prompt: "A SaaS landing page with features, pricing tiers, and signup flow" },
-  { icon: "photo_camera", title: "Photography", prompt: "A portfolio website for a photographer with gallery and booking" },
-  { icon: "restaurant", title: "Restaurant", prompt: "A restaurant website with menu showcase, reservations, and reviews" },
+// ── Rich suggestion cards with gradient previews ──
+const SUGGESTION_CARDS = [
+  { icon: "local_cafe", title: "Coffee Shop", prompt: "A modern coffee shop website with menu showcase and online ordering", accent: "#B45309" },
+  { icon: "cloud", title: "SaaS Landing", prompt: "A SaaS landing page with features, pricing tiers, and signup flow", accent: "#2563EB" },
+  { icon: "photo_camera", title: "Photography", prompt: "A portfolio website for a photographer with gallery and booking", accent: "#64748B" },
+  { icon: "restaurant", title: "Restaurant", prompt: "A restaurant website with menu showcase, reservations, and review", accent: "#DC2626" },
+];
+
+// ── Ambient floating particles ──
+const PARTICLES = [
+  { x: "12%", y: "20%", size: 4, delay: 0, duration: 6 },
+  { x: "85%", y: "15%", size: 3, delay: 1.2, duration: 7 },
+  { x: "25%", y: "70%", size: 5, delay: 0.8, duration: 5.5 },
+  { x: "75%", y: "65%", size: 3, delay: 2, duration: 6.5 },
+  { x: "50%", y: "40%", size: 4, delay: 0.5, duration: 8 },
+  { x: "90%", y: "50%", size: 3, delay: 1.8, duration: 7 },
+  { x: "8%", y: "55%", size: 4, delay: 2.5, duration: 5 },
+];
+
+// ── Celebration confetti ──
+const CONFETTI = [
+  { color: "#FFBE0B", x: 30, delay: 0, angle: -15 },
+  { color: "#5ec4b8", x: 45, delay: 0.08, angle: 10 },
+  { color: "#FF8FAB", x: 55, delay: 0.15, angle: -20 },
+  { color: "#E39C37", x: 65, delay: 0.05, angle: 5 },
+  { color: "#22746e", x: 35, delay: 0.12, angle: -10 },
+  { color: "#FFBE0B", x: 50, delay: 0.2, angle: 15 },
+  { color: "#5ec4b8", x: 40, delay: 0.18, angle: -5 },
+  { color: "#FF8FAB", x: 60, delay: 0.1, angle: 12 },
 ];
 
 const CHAT_CONTEXT_LIMIT = 10;
@@ -52,13 +81,13 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [collectedInfo, setCollectedInfo] = useState<Partial<WizardProjectInfo> | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const chatHistory = useRef<WizardChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const isStreamingRef = useRef(false);
   const collectedInfoRef = useRef<Partial<WizardProjectInfo> | null>(null);
-  const followUpAskedRef = useRef(false);
 
   // ── Typewriter effect ──
   const typewriterPosRef = useRef(0);
@@ -70,7 +99,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
     const hasStreaming = messages.some(m => m.status === "streaming");
 
     if (!hasStreaming) {
-      // No streaming message — stop timer, show everything
       typewriterPosRef.current = Infinity;
       if (typewriterTimerRef.current) {
         clearInterval(typewriterTimerRef.current);
@@ -79,7 +107,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       return;
     }
 
-    // Start timer if not already running
     if (!typewriterTimerRef.current) {
       typewriterTimerRef.current = setInterval(() => {
         typewriterPosRef.current += 2;
@@ -98,6 +125,16 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   // Keep refs in sync with state
   useEffect(() => { isStreamingRef.current = isStreaming; }, [isStreaming]);
   useEffect(() => { collectedInfoRef.current = collectedInfo; }, [collectedInfo]);
+
+  // Trigger confetti on completion
+  useEffect(() => {
+    if (isComplete) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete]);
+
   // Auto-scroll on new messages
   useEffect(() => {
     const el = scrollRef.current;
@@ -121,17 +158,13 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   const handleSend = useCallback(
     async (messageText?: string) => {
       const text = (messageText ?? inputRef.current?.value ?? "").trim();
-      // Guard: prevent double-send (abortRef acts as mutex for active request)
       if (!text || isStreamingRef.current || abortRef.current !== null) return;
 
       setInput("");
       if (inputRef.current) inputRef.current.style.height = "auto";
 
-      // Reset completion state when user sends new message
       if (isComplete) {
         setIsComplete(false);
-        setFollowUpAsked(false);
-        setConfirmedReady(false);
       }
 
       const msgId = crypto.randomUUID();
@@ -140,7 +173,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
         { id: `user-${msgId}`, role: "user", content: text, timestamp: Date.now(), status: "done" },
       ]);
 
-      // ── Greeting fast path: respond instantly, skip API ──
+      // ── Greeting fast path ──
       if (GREETING_RE.test(text) && text.split(/\s+/).length <= 4) {
         const reply = GREETING_REPLIES[Math.floor(Math.random() * GREETING_REPLIES.length)];
         chatHistory.current.push({ role: "user", content: text });
@@ -156,7 +189,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       setIsStreaming(true);
 
       const assistantMsgId = `assistant-${msgId}`;
-      typewriterPosRef.current = 0; // Reset typewriter for new message
+      typewriterPosRef.current = 0;
       setMessages((prev) => [
         ...prev,
         { id: assistantMsgId, role: "assistant", content: "", timestamp: Date.now(), status: "streaming" },
@@ -164,8 +197,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
 
       chatHistory.current.push({ role: "user", content: text });
 
-      let succeeded = false;
-      let completedThisTurn = false;
       try {
         const controller = new AbortController();
         abortRef.current = controller;
@@ -214,7 +245,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
                 if (info.collectedInfo) setCollectedInfo((prev) => ({ ...prev, ...info.collectedInfo }));
                 if (info.isComplete) {
                   setIsComplete(true);
-                  completedThisTurn = true;
                 }
               } else if (event.type === "error") {
                 throw new Error(event.message ?? "Chat error");
@@ -227,26 +257,9 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
           }
         }
 
-        // Mark streaming message as done FIRST
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantMsgId ? { ...m, status: "done" as const } : m)),
         );
-        succeeded = true;
-
-        // Inject follow-up question AFTER streaming completes (fixes double-bubble bug)
-        if (completedThisTurn && !followUpAskedRef.current) {
-          setFollowUpAsked(true);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `follow-up-${crypto.randomUUID()}`,
-              role: "assistant",
-              content: "Awesome! I've got a great picture of your idea. Is there anything else you'd like to add? For example, favorite colors, a specific style, or any special features?",
-              timestamp: Date.now(),
-              status: "done",
-            },
-          ]);
-        }
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           setMessages((prev) =>
@@ -260,10 +273,6 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       } finally {
         abortRef.current = null;
         setIsStreaming(false);
-        // Only mark ready after successful response (not on error/abort)
-        if (succeeded && followUpAskedRef.current) {
-          setConfirmedReady(true);
-        }
         inputRef.current?.focus();
       }
     },
@@ -286,6 +295,41 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
     onComplete(fullInfo);
   };
 
+  // ── Palette selection handler ──
+  const handlePaletteSelect = useCallback(
+    (palette: StylePalette) => {
+      const idea = collectedInfoRef.current?.idea ?? "";
+      const name = collectedInfoRef.current?.name ?? "My Project";
+      const language = collectedInfoRef.current?.language ?? "en";
+      const fullInfo = buildProjectInfoFromPalette(palette, name, idea, language);
+      setCollectedInfo(fullInfo);
+      collectedInfoRef.current = fullInfo;
+      setIsComplete(true);
+
+      const msgId = crypto.randomUUID();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `palette-${msgId}`,
+          role: "assistant",
+          content: `Great choice! "${palette.label}" is a perfect direction for ${name}. Let's customize the details!`,
+          timestamp: Date.now(),
+          status: "done" as const,
+        },
+      ]);
+      chatHistory.current.push({
+        role: "assistant",
+        content: `User selected style: ${palette.label}`,
+      });
+    },
+    [],
+  );
+
+  const showPalettePicker =
+    !!(collectedInfo?.name && collectedInfo?.idea) &&
+    !isComplete &&
+    !isStreaming;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -293,31 +337,63 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
     }
   };
 
-  // Is the chat in "welcome" state? (only the initial welcome message, no user messages)
   const isWelcome = messages.length <= 1;
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* ── Gradient accent bar ── */}
+      {/* ── Animated gradient accent bar ── */}
       <div
-        className="h-0.5 shrink-0 bg-linear-to-r from-primary via-primary-container to-primary animate-gradient-flow"
+        className="h-0.5 shrink-0 animate-gradient-flow"
+        style={{
+          background: "linear-gradient(90deg, #22746e, #5ec4b8, #E39C37, #FFBE0B, #22746e)",
+          backgroundSize: "200% 100%",
+        }}
         aria-hidden="true"
       />
 
       {/* ── Messages area ── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6"
+        className="flex-1 overflow-y-auto relative"
         aria-live="polite"
         role="log"
       >
-        {/* ── Welcome Hero ── */}
+        {/* ── Subtle radial gradient background ── */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: isWelcome
+              ? "radial-gradient(ellipse at 50% 30%, rgba(34, 116, 110, 0.04) 0%, transparent 60%), radial-gradient(ellipse at 50% 30%, rgba(255, 190, 11, 0.03) 0%, transparent 50%)"
+              : "radial-gradient(ellipse at 50% 0%, rgba(34, 116, 110, 0.02) 0%, transparent 40%)",
+          }}
+          aria-hidden="true"
+        />
+
         {isWelcome ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-2">
-            {/* Avatar with glow */}
-            <div className="relative mb-5">
+          /* ── Welcome Hero ── */
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 relative">
+            {/* Ambient floating particles */}
+            {PARTICLES.map((p, i) => (
               <div
-                className="absolute -inset-8 rounded-full bg-amber-400/10 blur-2xl animate-hero-glow"
+                key={i}
+                className="absolute rounded-full bg-primary/15 animate-float-particle pointer-events-none"
+                style={{
+                  left: p.x,
+                  top: p.y,
+                  width: p.size,
+                  height: p.size,
+                  animationDelay: `${p.delay}s`,
+                  animationDuration: `${p.duration}s`,
+                }}
+                aria-hidden="true"
+              />
+            ))}
+
+            {/* Avatar with subtle glow */}
+            <div className="relative mb-6">
+              {/* Soft glow */}
+              <div
+                className="absolute -inset-6 rounded-full bg-primary/4 blur-xl animate-hero-glow"
                 aria-hidden="true"
               />
               <div className="relative">
@@ -325,54 +401,52 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
               </div>
             </div>
 
-            {/* Greeting */}
+            {/* Greeting with staggered reveal */}
             <div className="animate-wizard-fade-up">
-              <h2 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
                 Let&apos;s build something amazing
               </h2>
-              <p className="text-sm text-on-surface-outline mt-2 max-w-xs mx-auto leading-relaxed">
+              <p className="text-sm text-on-surface-outline mt-2.5 max-w-sm mx-auto leading-relaxed">
                 Tell me about your dream website and I&apos;ll help bring it to life
               </p>
             </div>
 
-            {/* Import teasers — prominent, above suggestions */}
-            <div className="mt-7 w-full max-w-md animate-card-enter" style={{ animationDelay: "100ms" }}>
+            {/* Import teasers */}
+            <div className="mt-7 w-full max-w-md animate-card-enter" style={{ animationDelay: "150ms" }}>
               <ImportPlaceholders />
             </div>
 
-            {/* Simple suggestion chips */}
+            {/* ── Suggestion chips ── */}
             <div className="flex flex-wrap justify-center gap-2 mt-5 w-full max-w-md">
-              {SUGGESTION_CHIPS.map((chip, i) => (
+              {SUGGESTION_CARDS.map((card, i) => (
                 <button
-                  key={chip.title}
+                  key={card.title}
                   type="button"
-                  onClick={() => handleSend(chip.prompt)}
+                  onClick={() => handleSend(card.prompt)}
                   disabled={isStreaming}
                   className={cn(
-                    "animate-card-enter",
-                    "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full",
+                    "animate-card-enter inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full",
                     "text-xs font-medium text-on-surface-variant",
                     "border border-outline-variant/20 bg-surface-lowest",
                     "hover:border-primary/25 hover:text-on-surface hover:bg-surface-container/60",
                     "active:scale-[0.97] transition-all duration-200",
                     "disabled:opacity-50 disabled:pointer-events-none",
+                    "focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none",
                   )}
-                  style={{ animationDelay: `${(i + 3) * 80}ms` }}
+                  style={{ animationDelay: `${(i + 2) * 80}ms` }}
                 >
                   <span
-                    className="material-symbols-outlined text-sm text-on-surface-outline"
-                    style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }}
-                  >
-                    {chip.icon}
-                  </span>
-                  {chip.title}
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: card.accent }}
+                  />
+                  {card.title}
                 </button>
               ))}
             </div>
           </div>
         ) : (
           /* ── Normal chat messages ── */
-          <div className="space-y-5">
+          <div className="space-y-5 px-4 sm:px-6 py-6">
             {messages.map((msg, idx) => (
               <div
                 key={msg.id}
@@ -393,8 +467,8 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
                   className={cn(
                     "max-w-[85%] text-sm leading-relaxed",
                     msg.role === "user"
-                      ? "bg-primary text-on-primary px-4 py-3 rounded-2xl rounded-tr-md shadow-sm"
-                      : "bg-surface-container/50 text-on-surface px-4 py-3 rounded-2xl rounded-tl-md",
+                      ? "bg-primary text-on-primary px-4 py-3 rounded-2xl rounded-tr-md shadow-sm shadow-primary/10"
+                      : "bg-surface-container/40 text-on-surface px-4 py-3 rounded-2xl rounded-tl-md border border-outline-variant/10",
                   )}
                 >
                   {msg.content ? (
@@ -407,20 +481,39 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
                       {msg.status === "streaming" && (
                         <span className="inline-block w-0.5 h-4 bg-primary/70 ml-0.5 align-middle animate-cursor-blink" />
                       )}
-                      {/* Continue button — only after follow-up exchange */}
-                      {msg.role === "assistant" && confirmedReady && msg.status === "done" && idx === messages.length - 1 && (
-                        <div className="mt-4 animate-celebrate-glow rounded-xl">
-                          <button
-                            type="button"
-                            onClick={handleNext}
-                            className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
-                          >
-                            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-                              auto_awesome
-                            </span>
-                            Continue to Customize
-                            <span className="material-symbols-outlined text-base">arrow_forward</span>
-                          </button>
+                      {/* Continue button with celebration */}
+                      {msg.role === "assistant" && isComplete && msg.status === "done" && idx === messages.length - 1 && (
+                        <div className="mt-4 relative">
+                          {/* Celebration confetti burst */}
+                          {showConfetti && CONFETTI.map((c, ci) => (
+                            <span
+                              key={ci}
+                              className="absolute animate-confetti-burst rounded-full"
+                              style={{
+                                width: 6,
+                                height: 6,
+                                backgroundColor: c.color,
+                                left: `${c.x}%`,
+                                top: -8,
+                                animationDelay: `${c.delay}s`,
+                                transform: `rotate(${c.angle}deg)`,
+                              }}
+                              aria-hidden="true"
+                            />
+                          ))}
+                          <div className="animate-celebrate-glow rounded-xl">
+                            <button
+                              type="button"
+                              onClick={handleNext}
+                              className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
+                            >
+                              <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                auto_awesome
+                              </span>
+                              Continue to Customize
+                              <span className="material-symbols-outlined text-base">arrow_forward</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </>
@@ -442,6 +535,17 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
           </div>
         )}
       </div>
+
+      {/* ── Style palette picker (appears after name + idea collected) ── */}
+      {showPalettePicker && (
+        <div className="px-4 sm:px-6 pb-2 shrink-0 animate-card-enter">
+          <StylePalettePicker
+            businessIdea={collectedInfo?.idea ?? ""}
+            onSelect={handlePaletteSelect}
+            disabled={isStreaming}
+          />
+        </div>
+      )}
 
       {/* ── Input area ── */}
       <div className="px-4 sm:px-6 pb-4 pt-2 shrink-0">
@@ -480,7 +584,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
             Skip to blank project
           </button>
 
-          {confirmedReady && (
+          {isComplete && (
             <button
               type="button"
               onClick={handleNext}
