@@ -74,7 +74,7 @@ export function IconPickerField({
 
   return (
     <div className="space-y-2">
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Icon</div>
+      <div className="text-xs text-gray-500 uppercase tracking-wider">Icon</div>
 
       {/* Tab switch */}
       <div className="flex gap-1">
@@ -82,7 +82,7 @@ export function IconPickerField({
           type="button"
           onClick={() => setTab("heroicon")}
           className={`flex-1 text-[11px] py-1 rounded border ${
-            tab === "heroicon" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            tab === "heroicon" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           Icons
@@ -91,7 +91,7 @@ export function IconPickerField({
           type="button"
           onClick={() => setTab("emoji")}
           className={`flex-1 text-[11px] py-1 rounded border ${
-            tab === "emoji" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            tab === "emoji" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           Emoji
@@ -100,7 +100,7 @@ export function IconPickerField({
           type="button"
           onClick={() => setTab("svg")}
           className={`flex-1 text-[11px] py-1 rounded border ${
-            tab === "svg" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            tab === "svg" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           Custom SVG
@@ -109,7 +109,7 @@ export function IconPickerField({
 
       {/* Selected icon preview */}
       {v.name && (
-        <div className="flex items-center gap-2 p-1.5 bg-[var(--puck-color-grey-01)] rounded border border-gray-200">
+        <div className="flex items-center gap-2 p-1.5 bg-[var(--inspector-surface)] rounded border border-gray-200">
           <span
             className="inline-block"
             style={{ width: v.size || "24px", height: v.size || "24px", color: v.color || "currentColor" }}
@@ -142,8 +142,8 @@ export function IconPickerField({
                 key={name}
                 type="button"
                 onClick={() => selectHeroicon(name)}
-                className={`w-8 h-8 flex items-center justify-center rounded border text-gray-600 hover:bg-[var(--puck-color-azure-01)] hover:border-indigo-400 ${
-                  v.type === "heroicon" && v.name === name ? "border-indigo-400 bg-[var(--puck-color-azure-01)]" : "border-gray-200"
+                className={`w-8 h-8 flex items-center justify-center rounded border text-gray-600 hover:bg-[var(--inspector-accent-surface)] hover:border-indigo-400 ${
+                  v.type === "heroicon" && v.name === name ? "border-indigo-400 bg-[var(--inspector-accent-surface)]" : "border-gray-200"
                 }`}
                 title={name}
                 dangerouslySetInnerHTML={{ __html: HEROICONS[name] }}
@@ -160,8 +160,8 @@ export function IconPickerField({
               key={emoji}
               type="button"
               onClick={() => selectEmoji(emoji)}
-              className={`w-8 h-8 flex items-center justify-center rounded border text-sm hover:bg-[var(--puck-color-azure-01)] ${
-                v.type === "emoji" && v.name === emoji ? "border-indigo-400 bg-[var(--puck-color-azure-01)]" : "border-gray-200"
+              className={`w-8 h-8 flex items-center justify-center rounded border text-sm hover:bg-[var(--inspector-accent-surface)] ${
+                v.type === "emoji" && v.name === emoji ? "border-indigo-400 bg-[var(--inspector-accent-surface)]" : "border-gray-200"
               }`}
             >
               {emoji}

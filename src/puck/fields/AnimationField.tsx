@@ -71,10 +71,10 @@ export function AnimationField({
             key={p.value}
             type="button"
             onClick={() => update("name", p.value)}
-            className={`flex flex-col items-center gap-0.5 py-1.5 rounded-md text-[10px] font-medium transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1.5 rounded-md text-[10px] transition-all ${
               v.name === p.value
-                ? "bg-[var(--puck-color-azure-01)] text-[var(--puck-color-azure-05)] ring-1 ring-[var(--puck-color-azure-03)]"
-                : "bg-[var(--puck-color-grey-01)] text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                ? "bg-[var(--inspector-accent-surface)] text-[var(--inspector-accent-text)] ring-1 ring-[var(--inspector-accent)]"
+                : "bg-[var(--inspector-surface)] text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             }`}
             title={p.label}
           >
@@ -89,7 +89,7 @@ export function AnimationField({
         <div className="space-y-2 pt-1 border-t border-gray-100">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-0.5">Duration</label>
+              <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Duration</label>
               <input
                 type="text"
                 value={v.duration}
@@ -99,7 +99,7 @@ export function AnimationField({
               />
             </div>
             <div>
-              <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-0.5">Delay</label>
+              <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Delay</label>
               <input
                 type="text"
                 value={v.delay}
@@ -111,7 +111,7 @@ export function AnimationField({
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-0.5">Easing</label>
+              <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Easing</label>
               <select
                 value={v.easing}
                 onChange={(e) => update("easing", e.target.value)}
@@ -123,7 +123,7 @@ export function AnimationField({
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-0.5">Repeat</label>
+              <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Repeat</label>
               <select
                 value={v.iteration}
                 onChange={(e) => update("iteration", e.target.value)}
@@ -136,7 +136,7 @@ export function AnimationField({
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-0.5">Fill</label>
+              <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">End State</label>
               <select
                 value={v.fillMode}
                 onChange={(e) => update("fillMode", e.target.value)}
@@ -155,7 +155,7 @@ export function AnimationField({
             <button
               type="button"
               onClick={triggerPreview}
-              className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors"
+              className="text-[11px] text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition-colors"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z" />
@@ -165,7 +165,7 @@ export function AnimationField({
             {previewKey > 0 && cssValue && (
               <div
                 key={previewKey}
-                className="ml-3 w-8 h-8 bg-[var(--puck-color-azure-03)] rounded-md"
+                className="ml-3 w-8 h-8 bg-[var(--inspector-accent)] rounded-md"
                 style={{ animation: cssValue }}
               />
             )}

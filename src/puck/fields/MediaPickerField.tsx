@@ -21,11 +21,11 @@ export function MediaPickerField({
   return (
     <div className="space-y-1.5">
       {label && (
-        <div className="text-[11px] text-gray-600 font-medium">{label}</div>
+        <div className="text-[11px] text-gray-600">{label}</div>
       )}
 
       {value ? (
-        <div className="relative w-full h-20 rounded-lg border border-[var(--puck-color-grey-05)] overflow-hidden bg-[var(--puck-color-grey-01)]">
+        <div className="relative w-full h-20 rounded-lg border border-[var(--inspector-border)] overflow-hidden bg-[var(--inspector-surface)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="" className="w-full h-full object-cover" />
           <button
@@ -41,7 +41,7 @@ export function MediaPickerField({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full text-[11px] py-2 rounded-md border border-dashed border-[var(--puck-color-grey-05)] text-[var(--puck-color-grey-07)] hover:border-[var(--puck-color-azure-04)] hover:text-[var(--puck-color-azure-05)] hover:bg-[var(--puck-color-azure-01)] font-medium transition-all"
+        className="w-full text-[11px] py-2 rounded-md border border-dashed border-[var(--inspector-border)] text-[var(--inspector-text-dim)] hover:border-[var(--inspector-accent)] hover:text-[var(--inspector-accent-text)] hover:bg-[var(--inspector-accent-surface)] transition-all"
       >
         {value ? "Change Image" : "Select Image"}
       </button>

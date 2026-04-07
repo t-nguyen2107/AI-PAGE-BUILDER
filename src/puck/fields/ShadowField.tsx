@@ -56,9 +56,9 @@ export function ShadowField({
         <button
           type="button"
           onClick={() => onChange({ ...v, inset: !v.inset })}
-          className={`px-2 py-1 text-[10px] font-medium rounded border transition-colors ${
+          className={`px-2 py-1 text-[10px] rounded border transition-colors ${
             v.inset
-              ? "bg-[var(--puck-color-azure-01)] border-indigo-300 text-indigo-600"
+              ? "bg-[var(--inspector-accent-surface)] border-indigo-300 text-indigo-600"
               : "border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500"
           }`}
         >

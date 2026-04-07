@@ -1,3 +1,6 @@
+/* ── Inspector Tokens (must load first) ── */
+@import "./inspector-tokens.css";
+
 /* ── Unified Inspector ─────────────────────────────────────────────── */
 
 .unified-inspector {
@@ -12,21 +15,20 @@
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--puck-color-grey-08);
+  border-bottom: 1px solid var(--inspector-border);
 }
 
 .inspector-header-label {
   font-size: 11px;
-  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--puck-color-grey-04);
+  color: var(--inspector-text-secondary);
 }
 
 /* ── Tabs ── */
 .inspector-tabs {
   flex-shrink: 0;
-  border-bottom: 1px solid var(--puck-color-grey-08);
+  border-bottom: 1px solid var(--inspector-border);
   padding: 0 8px;
 }
 
@@ -45,21 +47,19 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--puck-color-grey-04);
+  color: var(--inspector-text-secondary);
   font-size: 11px;
-  font-weight: 500;
   transition: color 0.15s ease;
   position: relative;
   z-index: 1;
 }
 
 .inspector-tab:hover {
-  color: var(--puck-color-grey-03);
+  color: var(--inspector-text);
 }
 
 .inspector-tab--active {
-  color: var(--puck-color-black);
-  font-weight: 600;
+  color: var(--inspector-text);
 }
 
 .inspector-tab-icon {
@@ -75,7 +75,7 @@
   bottom: 0;
   left: 0;
   height: 2px;
-  background: var(--puck-color-black);
+  background: var(--inspector-accent);
   border-radius: 1px;
   transition: transform 0.2s ease;
 }
@@ -88,41 +88,45 @@
 }
 
 .tab-panel {
-  padding: 12px 0;
+  padding: 4px 0 16px;
 }
 
+/* ── Settings / Advanced tab panels ── */
+.tab-panel--settings .puck-field,
 .tab-panel--advanced .puck-field {
   padding: 0 16px;
   margin-bottom: 12px;
 }
 
+/* Settings & Advanced tab field labels */
+.tab-panel--settings .puck-field-label,
 .tab-panel--advanced .puck-field-label {
   display: block;
   font-size: 11px;
-  font-weight: 600;
   margin-bottom: 4px;
-  color: var(--puck-color-grey-03);
+  color: var(--inspector-text);
 }
 
+.tab-panel--settings .puck-field-text-input,
 .tab-panel--advanced .puck-field-text-input {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid var(--puck-color-grey-08);
+  border: 1px solid var(--inspector-border);
   border-radius: 6px;
-  background: var(--puck-color-grey-01);
-  color: var(--puck-color-grey-04);
+  background: var(--inspector-surface);
+  color: var(--inspector-text);
   font-size: 12px;
   outline: none;
   transition: border-color 0.15s;
 }
 
 .tab-panel--advanced .puck-field-text-input:focus {
-  border-color: var(--puck-color-azure-04);
+  border-color: var(--inspector-accent);
 }
 
 .tab-panel--advanced .puck-field-description {
   font-size: 10px;
-  color: var(--puck-color-grey-04);
+  color: var(--inspector-text-secondary);
   margin-top: 3px;
   opacity: 0.7;
 }
@@ -146,13 +150,13 @@
   padding: 32px;
 }
 
-/* ── Dark mode ── */
+/* ── Dark mode (tokens handle values, these override Puck-specific elements) ── */
 .dark .inspector-tab--active {
-  color: var(--puck-color-grey-04);
+  color: var(--inspector-text);
 }
 
 .dark .inspector-tab {
-  color: var(--puck-color-grey-04, #8a9fa6);
+  color: var(--inspector-text-secondary);
 }
 
 .dark .inspector-tab:hover {
@@ -160,15 +164,182 @@
 }
 
 .dark .inspector-tabs-indicator {
-  background: var(--puck-color-azure-04, #5ec4b8);
+  background: var(--inspector-accent);
 }
 
+.dark .tab-panel--settings .puck-field-text-input,
 .dark .tab-panel--advanced .puck-field-text-input {
-  background: var(--puck-color-grey-01, #091519);
-  border-color: var(--puck-color-grey-08, #1c3338);
-  color: var(--puck-color-grey-04, #dfe8ea);
+  background: var(--inspector-surface);
+  border-color: var(--inspector-border);
+  color: var(--inspector-text);
 }
 
+.dark .tab-panel--settings .puck-field-label,
 .dark .tab-panel--advanced .puck-field-label {
-  color: var(--puck-color-grey-04, #8a9fa6);
+  color: var(--inspector-text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Global inspector color overrides
+ *
+ * These rules override hardcoded Tailwind color classes (border-gray-200,
+ * bg-white, text-gray-500, etc.) used by field components, making them
+ * respect the inspector token system for proper light/dark mode support.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Inputs, selects, textareas ── */
+.unified-inspector input[type="text"],
+.unified-inspector input[type="number"],
+.unified-inspector input[type="color"],
+.unified-inspector select,
+.unified-inspector textarea {
+  border-color: var(--inspector-border) !important;
+  background: var(--inspector-surface) !important;
+  color: var(--inspector-text) !important;
+}
+
+.unified-inspector input:focus,
+.unified-inspector select:focus,
+.unified-inspector textarea:focus {
+  border-color: var(--inspector-border-focus) !important;
+  --tw-ring-color: var(--inspector-accent) !important;
+}
+
+/* ── Labels ── */
+.unified-inspector label {
+  color: var(--inspector-text-secondary) !important;
+}
+
+/* ── Section dividers ── */
+.unified-inspector .divide-gray-100 > :not(:last-child) {
+  border-color: var(--inspector-border) !important;
+}
+
+/* ── State toggle (Default/Hover) ── */
+.unified-inspector .border-gray-200 {
+  border-color: var(--inspector-border) !important;
+}
+.unified-inspector .border-gray-100 {
+  border-color: var(--inspector-border) !important;
+}
+.unified-inspector .border-b {
+  border-color: var(--inspector-border) !important;
+}
+
+/* ── Text colors ── */
+.unified-inspector .text-gray-500,
+.unified-inspector .text-gray-400 {
+  color: var(--inspector-text-dim) !important;
+}
+.unified-inspector .text-gray-600 {
+  color: var(--inspector-text-secondary) !important;
+}
+.unified-inspector .text-gray-300 {
+  color: var(--inspector-text-dim) !important;
+}
+
+/* ── Accent colors ── */
+.unified-inspector .text-indigo-500,
+.unified-inspector .text-indigo-600 {
+  color: var(--inspector-accent) !important;
+}
+.unified-inspector .text-amber-500 {
+  color: var(--inspector-warning) !important;
+}
+.unified-inspector .text-amber-600 {
+  color: var(--inspector-warning) !important;
+}
+
+/* ── Danger colors (delete buttons) ── */
+.unified-inspector .text-red-500 {
+  color: var(--inspector-danger) !important;
+}
+
+/* ── Borders ── */
+.unified-inspector .border-gray-200,
+.unified-inspector .border-gray-300 {
+  border-color: var(--inspector-border) !important;
+}
+.unified-inspector .border-indigo-400,
+.unified-inspector .border-indigo-500 {
+  border-color: var(--inspector-border-focus) !important;
+}
+
+/* ── Focus ring ── */
+.unified-inspector .ring-indigo-400 {
+  --tw-ring-color: var(--inspector-accent) !important;
+}
+
+/* ── Backgrounds ── */
+.unified-inspector .bg-white {
+  background-color: var(--inspector-surface) !important;
+}
+.unified-inspector .bg-gray-100 {
+  background-color: var(--inspector-bg) !important;
+}
+
+/* ── Range inputs ── */
+.unified-inspector input[type="range"] {
+  accent-color: var(--inspector-accent) !important;
+}
+
+/* ── Dashed border buttons (Select Image, etc.) ── */
+.unified-inspector .border-dashed {
+  border-color: var(--inspector-border) !important;
+  color: var(--inspector-text-dim) !important;
+}
+.unified-inspector .border-dashed:hover {
+  border-color: var(--inspector-accent) !important;
+  color: var(--inspector-accent-text) !important;
+  background-color: var(--inspector-accent-surface) !important;
+}
+
+/* ── Hover states ── */
+.unified-inspector .hover\:text-gray-600:hover,
+.unified-inspector .hover\:text-gray-700:hover {
+  color: var(--inspector-text) !important;
+}
+.unified-inspector .hover\:text-indigo-500:hover,
+.unified-inspector .hover\:text-indigo-600:hover,
+.unified-inspector .hover\:text-indigo-700:hover {
+  color: var(--inspector-accent-text) !important;
+}
+.unified-inspector .hover\:text-red-500:hover {
+  color: var(--inspector-danger) !important;
+}
+.unified-inspector .hover\:border-indigo-400:hover,
+.unified-inspector .hover\:border-gray-300:hover {
+  border-color: var(--inspector-border-focus) !important;
+}
+.unified-inspector .hover\:bg-gray-100:hover {
+  background-color: var(--inspector-surface-hover) !important;
+}
+
+/* ── Focus ring (Tailwind focus: variants) ── */
+.unified-inspector .focus\:ring-indigo-400:focus {
+  --tw-ring-color: var(--inspector-accent) !important;
+}
+.unified-inspector .focus\:border-indigo-400:focus {
+  border-color: var(--inspector-border-focus) !important;
+}
+
+/* ── State toggle active border ── */
+.unified-inspector .border-indigo-500 {
+  border-color: var(--inspector-accent) !important;
+}
+.unified-inspector .border-amber-500 {
+  border-color: var(--inspector-warning) !important;
+}
+
+/* ── Section left border indicator ── */
+.unified-inspector .group.border-l-2 {
+  border-left-color: transparent;
+}
+.unified-inspector .group.border-l-2[style*="var(--inspector-accent)"] {
+  border-left-color: var(--inspector-accent);
+}
+
+/* ── Loading spinner animation ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

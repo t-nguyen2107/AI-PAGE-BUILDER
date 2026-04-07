@@ -120,7 +120,7 @@ export function TypographyField({
           </select>
         </div>
         <div>
-          <label className="text-[10px] text-gray-500 block">Line H.</label>
+          <label className="text-[10px] text-gray-500 block">Line Height</label>
           <input
             type="text"
             value={v.lineHeight}
@@ -171,7 +171,7 @@ export function TypographyField({
             type="button"
             onClick={() => update("textAlign", a)}
             className={`flex-1 flex items-center justify-center py-1.5 rounded border ${
-              v.textAlign === a ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+              v.textAlign === a ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
             }`}
           >
             <span className="flex flex-col gap-[2px] w-3.5">
@@ -192,7 +192,7 @@ export function TypographyField({
           type="button"
           onClick={() => update("fontStyle", v.fontStyle === "italic" ? "normal" : "italic")}
           className={`flex-1 flex items-center justify-center py-1 rounded border text-xs ${
-            v.fontStyle === "italic" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            v.fontStyle === "italic" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           <span className="italic font-serif">I</span>
@@ -201,7 +201,7 @@ export function TypographyField({
           type="button"
           onClick={() => update("textDecoration", v.textDecoration === "underline" ? "none" : "underline")}
           className={`flex-1 flex items-center justify-center py-1 rounded border text-xs ${
-            v.textDecoration === "underline" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            v.textDecoration === "underline" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           <span className="underline">U</span>
@@ -210,10 +210,10 @@ export function TypographyField({
           type="button"
           onClick={() => update("textTransform", v.textTransform === "uppercase" ? "none" : "uppercase")}
           className={`flex-1 flex items-center justify-center py-1 rounded border text-xs ${
-            v.textTransform === "uppercase" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            v.textTransform === "uppercase" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
-          <span className="text-[10px] tracking-wider font-semibold">AA</span>
+          <span className="text-[10px] tracking-wider">AA</span>
         </button>
       </div>
     </div>

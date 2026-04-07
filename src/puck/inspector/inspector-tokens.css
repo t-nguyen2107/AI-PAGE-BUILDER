@@ -1,0 +1,97 @@
+/* Inspector Design Tokens
+ *
+ * Single source of truth for all inspector UI values.
+ * Light/dark mode support via .dark class override.
+ * All inspector components should reference these tokens — NOT hardcoded Tailwind values.
+ */
+
+/* ═─ Light mode (default) ═══════════════════════════════════════════════ */
+
+:root {
+  /* Surfaces — hardcoded, do NOT reference --puck-color-* (they are dark editor chrome) */
+  --inspector-bg: #f5f5f5;
+  --inspector-surface: #ffffff;
+  --inspector-surface-hover: #f9fafb;
+  --inspector-surface-active: #f3f4f6;
+
+  /* Borders */
+  --inspector-border: #e5e7eb;
+  --inspector-border-focus: #6366f1;
+
+  /* Text */
+  --inspector-text: #374151;
+  --inspector-text-secondary: #6b7280;
+  --inspector-text-dim: #9ca3af;
+  --inspector-text-inverse: #ffffff;
+
+  /* Accent */
+  --inspector-accent: #6366f1;
+  --inspector-accent-hover: #818cf8;
+  --inspector-accent-surface: #eef2ff;
+  --inspector-accent-text: #4f46e5;
+
+  /* Semantic */
+  --inspector-success: #10b981;
+  --inspector-warning: #f59e0b;
+  --inspector-danger: #ef4444;
+
+  /* Sizing */
+  --inspector-control-height: 28px;
+  --inspector-control-height-lg: 32px;
+  --inspector-icon-size: 14px;
+
+  /* Spacing */
+  --inspector-gap-xs: 2px;
+  --inspector-gap-sm: 4px;
+  --inspector-gap-md: 6px;
+  --inspector-gap-lg: 8px;
+  --inspector-gap-xl: 12px;
+  --inspector-gap-2xl: 16px;
+
+  /* Section */
+  --inspector-section-padding: var(--inspector-gap-lg) var(--inspector-gap-xl);
+  --inspector-section-header-height: 32px;
+
+  /* Typography */
+  --inspector-font-size-xs: 10px;
+  --inspector-font-size: 11px;
+  --inspector-font-size-sm: 12px;
+  --inspector-font-size-md: 13px;
+  --inspector-font-weight: 400;
+
+  /* Radius */
+  --inspector-radius-sm: 4px;
+  --inspector-radius-md: 6px;
+  --inspector-radius-lg: 8px;
+  --inspector-radius-full: 9999px;
+
+  /* Transitions */
+  --inspector-transition-fast: 120ms;
+  --inspector-transition-normal: 200ms;
+}
+
+/* ═─ Dark mode ══════════════════════════════════════════════════════════ */
+
+.dark {
+  --inspector-bg: #091519;
+  --inspector-surface: #0d1f24;
+  --inspector-surface-hover: #152a30;
+  --inspector-surface-active: #1f383f;
+
+  --inspector-border: #344a4f;
+  --inspector-border-focus: #5ec4b8;
+
+  --inspector-text: #dfe8ea;
+  --inspector-text-secondary: #8a9b9f;
+  --inspector-text-dim: #5a6b6f;
+  --inspector-text-inverse: #091519;
+
+  --inspector-accent: #5ec4b8;
+  --inspector-accent-hover: #88d4cc;
+  --inspector-accent-surface: #0a2a30;
+  --inspector-accent-text: #88d4cc;
+
+  --inspector-success: #34d399;
+  --inspector-warning: #fbbf24;
+  --inspector-danger: #f87171;
+}

@@ -60,12 +60,12 @@ export function ImagePickerField({
   return (
     <div className="space-y-2">
       {label && (
-        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</div>
+        <div className="text-xs text-gray-500 uppercase tracking-wider">{label}</div>
       )}
 
       {/* Preview */}
       {v.url && (
-        <div className="relative w-full h-24 rounded border border-gray-200 overflow-hidden bg-[var(--puck-color-grey-01)]">
+        <div className="relative w-full h-24 rounded border border-gray-200 overflow-hidden bg-[var(--inspector-surface)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={v.url}
@@ -89,7 +89,7 @@ export function ImagePickerField({
           type="button"
           onClick={() => setTab("url")}
           className={`flex-1 text-[11px] py-1 rounded border ${
-            tab === "url" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            tab === "url" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           URL
@@ -98,7 +98,7 @@ export function ImagePickerField({
           type="button"
           onClick={() => setTab("library")}
           className={`flex-1 text-[11px] py-1 rounded border ${
-            tab === "library" ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+            tab === "library" ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
           }`}
         >
           Library
@@ -166,7 +166,7 @@ export function ImagePickerField({
             type="button"
             onClick={() => update("objectFit", fit)}
             className={`flex-1 text-[10px] py-1 rounded border ${
-              v.objectFit === fit ? "border-indigo-400 bg-[var(--puck-color-azure-01)] text-indigo-600" : "border-gray-200 text-gray-500"
+              v.objectFit === fit ? "border-indigo-400 bg-[var(--inspector-accent-surface)] text-indigo-600" : "border-gray-200 text-gray-500"
             }`}
           >
             {fit.charAt(0).toUpperCase() + fit.slice(1)}

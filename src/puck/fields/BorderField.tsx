@@ -37,7 +37,7 @@ export function BorderField({
     <div className="space-y-3">
       {/* Radius */}
       <div className="space-y-1">
-        <div className="text-[11px] text-gray-600 font-medium">Radius</div>
+        <div className="text-[11px] text-gray-600">Radius</div>
         <div className="grid grid-cols-4 gap-1">
           {([["tl", "↖"], ["tr", "↗"], ["br", "↘"], ["bl", "↙"]] as const).map(([key, icon]) => (
             <div key={key}>

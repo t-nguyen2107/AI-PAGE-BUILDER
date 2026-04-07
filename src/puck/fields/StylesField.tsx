@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, type ReactNode, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { SpacingField, type SpacingValue } from "./SpacingField";
 import { TypographyField, type TypographyValue } from "./TypographyField";
 import { BorderField, type BorderValue } from "./BorderField";
 import { ShadowField, shadowToCss, type ShadowValue } from "./ShadowField";
 import { ColorPickerField } from "./ColorPickerField";
-// GradientValue type removed — gradient feature no longer supported
 import { AnimationField, animationToCss, type AnimationValue } from "./AnimationField";
 import { MediaManager } from "./MediaManager";
+import { Section, SliderInput } from "../inspector/components";
+import { LayoutSection } from "./LayoutSection";
+import { PositionSection } from "./PositionSection";
+import { TransformSection } from "./TransformSection";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -18,35 +21,79 @@ export type TransitionValue = {
   properties: string;
 };
 
+export type TransformValue = {
+  translateX: string;
+  translateY: string;
+  rotate: string;
+  scaleX: string;
+  scaleY: string;
+  skewX: string;
+  skewY: string;
+};
+
 export type StylesValue = {
+  // Layout
+  display?: "block" | "flex" | "grid" | "inline" | "inline-block" | "inline-flex" | "none";
+  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+  flexWrap?: "nowrap" | "wrap" | "wrap-reverse";
+  justifyContent?: "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly";
+  alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline";
+  gap?: string;
+  gridTemplateColumns?: string;
+  gridTemplateRows?: string;
+
+  // Spacing
   padding?: SpacingValue;
   margin?: SpacingValue;
+
+  // Size
   width?: string;
   height?: string;
   minWidth?: string;
   maxWidth?: string;
   minHeight?: string;
   maxHeight?: string;
+  aspectRatio?: string;
+
+  // Position
+  position?: "static" | "relative" | "absolute" | "fixed" | "sticky";
+  zIndex?: string;
+  inset?: { top: string; right: string; bottom: string; left: string };
+
+  // Typography
   typography?: TypographyValue;
+
+  // Border & Shadow
   border?: BorderValue;
   shadow?: ShadowValue;
+
+  // Background
   backgroundColor?: string;
   gradient?: string; // kept for backward compat
   backgroundImageUrl?: string;
   backgroundSize?: string;
   backgroundPosition?: string;
   backgroundRepeat?: string;
+
+  // Effects
   opacity?: number;
   overflow?: "visible" | "hidden" | "scroll" | "auto";
   filter?: { blur: string; brightness: string; contrast: string };
+
+  // Transform
+  transform?: TransformValue;
+
+  // Animation & Transition
   animation?: AnimationValue;
   transition?: TransitionValue;
+
+  // Hover state
   hover?: Partial<Omit<StylesValue, "hover" | "animation" | "cssClasses">>;
   cssClasses?: string;
 };
 
 // ─── Hover CSS types ────────────────────────────────────────────────
-type HoverableKeys = Exclude<keyof StylesValue, "hover" | "animation" | "cssClasses">;
+type HoverableKeys = Exclude<keyof StylesValue, "hover" | "animation" | "cssClasses" | "transition">;
 
 // ─── stylesToCss ────────────────────────────────────────────────────
 
@@ -54,6 +101,32 @@ export function stylesToCss(s: StylesValue | undefined): CSSProperties {
   if (!s) return {};
   const css: CSSProperties = {};
 
+  // Layout
+  if (s.display && s.display !== "block") css.display = s.display;
+  if (s.flexDirection) css.flexDirection = s.flexDirection;
+  if (s.flexWrap && s.flexWrap !== "nowrap") css.flexWrap = s.flexWrap;
+  if (s.justifyContent) css.justifyContent = s.justifyContent;
+  if (s.alignItems) css.alignItems = s.alignItems;
+  if (s.gap && s.gap !== "0px") css.gap = s.gap;
+  if (s.gridTemplateColumns) css.gridTemplateColumns = s.gridTemplateColumns;
+  if (s.gridTemplateRows) css.gridTemplateRows = s.gridTemplateRows;
+
+  // Position
+  if (s.position && s.position !== "static") css.position = s.position;
+  if (s.zIndex) css.zIndex = s.zIndex;
+  if (s.inset) {
+    const { top, right, bottom, left } = s.inset;
+    if (top === right && right === bottom && bottom === left && top && top !== "auto") {
+      css.inset = top;
+    } else {
+      if (top && top !== "auto") css.top = top;
+      if (right && right !== "auto") css.right = right;
+      if (bottom && bottom !== "auto") css.bottom = bottom;
+      if (left && left !== "auto") css.left = left;
+    }
+  }
+
+  // Spacing
   if (s.padding) {
     const { top, right, bottom, left } = s.padding;
     if (top === right && right === bottom && bottom === left && top && top !== "0px") {
@@ -145,6 +218,27 @@ export function stylesToCss(s: StylesValue | undefined): CSSProperties {
     if (filters.length) css.filter = filters.join(" ");
   }
 
+  // Transform
+  if (s.transform) {
+    const t = s.transform;
+    const parts: string[] = [];
+    const tx = parseFloat(t.translateX) || 0;
+    const ty = parseFloat(t.translateY) || 0;
+    if (tx !== 0 || ty !== 0) parts.push(`translate(${t.translateX}, ${t.translateY})`);
+    const rot = parseFloat(t.rotate) || 0;
+    if (rot !== 0) parts.push(`rotate(${t.rotate})`);
+    const sx = parseFloat(t.scaleX) || 1;
+    const sy = parseFloat(t.scaleY) || 1;
+    if (sx !== 1 || sy !== 1) parts.push(`scale(${t.scaleX}, ${t.scaleY})`);
+    const skx = parseFloat(t.skewX) || 0;
+    const sky = parseFloat(t.skewY) || 0;
+    if (skx !== 0 || sky !== 0) parts.push(`skew(${t.skewX}, ${t.skewY})`);
+    if (parts.length) css.transform = parts.join(" ");
+  }
+
+  // Aspect ratio
+  if (s.aspectRatio) css.aspectRatio = s.aspectRatio;
+
   const anim = animationToCss(s.animation);
   if (anim) css.animation = anim;
 
@@ -172,75 +266,6 @@ export function hoverToCss(className: string, hover: StylesValue["hover"]): stri
     .join("\n");
 
   return `.${className}:hover {\n${rules}\n}`;
-}
-
-// ─── Accordion ──────────────────────────────────────────────────────
-
-function Accordion({
-  title,
-  icon,
-  defaultOpen = false,
-  children,
-}: {
-  title: string;
-  icon?: string;
-  defaultOpen?: boolean;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className={`group border-l-2 transition-colors ${open ? "border-l-[var(--puck-color-azure-04)] bg-[var(--puck-color-grey-01)]" : "border-l-transparent"}`}>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-gray-600 hover:text-gray-900 hover:bg-[var(--puck-color-grey-01)] transition-colors"
-      >
-        {icon && <span className="text-xs opacity-70">{icon}</span>}
-        <span className="flex-1 text-left uppercase tracking-wider">{title}</span>
-        <svg
-          className={`w-3 h-3 text-gray-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-      {open && <div className="px-3 pb-3 pt-1 space-y-2.5">{children}</div>}
-    </div>
-  );
-}
-
-// ─── Slider + Input ─────────────────────────────────────────────────
-
-function SliderInput({
-  label, value, onChange, min, max, step = 1,
-}: {
-  label: string; value: string; onChange: (val: string) => void;
-  min: number; max: number; step?: number;
-}) {
-  const num = parseFloat(value) || 0;
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-0.5">
-        <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">{label}</label>
-        <input
-          type="text" value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-14 text-[11px] border border-gray-200 rounded px-1.5 py-0.5 text-center font-mono bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-shadow"
-        />
-      </div>
-      <input
-        type="range"
-        value={Math.min(Math.max(num, min), max)}
-        onChange={(e) => {
-          const v = e.target.value;
-          const unit = value.replace(/^-?[\d.]+/, "") || "px";
-          onChange(v + unit);
-        }}
-        min={min} max={max} step={step}
-        className="w-full h-1 accent-indigo-500 cursor-pointer"
-      />
-    </div>
-  );
 }
 
 // ─── StylesFieldOptions ─────────────────────────────────────────────
@@ -294,11 +319,11 @@ export function StylesField({
   return (
     <div>
       {/* ── State Toggle ── */}
-      <div className="flex border-b border-gray-200 mb-0.5">
+      <div className="flex border-b border-gray-200">
         <button
           type="button"
           onClick={() => setStateMode("default")}
-          className={`flex-1 py-1.5 text-[11px] font-semibold transition-colors ${
+          className={`flex-1 py-2 text-[11px] transition-colors ${
             !isHover ? "text-indigo-600 border-b-2 border-indigo-500" : "text-gray-500 hover:text-gray-600"
           }`}
         >
@@ -307,7 +332,7 @@ export function StylesField({
         <button
           type="button"
           onClick={() => setStateMode("hover")}
-          className={`flex-1 py-1.5 text-[11px] font-semibold transition-colors ${
+          className={`flex-1 py-2 text-[11px] transition-colors ${
             isHover ? "text-amber-600 border-b-2 border-amber-500" : "text-gray-500 hover:text-gray-600"
           }`}
         >
@@ -315,83 +340,38 @@ export function StylesField({
         </button>
       </div>
 
-      {/* ── Quick-access bar ── */}
-      {!isHover && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--puck-color-grey-01)] border-b border-gray-100">
-          {/* Background color */}
-          <div className="flex items-center gap-1.5">
-            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">BG</label>
-            <ColorPickerField
-              value={v.backgroundColor || ""}
-              onChange={(val) => onChange({ ...v, backgroundColor: val })}
-            />
-          </div>
-
-          {/* Opacity */}
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">OP</label>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={v.opacity ?? 100}
-              onChange={(e) => onChange({ ...v, opacity: Number(e.target.value) })}
-              className="flex-1 h-1 accent-indigo-500 cursor-pointer"
-            />
-            <span className="text-[10px] font-mono text-gray-500 w-7 text-right">{v.opacity ?? 100}%</span>
-          </div>
-
-          {/* Border radius */}
-          <div className="flex items-center gap-1">
-            <label className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">R</label>
-            <input
-              type="text"
-              value={v.border?.radius?.tl ?? ""}
-              onChange={(e) => {
-                const r = e.target.value;
-                onChange({
-                  ...v,
-                  border: {
-                    radius: { tl: r, tr: r, br: r, bl: r },
-                    width: v.border?.width ?? "0px",
-                    style: v.border?.style ?? "solid",
-                    color: v.border?.color ?? "#000000",
-                  },
-                });
-              }}
-              placeholder="0px"
-              className="w-12 text-[11px] border border-gray-200 rounded px-1.5 py-0.5 text-center font-mono bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ── Accordion Sections ── */}
+      {/* ── Section Sections ── */}
       <div className="divide-y divide-gray-100">
 
-        {/* ── Spacing ── */}
+        {/* ── Spacing (most used — always open) ── */}
         {!opts.disableSpacing && (
-          <Accordion title="Spacing" icon="⊞" defaultOpen={!isHover}>
+          <Section title="Spacing" icon="▤" defaultOpen>
             <SpacingField label="Padding" value={target.padding} onChange={(val) => setField("padding", val)} />
             <SpacingField label="Margin" value={target.margin} onChange={(val) => setField("margin", val)} />
-          </Accordion>
+          </Section>
+        )}
+
+        {/* ── Typography ── */}
+        {!opts.disableTypography && (
+          <Section title="Typography" icon="A" defaultOpen>
+            <TypographyField value={target.typography} onChange={(val) => setField("typography", val)} />
+          </Section>
         )}
 
         {/* ── Size ── */}
         {!opts.disableSize && !isHover && (
-          <Accordion title="Size" icon="⤡">
+          <Section title="Size" icon="⤡">
             <div className="grid grid-cols-2 gap-2">
               {([
                 ["width", "Width", "auto"],
                 ["height", "Height", "auto"],
-                ["minWidth", "Min W", "0"],
-                ["maxWidth", "Max W", "none"],
-                ["minHeight", "Min H", "0"],
-                ["maxHeight", "Max H", "none"],
+                ["minWidth", "Min Width", "0"],
+                ["maxWidth", "Max Width", "none"],
+                ["minHeight", "Min Height", "0"],
+                ["maxHeight", "Max Height", "none"],
               ] as const).map(([key, label, ph]) => (
                 <div key={key}>
-                  <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">{label}</label>
+                  <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">{label}</label>
                   <input
                     type="text"
                     value={(target[key] as string) || ""}
@@ -402,41 +382,48 @@ export function StylesField({
                 </div>
               ))}
             </div>
-          </Accordion>
+          </Section>
         )}
 
-        {/* ── Typography ── */}
-        {!opts.disableTypography && (
-          <Accordion title="Typography" icon="A">
-            <TypographyField value={target.typography} onChange={(val) => setField("typography", val)} />
-          </Accordion>
+        {/* ── Layout (collapsed — advanced) ── */}
+        {!isHover && (
+          <Section title="Layout" icon="⊞">
+            <LayoutSection value={v} onChange={onChange} />
+          </Section>
+        )}
+
+        {/* ── Position ── */}
+        {!isHover && (
+          <Section title="Position" icon="⊕">
+            <PositionSection value={v} onChange={onChange} />
+          </Section>
         )}
 
         {/* ── Border ── */}
         {!opts.disableBorder && (
-          <Accordion title="Border" icon="▢">
+          <Section title="Border" icon="▢">
             <BorderField value={target.border} onChange={(val) => setField("border", val)} />
-          </Accordion>
+          </Section>
         )}
 
         {/* ── Shadow ── */}
         {!opts.disableShadow && (
-          <Accordion title="Shadow" icon="▪">
+          <Section title="Shadow" icon="▪">
             <ShadowField value={target.shadow} onChange={(val) => setField("shadow", val)} />
-          </Accordion>
+          </Section>
         )}
 
         {/* ── Background ── */}
         {!opts.disableBackground && (
-          <Accordion title="Background" icon="◨">
+          <Section title="Background" icon="◨">
             <ColorPickerField label="Color" value={target.backgroundColor} onChange={(val) => setField("backgroundColor", val)} />
 
             {/* Background Image (default mode only) */}
             {!isHover && (
               <div className="space-y-2">
-                <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Image</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider">Image</div>
                 {v.backgroundImageUrl ? (
-                  <div className="relative w-full h-20 rounded-lg border border-gray-200 overflow-hidden bg-[var(--puck-color-grey-01)]">
+                  <div className="relative w-full h-20 rounded-lg border border-gray-200 overflow-hidden bg-[var(--inspector-surface)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={v.backgroundImageUrl} alt="" className="w-full h-full object-cover" />
                     <button
@@ -451,7 +438,7 @@ export function StylesField({
                 <button
                   type="button"
                   onClick={() => setMediaOpen(true)}
-                  className="w-full text-[11px] py-2 rounded-md border border-dashed border-gray-300 text-gray-500 hover:border-[var(--puck-color-azure-04)] hover:text-[var(--puck-color-azure-05)] hover:bg-[var(--puck-color-azure-01)] font-medium transition-all"
+                  className="w-full text-[11px] py-2 rounded-md border border-dashed border-gray-300 text-gray-500 hover:border-[var(--inspector-accent)] hover:text-[var(--inspector-accent-text)] hover:bg-[var(--inspector-accent-surface)] transition-all"
                 >
                   {v.backgroundImageUrl ? "Change Image" : "Select Image"}
                 </button>
@@ -459,7 +446,7 @@ export function StylesField({
                 {v.backgroundImageUrl && (
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">Size</label>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Size</label>
                       <select
                         value={v.backgroundSize || "cover"}
                         onChange={(e) => onChange({ ...v, backgroundSize: e.target.value })}
@@ -471,7 +458,7 @@ export function StylesField({
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">Position</label>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Position</label>
                       <select
                         value={v.backgroundPosition || "center"}
                         onChange={(e) => onChange({ ...v, backgroundPosition: e.target.value })}
@@ -485,7 +472,7 @@ export function StylesField({
                       </select>
                     </div>
                     <div className="col-span-2">
-                      <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">Repeat</label>
+                      <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Repeat</label>
                       <select
                         value={v.backgroundRepeat || "no-repeat"}
                         onChange={(e) => onChange({ ...v, backgroundRepeat: e.target.value })}
@@ -502,19 +489,26 @@ export function StylesField({
               </div>
             )}
 
-          </Accordion>
+          </Section>
         )}
 
         {/* ── Animation ── */}
         {!opts.disableAnimation && !isHover && (
-          <Accordion title="Animation" icon="✦">
+          <Section title="Animation" icon="✦">
             <AnimationField value={v.animation} onChange={(val) => onChange({ ...v, animation: val })} />
-          </Accordion>
+          </Section>
+        )}
+
+        {/* ── Transform ── */}
+        {!isHover && (
+          <Section title="Transform" icon="⟲">
+            <TransformSection value={v} onChange={onChange} />
+          </Section>
         )}
 
         {/* ── Effects ── */}
         {!opts.disableEffects && (
-          <Accordion title="Effects" icon="◈">
+          <Section title="Effects" icon="◈">
             <SliderInput
               label="Opacity"
               value={target.opacity !== undefined ? String(target.opacity) : "100"}
@@ -526,7 +520,7 @@ export function StylesField({
             />
             {!isHover && (
               <div>
-                <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">Overflow</label>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Overflow</label>
                 <select
                   value={target.overflow || "visible"}
                   onChange={(e) => setField("overflow", e.target.value as StylesValue["overflow"])}
@@ -541,7 +535,7 @@ export function StylesField({
             )}
             {!isHover && (
               <div className="space-y-2 pt-1">
-                <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Filters</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider">Filters</div>
                 <SliderInput label="Blur" value={v.filter?.blur || "0px"}
                   onChange={(val) => onChange({ ...v, filter: { ...(v.filter || defaultFilter), blur: val } })}
                   min={0} max={20} step={0.5}
@@ -556,15 +550,15 @@ export function StylesField({
                 />
               </div>
             )}
-          </Accordion>
+          </Section>
         )}
 
         {/* ── Transition ── */}
         {isHover && (
-          <Accordion title="Transition" icon="↝" defaultOpen>
+          <Section title="Transition" icon="↝" defaultOpen>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">Duration</label>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Duration</label>
                 <select
                   value={v.transition?.duration || "0.2s"}
                   onChange={(e) => setTransition({ ...(v.transition || { duration: "0.2s", easing: "ease", properties: "all" }), duration: e.target.value })}
@@ -579,7 +573,7 @@ export function StylesField({
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">Easing</label>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Easing</label>
                 <select
                   value={v.transition?.easing || "ease"}
                   onChange={(e) => setTransition({ ...(v.transition || { duration: "0.2s", easing: "ease", properties: "all" }), easing: e.target.value })}
@@ -593,14 +587,14 @@ export function StylesField({
                 </select>
               </div>
             </div>
-          </Accordion>
+          </Section>
         )}
 
         {/* ── Advanced ── */}
         {!isHover && (
-          <Accordion title="Advanced" icon="⚙">
+          <Section title="Advanced" icon="⚙">
             <div>
-              <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider block mb-0.5">CSS Classes</label>
+              <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">CSS Classes</label>
               <input
                 type="text" value={v.cssClasses || ""}
                 onChange={(e) => onChange({ ...v, cssClasses: e.target.value || undefined })}
@@ -608,7 +602,7 @@ export function StylesField({
                 placeholder="class1 class2 ..."
               />
             </div>
-          </Accordion>
+          </Section>
         )}
       </div>
 

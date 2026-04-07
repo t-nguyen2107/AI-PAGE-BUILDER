@@ -9,14 +9,6 @@ export type SpacingValue = {
   left: string;
 };
 
-const UNITS = ["px", "rem", "em", "%", "vw", "vh"];
-
-function parseValue(val: string): { num: string; unit: string } {
-  const m = val.match(/^(-?[\d.]+)(px|rem|em|%|vw|vh)?$/);
-  if (m) return { num: m[1], unit: m[2] || "px" };
-  return { num: val, unit: "px" };
-}
-
 export function SpacingField({
   value,
   onChange,
@@ -45,10 +37,12 @@ export function SpacingField({
   ];
 
   return (
-    <div className="space-y-2">
+    <div>
       {label && (
-        <div className="text-[11px] text-gray-600 font-medium">{label}</div>
+        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">{label}</div>
       )}
+
+      {/* TRBL inputs */}
       <div className="flex items-center gap-1">
         {dirs.map(({ key, label: l }) => (
           <div key={key} className="flex-1">
@@ -57,7 +51,7 @@ export function SpacingField({
               type="text"
               value={v[key]}
               onChange={(e) => handleChange(key, e.target.value)}
-              className="w-full text-center text-xs border border-gray-200 rounded px-1 py-1.5 focus:outline-none focus:border-indigo-400"
+              className="w-full text-center text-[11px] border border-gray-200 rounded px-1 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
               placeholder="0px"
             />
           </div>
