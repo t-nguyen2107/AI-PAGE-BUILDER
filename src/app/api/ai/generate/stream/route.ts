@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createAIStream } from '@/lib/ai/streaming';
+import { writeFileSync } from 'fs';
+import { createAIStream, createMakeupStream } from '@/lib/ai/streaming';
 import { optimizePrompt, selectRelevantComponents } from '@/lib/ai/prompts/prompt-optimizer';
 import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
 import * as aiMemory from '@/lib/ai/memory';
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
 
         let styleguideData: { colors?: string; typography?: string; spacing?: string; cssVariables?: string } | undefined;
         let treeSummary: string | undefined;
+        let treeDataRaw: unknown;
         let miniContext = '';
         let history: BaseMessage[] = [];
         let projectProfile = '';
@@ -75,7 +77,10 @@ export async function POST(request: NextRequest) {
         const [, , , profileResult] = await Promise.allSettled([
           (async () => {
             const page = await prisma.page.findUnique({ where: { id: pageId } });
-            if (page?.treeData) treeSummary = buildTreeSummary(page.treeData);
+            if (page?.treeData) {
+              treeSummary = buildTreeSummary(page.treeData);
+              treeDataRaw = page.treeData;
+            }
           })(),
           (async () => {
             const session = await aiMemory.getOrCreateSession(projectId, pageId);
@@ -142,8 +147,8 @@ export async function POST(request: NextRequest) {
         // Select component catalog tiers based on intent + business type
         const componentTiers = selectRelevantComponents(intent, businessType, treeSummary);
 
-        // Route: create_page → template mode, everything else → full AI mode
-        const useTemplateMode = intent === 'create_page';
+        // Route: create_page → makeup mode (structure + parallel polish), everything else → full AI mode
+        const useMakeupMode = intent === 'create_page';
 
         // STEP 2b: RAG — vector knowledge lookup (non-fatal)
         let ragContext = '';
@@ -160,19 +165,37 @@ export async function POST(request: NextRequest) {
         // STEP 3-6: Create AI stream
         let aiStream: ReadableStream<Uint8Array>;
         try {
-          aiStream = createAIStream(enrichedPrompt, {
-            styleguideData,
-            miniContext: miniContext || undefined,
-            treeSummary,
-            history,
-            projectProfile: projectProfile || undefined,
-            mode: useTemplateMode ? 'template' : 'full',
-            businessType: businessType ?? undefined,
-            componentTiers,
-            designGuidance: designGuidance ?? undefined,
-            designContext: mergedDesignContext,
-            signal: request.signal,
-          });
+          if (useMakeupMode) {
+            // Makeup mode: structure resolver + parallel per-section polish
+            // Validate treeDataRaw has expected structure before passing
+            const validTreeData = treeDataRaw && typeof treeDataRaw === 'object' && 'content' in (treeDataRaw as Record<string, unknown>)
+              ? treeDataRaw
+              : undefined;
+            aiStream = createMakeupStream(enrichedPrompt, {
+              styleguideData,
+              businessType: businessType ?? undefined,
+              designContext: mergedDesignContext,
+              designGuidance: designGuidance ?? undefined,
+              signal: request.signal,
+              existingTreeData: validTreeData,
+              intent,
+            });
+          } else {
+            // Full mode: single AI call with conversation history
+            aiStream = createAIStream(enrichedPrompt, {
+              styleguideData,
+              miniContext: miniContext || undefined,
+              treeSummary,
+              history,
+              projectProfile: projectProfile || undefined,
+              mode: 'full',
+              businessType: businessType ?? undefined,
+              componentTiers,
+              designGuidance: designGuidance ?? undefined,
+              designContext: mergedDesignContext,
+              signal: request.signal,
+            });
+          }
         } catch (streamError) {
           // Fallback to template-based generation
           console.error('Stream creation failed, using template fallback:', streamError);
@@ -263,6 +286,13 @@ export async function POST(request: NextRequest) {
               console.error('[ai-profile] Background analysis failed:', err);
             });
           }
+        }
+
+        // Debug: save finalResult JSON for review
+        if (finalResult) {
+          try {
+            writeFileSync('json_test_result.json', JSON.stringify(finalResult, null, 2));
+          } catch { /* non-fatal */ }
         }
 
         close();

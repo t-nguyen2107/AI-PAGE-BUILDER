@@ -17,10 +17,13 @@ import {
 
 interface ParsedColors {
   primary?: string;
+  onPrimary?: string;
   secondary?: string;
   accent?: string;
+  onAccent?: string;
   background?: string;
   foreground?: string;
+  card?: string;
   muted?: string;
   border?: string;
 }
@@ -47,10 +50,13 @@ function parseStyleguideColors(raw: string | undefined): ParsedColors {
 
     return {
       primary: flat.primary ?? flat['--color-primary'] ?? undefined,
+      onPrimary: flat.onPrimary ?? flat['--color-on-primary'] ?? flat.onprimary ?? undefined,
       secondary: flat.secondary ?? flat['--color-secondary'] ?? undefined,
       accent: flat.accent ?? flat['--color-accent'] ?? undefined,
+      onAccent: flat.onAccent ?? flat['--color-on-accent'] ?? flat.onaccent ?? undefined,
       background: flat.background ?? flat['--color-background'] ?? flat.surface ?? undefined,
       foreground: flat.foreground ?? flat['--color-foreground'] ?? flat.text ?? undefined,
+      card: flat.card ?? flat['--color-card'] ?? flat.cardBg ?? undefined,
       muted: flat.muted ?? flat['--color-muted'] ?? flat.mutedBg ?? undefined,
       border: flat.border ?? flat['--color-border'] ?? undefined,
     };
@@ -139,10 +145,13 @@ function buildStyleguideSection(
   const palette = guidance?.colorPalette;
   const tokens: ParsedColors = {
     primary: parsed.primary ?? palette?.primary,
+    onPrimary: parsed.onPrimary ?? palette?.onPrimary,
     secondary: parsed.secondary ?? palette?.secondary,
     accent: parsed.accent ?? palette?.accent,
+    onAccent: parsed.onAccent ?? palette?.onAccent,
     background: parsed.background ?? palette?.background,
     foreground: parsed.foreground ?? palette?.foreground,
+    card: parsed.card ?? palette?.card,
     muted: parsed.muted ?? palette?.muted,
     border: parsed.border ?? palette?.border,
   };
@@ -164,21 +173,28 @@ function buildStyleguideSection(
   if (hasColors) {
     parts.push('### Color Tokens');
     if (tokens.primary) parts.push(`- Primary (CTAs, nav highlights, key interactive): ${tokens.primary}`);
+    if (tokens.onPrimary) parts.push(`- OnPrimary (text on primary bg): ${tokens.onPrimary}`);
     if (tokens.secondary) parts.push(`- Secondary (secondary actions, hover states): ${tokens.secondary}`);
     if (tokens.accent) parts.push(`- Accent (badges, tags, highlights): ${tokens.accent}`);
+    if (tokens.onAccent) parts.push(`- OnAccent (text on accent bg): ${tokens.onAccent}`);
     if (tokens.background) parts.push(`- Background (page bg): ${tokens.background}`);
     if (tokens.foreground) parts.push(`- Foreground (main text): ${tokens.foreground}`);
+    if (tokens.card) parts.push(`- Card (card bg, elevated panels): ${tokens.card}`);
     if (tokens.muted) parts.push(`- Muted (subtle bg, cards): ${tokens.muted}`);
     if (tokens.border) parts.push(`- Border (dividers, outlines): ${tokens.border}`);
     parts.push('');
-    parts.push('### Color Application Rules');
-    parts.push('- HeroSection gradient: use gradientFrom=primary, gradientTo=secondary');
-    parts.push('- CTASection: use variant="gradient" with primary→secondary gradient');
-    parts.push('- Alternate section backgrounds: background → muted → background → dark');
-    parts.push('- PricingTable highlighted card: border in primary, bg slightly tinted');
+    parts.push('### Color Application Rules (MANDATORY — VIOLATION = INVALID OUTPUT)');
+    parts.push('- You MUST use the exact hex values listed above for ALL color props. NEVER invent, guess, or approximate colors.');
+    parts.push('- HeroSection: gradientFrom MUST be the primary token value, gradientTo MUST be the secondary or accent token value');
+    parts.push('- CTASection: use variant="gradient", gradientFrom=primary hex, gradientTo=accent hex');
+    parts.push('- PricingTable: highlighted card uses primary for border/accent. highlightedBadge uses accent token');
+    parts.push('- StatsSection: accent color for stat values. Background: muted or dark variant');
     parts.push('- TestimonialSection: muted background with foreground text');
-    parts.push('- Dark sections (FooterSection, some HeroSection): foreground/onPrimary for text');
-    parts.push('- Never use raw black (#000) or raw white (#FFF) — always use token values');
+    parts.push('- FooterSection: dark background (primary-dark or secondary), text using foreground/muted tokens');
+    parts.push('- HeaderNav: primary color for logo/active link, background color for nav bar');
+    parts.push('- Alternate section backgrounds: background → muted → dark → gradient. NEVER place same-background sections adjacently');
+    parts.push('- NEVER use colors NOT listed above. If your palette is blue, do NOT output orange hex values.');
+    parts.push('- NEVER use raw black (#000000) or raw white (#FFFFFF) — always use the token values above');
   }
 
   if (hasTypo) {
@@ -332,7 +348,7 @@ const SECTION_INSTRUCTIONS: Record<string, string> = {
   LogoGrid: '5-6 partner/client logos with "Trusted by" heading. Use for social proof.',
   TestimonialSection: '3-4 testimonials with full names, realistic company names, specific quotes. Use variant "carousel", animation "stagger-fade".',
   PricingTable: '2-3 pricing tiers with believable prices and specific features. Highlight middle tier (highlightedBadge: "Most Popular"). Include pricingToggle with yearly discount.',
-  FAQSection: '4-6 genuine questions customers would ask. Match business type concerns. Set animation "fade-up".',
+  FAQSection: '4-6 genuine questions customers would ask. Use "items" array (NOT "faqs") with {question, answer} objects. Use "heading" (NOT "title") for section title. Set accordion: true, animation "fade-up".',
   CTASection: 'Bold heading, compelling subtext, prominent CTA button. Use variant "gradient" or "dark" for contrast. Set animation "fade-up".',
   ContactForm: 'Contact form with showPhone and showCompany. Button text matches business type ("Send Message" / "Book a Demo" / "Reserve a Table").',
   FooterSection: 'Dark background, 3-4 link groups (Product/Company/Support/Legal), logo description, copyright with current year.',
@@ -450,11 +466,18 @@ interface PromptContext {
 // Dynamic Catalog Builder (uses shared COMPONENT_CATALOG from component-catalog.ts)
 // ---------------------------------------------------------------------------
 
+function buildComponentEntry(name: string, info: import('./component-catalog').ComponentInfo): string {
+  let entry = `### ${name}\n${info.description}\nProps: ${info.propsSignature}`;
+  if (info.recommendedDefaults) entry += `\nRecommended defaults: ${info.recommendedDefaults}`;
+  if (info.variantTips) entry += `\nVariant tips: ${info.variantTips}`;
+  return entry;
+}
+
 function buildDynamicCatalog(tiers?: ComponentTierPlan): string {
   // Default: all components full detail (backward compatible)
   if (!tiers) {
     return Object.entries(COMPONENT_CATALOG)
-      .map(([name, info]) => `### ${name}\n${info.description}\nProps: ${info.propsSignature}`)
+      .map(([name, info]) => buildComponentEntry(name, info))
       .join('\n\n');
   }
 
@@ -462,27 +485,29 @@ function buildDynamicCatalog(tiers?: ComponentTierPlan): string {
   const hasContent = tiers.fullDetail.length > 0 || tiers.summary.length > 0 || tiers.nameOnly.length > 0;
   if (!hasContent) {
     return Object.entries(COMPONENT_CATALOG)
-      .map(([name, info]) => `### ${name}\n${info.description}\nProps: ${info.propsSignature}`)
+      .map(([name, info]) => buildComponentEntry(name, info))
       .join('\n\n');
   }
 
   const parts: string[] = [];
 
-  // Tier 1: Full detail
+  // Tier 1: Full detail (includes recommendedDefaults + variantTips)
   for (const name of tiers.fullDetail) {
     const info = COMPONENT_CATALOG[name];
     if (info) {
-      parts.push(`### ${name}\n${info.description}\nProps: ${info.propsSignature}`);
+      parts.push(buildComponentEntry(name, info));
     }
   }
 
-  // Tier 2: Summary (name + short description)
+  // Tier 2: Summary (name + short description + props)
   if (tiers.summary.length > 0) {
     parts.push('\n### Additional Components (summary)');
     for (const name of tiers.summary) {
       const info = COMPONENT_CATALOG[name];
       if (info) {
-        parts.push(`- ${name} — ${info.shortDescription}`);
+        let entry = `- ${name} — ${info.shortDescription}. Props: ${info.propsSignature}`;
+        if (info.recommendedDefaults) entry += `. Defaults: ${info.recommendedDefaults}`;
+        parts.push(entry);
       }
     }
   }

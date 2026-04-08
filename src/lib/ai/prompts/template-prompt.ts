@@ -212,6 +212,30 @@ ${varLines}`);
 // Prompt Builder
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Variant tip extraction — pulls only the relevant business-type guidance
+// ---------------------------------------------------------------------------
+
+/** Map business-type strings to the label used inside variantTips strings */
+function extractBusinessVariantTip(businessType: string): string {
+  // e.g. "SaaS/technology" → "SaaS", "restaurant/dining" → "Restaurant"
+  const main = businessType.split('/')[0];
+  return main.charAt(0).toUpperCase() + main.slice(1);
+}
+
+/** Extract the tip for a specific business label from a variantTips string */
+function extractVariantTipForBusiness(variantTips: string, businessLabel: string): string | null {
+  // variantTips format: "SaaS: tip text. E-commerce: tip text. Restaurant: tip text."
+  // Match "Label:" or "Label :" case-insensitively
+  const re = new RegExp(`${escapeRegExp(businessLabel)}\\s*:\\s*(.+?)(?=\\.\\s+[A-Z][a-z]+:|$)`, 'is');
+  const match = variantTips.match(re);
+  return match ? match[1].trim() : null;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Build the compact Puck component selection prompt.
  */
@@ -242,6 +266,7 @@ ${_ctx.designContext}
 - Use gradientFrom/gradientTo on HeroSection for rich backgrounds (never flat solid color)
 - PricingTable: include highlightedBadge, pricingToggle with yearlyPlans, animation="stagger"
 - Alternate section backgrounds: white → muted → dark → gradient (never all-white)
+- CRITICAL: Color props (gradientFrom, gradientTo, bgColor, borderColor) MUST use the exact hex values from Color Tokens above. NEVER guess or invent your own colors.
 ${styleguideBlock ? `
 ### Active Token Application Rules
 - HeroSection: Use gradient tokens for gradientFrom/gradientTo. Use primary color for CTA buttons.
@@ -262,18 +287,32 @@ ${styleguideBlock ? `
 ${styleguideBlock}
 
 ### Token Application Rules
-- Apply colors EXACTLY as specified above — do NOT invent your own palette.
+- Apply colors EXACTLY as specified above — do NOT invent your own palette. NEVER use colors not listed.
 - Use gradient tokens for HeroSection gradientFrom/gradientTo props.
 - Alternate section backgrounds: background → surface → dark (primary-tinted) → gradient.
 - Typography: headingFont for headings/hero, bodyFont for body text/descriptions.
 - Spacing: Use the spacing scale for section padding — prefer larger values for breathing room.
 - Shadow: Use the derived shadow token for elevated card effects.
+- CRITICAL: gradientFrom/gradientTo MUST use the exact primary/secondary/accent hex values above. NEVER invent colors like "#FF6B6B" if your palette is blue.
 `
       : '';
 
+  // Extract variant tips for the specific business type
+  const businessLabel = _ctx?.businessType
+    ? extractBusinessVariantTip(_ctx.businessType)
+    : null;
+
   // Build component type reference from shared catalog
   const componentRef = Object.entries(COMPONENT_CATALOG)
-    .map(([name, info]) => `### ${name}\nProps: ${info.propsSignature}`)
+    .map(([name, info]) => {
+      let entry = `### ${name}\nProps: ${info.propsSignature}`;
+      if (info.recommendedDefaults) entry += `\nDefaults: ${info.recommendedDefaults}`;
+      if (businessLabel && info.variantTips) {
+        const tip = extractVariantTipForBusiness(info.variantTips, businessLabel);
+        if (tip) entry += `\nBusiness tips: ${tip}`;
+      }
+      return entry;
+    })
     .join('\n\n');
 
   // Build system message with regular braces — we escape them all at the end

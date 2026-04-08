@@ -25,6 +25,8 @@ export interface SectionPromptContext {
   designContext?: string;
   /** Position context: which section out of how many */
   position: { index: number; total: number };
+  /** When true, adds makeup enhancement rules for polishing existing sections */
+  isMakeup?: boolean;
 }
 
 // ─── Stock images by business category ─────────────────────────────────────────
@@ -69,13 +71,28 @@ export function buildSectionPrompt(
   catalogEntry: ComponentInfo,
   context: SectionPromptContext,
 ): ChatPromptTemplate {
-  const { position, businessType, designGuidance, styleguideData, designContext } = context;
+  const { position, businessType, designGuidance, styleguideData, designContext, isMakeup } = context;
 
   // ── Build design tokens block ──
   const designTokensBlock = buildDesignTokensBlock(designGuidance, styleguideData);
 
   // ── Build stock image hints ──
   const heroImage = getHeroImage(businessType);
+
+  // ── Makeup enhancement rules (added when polishing existing sections) ──
+  const makeupRules = isMakeup ? `
+## Makeup Enhancement Rules
+
+You are POLISHING this section — make it visually stunning:
+
+1. **Animation**: Set "animation" prop — use "fade-up" for hero/CTA/stats, "stagger" for grids/galleries/products, "stagger-fade" for testimonials/teams.
+2. **Gradients**: Use gradientFrom/gradientTo on HeroSection/CTASection with the exact color tokens from above. NEVER use flat solid backgrounds for hero or CTA.
+3. **Images**: Fill ALL image props with appropriate stock paths. Hero backgrounds use ${heroImage}, testimonials use /stock/testimonials/avatar-N.webp, products use relevant /stock/ paths.
+4. **Text Polish**: Refine heading text to be compelling and specific to ${businessType}. Make descriptions vivid but concise.
+5. **Visual Variety**: Use variant props — TestimonialSection variant "carousel", CTASection variant "gradient", FeaturesGrid cardStyle "elevated".
+6. **Hover Effects**: Set hoverEffect "lift" on FeaturesGrid and ProductCards.
+7. **Background Alternation**: This is section ${position.index + 1} of ${position.total}. ${position.index % 2 === 0 ? 'Use light or gradient background.' : 'Use muted or dark background for contrast.'}
+` : '';
 
   const systemMessageRaw = `You are generating section ${position.index + 1} of ${position.total} for a ${businessType} landing page.
 
@@ -103,7 +120,8 @@ Return JSON with this exact structure (do NOT include "type" or "id" — those a
 2. No placeholder text — use realistic, business-specific content.
 3. Tailor content specifically to: ${businessType}.
 4. For images, use: ${heroImage} and /stock/ paths.
-5. Return ONLY valid JSON. No markdown, no explanation, no code fences.`;
+5. Return ONLY valid JSON. No markdown, no explanation, no code fences.
+${makeupRules}`;
 
   // Escape braces for LangChain
   const systemMessage = systemMessageRaw.replace(/{/g, '{{').replace(/}/g, '}}');

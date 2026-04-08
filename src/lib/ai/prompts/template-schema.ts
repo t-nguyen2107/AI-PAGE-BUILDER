@@ -65,9 +65,19 @@ export function validateTemplateResponse(raw: unknown): { data: PuckComponentPla
       return { data: null, error: `components[${i}].type is required` };
     }
 
-    if (!VALID_COMPONENT_TYPES.has(c.type)) {
-      // Don't reject — just warn. AI might output slightly different names.
-      console.warn(`[template-schema] Unknown component type "${c.type}" at index ${i}`);
+    let componentType: string = c.type;
+
+    if (!VALID_COMPONENT_TYPES.has(componentType)) {
+      // Try fuzzy match (case-insensitive, strip spaces/special chars)
+      const normalized = componentType.replace(/[\s_-]/g, '').toLowerCase();
+      const match = [...VALID_COMPONENT_TYPES].find(
+        t => t.replace(/[\s_-]/g, '').toLowerCase() === normalized,
+      );
+      if (match) {
+        componentType = match; // Auto-correct to valid name
+      } else {
+        return { data: null, error: `Unknown component type "${componentType}" at index ${i}. Valid types: ${[...VALID_COMPONENT_TYPES].join(', ')}` };
+      }
     }
 
     // props is optional but must be an object if present
@@ -77,7 +87,7 @@ export function validateTemplateResponse(raw: unknown): { data: PuckComponentPla
     }
 
     components.push({
-      type: c.type,
+      type: componentType,
       props: props as Record<string, unknown>,
     });
   }

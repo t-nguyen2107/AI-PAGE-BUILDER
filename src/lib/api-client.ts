@@ -123,7 +123,8 @@ export const apiClient = {
     onDone: (result: AIGenerationResponse) => void,
     onError: (error: string) => void,
     onStatus?: (step: string, label: string) => void,
-    onComponent?: (component: { type: string; props: Record<string, unknown> }, index: number, total: number) => void,
+    onComponent?: (component: { type: string; props: Record<string, unknown> }, index: number, total: number, replacesSkelId?: string) => void,
+    onPlan?: (plan: { type: string; skeletonId: string }[]) => void,
   ): AbortController {
     const controller = new AbortController();
     // Combine manual abort with 120s timeout to prevent infinite wait
@@ -167,7 +168,8 @@ export const apiClient = {
               else if (event.type === 'done' && event.result) onDone(event.result);
               else if (event.type === 'error') onError(event.message ?? 'Unknown stream error');
               else if (event.type === 'status' && event.step) onStatus?.(event.step, event.label ?? event.step);
-              else if (event.type === 'component_stream' && event.component) onComponent?.(event.component as { type: string; props: Record<string, unknown> }, event.componentIndex ?? 0, event.componentTotal ?? 0);
+              else if (event.type === 'plan' && event.plan) onPlan?.(event.plan);
+              else if (event.type === 'component_stream' && event.component) onComponent?.(event.component as { type: string; props: Record<string, unknown> }, event.componentIndex ?? 0, event.componentTotal ?? 0, event.replacesSkelId);
             } catch { /* skip malformed events */ }
           }
         }

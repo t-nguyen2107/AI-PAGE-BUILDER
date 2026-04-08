@@ -91,7 +91,7 @@ function detectLanguage(prompt: string): 'vi' | 'en' | 'mixed' {
 // ---------------------------------------------------------------------------
 // Intent detection
 // ---------------------------------------------------------------------------
-type Intent = 'create_page' | 'add_section' | 'modify' | 'delete' | 'clarify' | 'unknown';
+type Intent = 'create_page' | 'add_section' | 'modify' | 'delete' | 'unknown';
 
 function detectIntent(prompt: string): Intent {
   const lower = prompt.toLowerCase();
@@ -157,15 +157,20 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
   const intent = detectIntent(rawPrompt);
   const nameRefs = extractNameRefs(rawPrompt);
 
-  // Detect business type
+  // Detect business type — score-based (prefer longest/best match)
   let businessType: string | null = null;
   let inferredStyle: string | null = null;
 
+  let bestScore = 0;
   for (const industry of INDUSTRY_MAP) {
-    if (industry.keywords.some(kw => rawPrompt.toLowerCase().includes(kw.toLowerCase()))) {
+    const score = industry.keywords.reduce(
+      (acc, kw) => acc + (rawPrompt.toLowerCase().includes(kw.toLowerCase()) ? 1 : 0),
+      0,
+    );
+    if (score > bestScore) {
+      bestScore = score;
       businessType = industry.type;
       inferredStyle = industry.style;
-      break;
     }
   }
 

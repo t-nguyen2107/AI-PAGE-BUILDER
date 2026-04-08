@@ -517,6 +517,8 @@ export interface ComponentMeta {
   opacity?: number;
   /** Extra CSS class names */
   className?: string;
+  /** Responsive visibility: breakpoints where component is hidden */
+  hiddenOnBreakpoints?: string[];
 }
 
 // ─── All component names (for Config generics) ──────────────────────
@@ -563,6 +565,7 @@ type RawComponentProps = {
   AnnouncementBar: AnnouncementBarProps;
   Banner: BannerProps;
   CustomSection: CustomSectionProps;
+  SectionSkeleton: SectionSkeletonProps;
 };
 
 // ─── Custom Section (AI-generated HTML) ──────────────────────────────────
@@ -576,4 +579,10 @@ export interface CustomSectionProps {
   preview?: string;
   /** Minimum height for empty/placeholder state */
   minHeight?: string;
+}
+
+/** Temporary skeleton shown while the real section is being generated */
+export interface SectionSkeletonProps {
+  /** The real component type this skeleton represents */
+  sectionType: string;
 }

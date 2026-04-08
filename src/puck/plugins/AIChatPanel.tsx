@@ -414,25 +414,58 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
           });
         },
         // onComponent — progressive component rendering
-        (component, index, total) => {
+        (component, index, total, replacesSkelId) => {
           const puckComponent = component as import("@puckeditor/core").ComponentData;
           progressiveComponentsRef.current.push(puckComponent);
-          // Apply immediately to canvas
+
+          if (replacesSkelId) {
+            // Makeup mode: replace skeleton with polished component
+            dispatch({
+              type: "setData",
+              data: (prev: Data) => ({
+                ...prev,
+                content: (prev.content || []).map((c) => {
+                  const cId = (c.props as Record<string, unknown>)?.id;
+                  return cId === replacesSkelId ? puckComponent : c;
+                }),
+              }),
+            });
+          } else {
+            // Standard mode: append to canvas
+            dispatch({
+              type: "setData",
+              data: (prev: Data) => {
+                const content = [...(prev.content || [])];
+                if (index === 0 && total > 1) {
+                  // First component of a full-page: reset canvas
+                  return {
+                    root: { props: { title: "Untitled" } },
+                    content: [puckComponent],
+                  };
+                }
+                content.push(puckComponent);
+                return { ...prev, content };
+              },
+            });
+          }
+        },
+        // onPlan — render skeletons immediately (makeup mode)
+        (plan) => {
+          const skeletons = plan.map((p) => ({
+            type: "SectionSkeleton" as const,
+            props: { id: p.skeletonId, sectionType: p.type },
+          }));
           dispatch({
             type: "setData",
-            data: (prev: Data) => {
-              const content = [...(prev.content || [])];
-              if (index === 0 && total > 1) {
-                // First component of a full-page: reset canvas
-                return {
-                  root: { props: { title: "Untitled" } },
-                  content: [puckComponent],
-                };
-              }
-              content.push(puckComponent);
-              return { ...prev, content };
-            },
+            data: () => ({
+              root: { props: { title: "Untitled" } },
+              content: skeletons,
+            }),
           });
+          setPipelineSteps((prev) => [
+            ...prev.map((s) => (s.status === "active" ? { ...s, status: "done" as const } : s)),
+            { step: "skeleton", label: "Layout planned — polishing sections...", status: "active" as const },
+          ]);
         },
       );
 

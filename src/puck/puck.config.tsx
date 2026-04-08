@@ -32,6 +32,7 @@ import { CountdownTimer as CountdownTimerRender } from "./components/CountdownTi
 import { AnnouncementBar as AnnouncementBarRender } from "./components/AnnouncementBar";
 import { Banner as BannerRender } from "./components/Banner";
 import { CustomSection as CustomSectionRender } from "./components/CustomSection";
+import { SectionSkeleton as SectionSkeletonRender } from "./components/SectionSkeleton";
 // Atomic (composable) — self-contained ComponentConfig exports
 import { Button } from "./components/Button";
 import { Card } from "./components/Card";
@@ -73,6 +74,7 @@ import type {
   AnnouncementBarProps,
   BannerProps,
   CustomSectionProps,
+  SectionSkeletonProps,
 } from "./types";
 
 // ─── Root ──────────────────────────────────────────────────────────────
@@ -1845,6 +1847,18 @@ const CustomSection: ComponentConfig<CustomSectionProps> = {
   render: CustomSectionRender,
 };
 
+// ─── Section Skeleton (internal — not in sidebar) ─────────────────────
+
+const SectionSkeleton: ComponentConfig<SectionSkeletonProps> = {
+  fields: {
+    sectionType: { type: "text", label: "Section Type" },
+  },
+  defaultProps: {
+    sectionType: "HeroSection",
+  },
+  render: SectionSkeletonRender,
+};
+
 // ─── Config ────────────────────────────────────────────────────────────
 
 // NOTE: NAME_FIELD, STYLE_FIELDS removed — now managed by UnifiedInspector
@@ -1896,6 +1910,7 @@ export const config: Config<{ components: ComponentProps }> = {
     AnnouncementBar: withMetaFields(AnnouncementBar),
     Banner: withMetaFields(Banner),
     CustomSection: withMetaFields(CustomSection),
+    SectionSkeleton: withMetaFields(SectionSkeleton),
   },
 };
 

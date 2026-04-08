@@ -39,7 +39,7 @@ interface StreamOptions {
 }
 
 export interface SSEEvent {
-  type: 'chunk' | 'done' | 'error' | 'status' | 'component_stream';
+  type: 'chunk' | 'done' | 'error' | 'status' | 'component_stream' | 'plan';
   content?: string;
   result?: AIGenerationResponse;
   message?: string;
@@ -51,6 +51,10 @@ export interface SSEEvent {
   componentIndex?: number;
   /** Total expected components (component_stream events) */
   componentTotal?: number;
+  /** Plan event: component types in order (for skeleton rendering) */
+  plan?: { type: string; skeletonId: string }[];
+  /** ID of skeleton component this replaces (progressive reveal) */
+  replacesSkelId?: string;
 }
 
 /**
@@ -60,6 +64,7 @@ export interface SSEEvent {
 function emitComponentStream(
   send: (event: SSEEvent) => void,
   components: ComponentData[],
+  skeletonIds?: string[],
 ): void {
   const total = components.length;
   send({ type: 'status', step: 'rendering', label: `Streaming ${total} components...` });
@@ -69,6 +74,7 @@ function emitComponentStream(
       component: components[i],
       componentIndex: i,
       componentTotal: total,
+      replacesSkelId: skeletonIds?.[i],
     });
   }
 }
@@ -104,9 +110,9 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         // Status: generating
         send({ type: 'status', step: 'generating', label: isTemplateMode ? 'Selecting templates...' : 'Generating with AI...' });
 
-        const { model, jsonCallOptions } = isTemplateMode
-          ? createFastModelBundle({ maxTokens: 16384 })
-          : createModelBundle({ maxTokens: 16384 });
+        // Template mode generates a FULL page — use main model for quality.
+        // Fast model is too weak to follow detailed prompt instructions (recommendedDefaults, variantTips, color tokens).
+        const { model, jsonCallOptions } = createModelBundle({ maxTokens: 16384 });
 
         // Always apply timeout; combine with external signal if provided
         // Template mode: 120s (fast model), Full mode: 180s (heavy model)
@@ -429,12 +435,16 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
               position: { index, total: plan.components.length },
             });
 
-            const { model: sectionModel, jsonCallOptions: sectionOpts } = createFastModelBundle({ maxTokens: 4096 });
+            const { model: sectionModel, jsonCallOptions: sectionOpts } = createModelBundle({ maxTokens: 4096 });
             const sectionMessages = await sectionPrompt.formatMessages({ input });
             const { response_format: _rf2, ...sectionInvokeOpts } = sectionOpts;
+            // Propagate parent signal (client disconnect) + per-section timeout
+            const sectionSignal = options.signal
+              ? AbortSignal.any([options.signal, AbortSignal.timeout(60_000)])
+              : AbortSignal.timeout(60_000);
             const sectionResponse = await sectionModel.invoke(sectionMessages, {
               ...sectionInvokeOpts,
-              signal: AbortSignal.timeout(60_000),
+              signal: sectionSignal,
             });
 
             const sectionText = typeof sectionResponse.content === 'string'
@@ -472,6 +482,10 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
               props: { id: generateId(), ...result.value.props },
             };
           }
+          // Log rejection for debugging
+          if (result.status === 'rejected') {
+            console.warn(`[two-pass] Section ${i} (${fallback.type}) failed:`, result.reason);
+          }
           // Fallback to pass 1 data
           return {
             type: fallback.type,
@@ -495,6 +509,243 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
         send({
           type: 'error',
           message: err instanceof Error ? err.message : 'Unknown two-pass streaming error',
+        });
+      } finally {
+        close();
+      }
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Makeup Stream — Structure Resolver + Parallel Per-Section Polish
+// ---------------------------------------------------------------------------
+
+export interface MakeupStreamOptions {
+  styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
+  businessType?: string;
+  designContext?: string;
+  designGuidance?: DesignGuidance;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  /** Existing treeData for modify/restyle — skips AI plan generation */
+  existingTreeData?: unknown;
+  /** User intent from prompt optimizer */
+  intent?: string;
+}
+
+/**
+ * Extract a component plan from existing Puck treeData.
+ * Used when intent is modify/restyle — no AI call needed.
+ */
+function extractPlanFromTreeData(treeData: unknown): import('./prompts/template-schema').PuckComponentPlanRaw {
+  const d = treeData as { content?: Array<{ type: string; props: Record<string, unknown> }> };
+  const components = (d.content ?? []).map(c => ({
+    type: c.type,
+    props: { ...c.props },
+  }));
+  return { components };
+}
+
+/**
+ * Create a makeup streaming ReadableStream.
+ *
+ * Phase 1 (Structure Resolver): Determine component plan.
+ *   - create_page/add_section: AI plan via fast model + template prompt
+ *   - modify/restyle: Extract from existing treeData
+ *
+ * Phase 2 (Parallel Makeup): Each section gets polished with animation,
+ *   gradients, images, refined text via main model + section prompt.
+ *
+ * Emits:
+ *   1. status(planning) — "Planning page layout..."
+ *   2. plan — skeleton plan for frontend
+ *   3. status(generating) — "Polishing N sections..."
+ *   4. component_stream × N — polished sections with replacesSkelId
+ *   5. done — final result
+ */
+export function createMakeupStream(input: string, options: MakeupStreamOptions = {}): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      let closed = false;
+      const send = (event: SSEEvent) => {
+        if (closed) return;
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try { controller.close(); } catch { /* already closed */ }
+      };
+
+      try {
+        // ── PHASE 1: Structure Resolver ──
+        send({ type: 'status', step: 'planning', label: 'Planning page layout...' });
+
+        const planTimeout = options.timeoutMs ?? 90_000;
+        const planSignal = options.signal
+          ? AbortSignal.any([options.signal, AbortSignal.timeout(planTimeout)])
+          : AbortSignal.timeout(planTimeout);
+
+        let plan: import('./prompts/template-schema').PuckComponentPlanRaw;
+
+        const intent = options.intent ?? 'unknown';
+        const isModify = intent === 'modify' || intent === 'delete';
+
+        if (isModify && options.existingTreeData) {
+          // Modify/restyle: extract plan from existing treeData (zero AI cost)
+          plan = extractPlanFromTreeData(options.existingTreeData);
+        } else {
+          // Create/add/unknown: AI plan via fast model
+          const { model: planModel, jsonCallOptions: planOpts } = createFastModelBundle({ maxTokens: 4096 });
+          const planPrompt = buildTemplatePrompt({
+            businessType: options.businessType,
+            styleguideData: options.styleguideData,
+            designContext: options.designContext,
+          });
+
+          const planMessages = await planPrompt.formatMessages({ input });
+          const { response_format: _rf, ...invokeOpts } = planOpts;
+          const planResponse = await planModel.invoke(planMessages, { ...invokeOpts, signal: planSignal });
+
+          const planText = typeof planResponse.content === 'string'
+            ? planResponse.content
+            : Array.isArray(planResponse.content)
+              ? planResponse.content
+                  .filter((c: unknown): c is { type: string; text: string } =>
+                    typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
+                  .map((c) => c.text)
+                  .join('')
+              : '';
+
+          const planParsed = extractJSON(planText);
+          if (!planParsed) {
+            send({ type: 'error', message: 'Structure planning failed: could not parse component plan' });
+            return;
+          }
+
+          const { data: validatedPlan, error: planError } = validateTemplateResponse(planParsed);
+          if (planError || !validatedPlan) {
+            send({ type: 'error', message: planError ?? 'Component plan validation failed' });
+            return;
+          }
+          plan = validatedPlan;
+        }
+
+        // ── Emit plan event for skeleton rendering ──
+        const skeletonIds = plan.components.map(() => `skel_${generateId()}`);
+        send({
+          type: 'plan',
+          plan: plan.components.map((c, i) => ({
+            type: c.type,
+            skeletonId: skeletonIds[i],
+          })),
+        });
+
+        // ── PHASE 2: Parallel Per-Section Makeup ──
+        send({ type: 'status', step: 'generating', label: `Polishing ${plan.components.length} sections...` });
+
+        const sectionResults = await Promise.allSettled(
+          plan.components.map(async (comp, index) => {
+            const catalogEntry = COMPONENT_CATALOG[comp.type];
+            if (!catalogEntry) {
+              // Unknown type — use plan props as-is
+              return { type: comp.type, props: comp.props };
+            }
+
+            const sectionPrompt = buildSectionPrompt(comp.type, catalogEntry, {
+              userPrompt: input,
+              businessType: options.businessType ?? 'general',
+              designGuidance: options.designGuidance,
+              styleguideData: options.styleguideData,
+              designContext: options.designContext,
+              position: { index, total: plan.components.length },
+              isMakeup: true,
+            });
+
+            const { model: sectionModel, jsonCallOptions: sectionOpts } = createModelBundle({ maxTokens: 4096 });
+            const sectionMessages = await sectionPrompt.formatMessages({ input });
+            const { response_format: _rf2, ...sectionInvokeOpts } = sectionOpts;
+            // Propagate parent signal (client disconnect) + per-section timeout
+            const sectionSignal = options.signal
+              ? AbortSignal.any([options.signal, AbortSignal.timeout(60_000)])
+              : AbortSignal.timeout(60_000);
+            const sectionResponse = await sectionModel.invoke(sectionMessages, {
+              ...sectionInvokeOpts,
+              signal: sectionSignal,
+            });
+
+            const sectionText = typeof sectionResponse.content === 'string'
+              ? sectionResponse.content
+              : Array.isArray(sectionResponse.content)
+                ? sectionResponse.content
+                    .filter((c: unknown): c is { type: string; text: string } =>
+                      typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
+                    .map((c) => c.text)
+                    .join('')
+                : '';
+
+            const sectionParsed = extractJSON(sectionText);
+            if (sectionParsed) {
+              const { data: validated } = validateSingleComponent(sectionParsed);
+              if (validated) {
+                return {
+                  type: comp.type,
+                  props: { ...comp.props, ...validated.props },
+                };
+              }
+            }
+
+            // Fallback: use plan props
+            return { type: comp.type, props: comp.props };
+          }),
+        );
+
+        // ── Assemble final components ──
+        const components: ComponentData[] = sectionResults.map((result, i) => {
+          const fallback = plan.components[i];
+          const skelId = skeletonIds[i];
+          if (result.status === 'fulfilled' && result.value) {
+            return {
+              type: result.value.type,
+              props: { id: skelId, ...result.value.props },
+            };
+          }
+          // Log rejection for debugging
+          if (result.status === 'rejected') {
+            console.warn(`[makeup] Section ${i} (${fallback.type}) failed:`, result.reason);
+          }
+          // Fallback to plan data
+          return {
+            type: fallback.type,
+            props: { id: skelId, ...fallback.props },
+          };
+        });
+
+        const ordered = orderPuckComponents(components);
+
+        // Build skeletonIds for ordered components (id was set before ordering)
+        const orderedSkeletonIds = ordered.map((c) => {
+          const id = (c.props as Record<string, unknown>)?.id;
+          return typeof id === 'string' ? id : '';
+        });
+
+        // Progressive: emit each component with skeleton replacement
+        emitComponentStream(send, ordered, orderedSkeletonIds);
+
+        const finalResult: AIGenerationResponse = {
+          action: AIAction.FULL_PAGE,
+          components: ordered,
+          message: `Generated page with ${ordered.length} components`,
+        };
+
+        send({ type: 'done', result: finalResult });
+      } catch (err) {
+        send({
+          type: 'error',
+          message: err instanceof Error ? err.message : 'Unknown makeup streaming error',
         });
       } finally {
         close();
