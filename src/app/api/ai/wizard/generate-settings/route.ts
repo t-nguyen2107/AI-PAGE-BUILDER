@@ -123,13 +123,21 @@ export async function POST(request: NextRequest) {
     const autoResult = businessType ? generateStyleguideFromBusinessType(businessType) : null;
 
     let styleguide: GenerateSettingsResponse["styleguide"];
-    if (autoResult?.styleguide) {
-      const sg = autoResult.styleguide;
+    if (projectInfo.paletteColors) {
+      // User selected a palette — use those colors directly
+      const colors = projectInfo.paletteColors;
+      const fallback = buildFallbackStyleguide();
+      const autoTypography = autoResult?.styleguide?.typography ?? fallback.typography;
+      const autoSpacing = autoResult?.styleguide?.spacing ?? fallback.spacing;
+      const sg = { colors, typography: autoTypography, spacing: autoSpacing, cssVariables: {} as Record<string, string> };
+      sg.cssVariables = generateCssVariables(sg);
+      styleguide = sg;
+    } else if (autoResult?.styleguide) {
       styleguide = {
-        colors: sg.colors,
-        typography: sg.typography,
-        spacing: sg.spacing,
-        cssVariables: (sg.cssVariables ?? {}) as Record<string, string>,
+        colors: autoResult.styleguide.colors,
+        typography: autoResult.styleguide.typography,
+        spacing: autoResult.styleguide.spacing,
+        cssVariables: (autoResult.styleguide.cssVariables ?? {}) as Record<string, string>,
       };
     } else {
       styleguide = buildFallbackStyleguide();

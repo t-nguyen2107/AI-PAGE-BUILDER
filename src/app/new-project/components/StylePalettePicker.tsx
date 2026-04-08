@@ -5,6 +5,17 @@ import type { WizardProjectInfo } from "@/types/wizard";
 
 // ── Palette definitions ──────────────────────────────────────────────
 
+export interface PaletteColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textMuted: string;
+  border: string;
+}
+
 export interface StylePalette {
   id: string;
   label: string;
@@ -17,6 +28,8 @@ export interface StylePalette {
   audience: string;
   tone: string;
   relevantTypes: string[];
+  /** Full color definitions for styleguide generation */
+  colors: PaletteColors;
 }
 
 export const PALETTES: StylePalette[] = [
@@ -32,6 +45,16 @@ export const PALETTES: StylePalette[] = [
     audience: "local customers, community",
     tone: "friendly, welcoming",
     relevantTypes: ["restaurant", "bakery", "cafe", "hospitality", "food", "coffee", "nonprofit"],
+    colors: {
+      primary: "#8B4513",
+      secondary: "#D4A374",
+      accent: "#C48B20",
+      background: "#FFF8F0",
+      surface: "#FFFFFF",
+      text: "#5C3D3D",
+      textMuted: "#8B7355",
+      border: "#E8D5C4",
+    },
   },
   {
     id: "clean-modern",
@@ -45,6 +68,16 @@ export const PALETTES: StylePalette[] = [
     audience: "professionals, businesses",
     tone: "professional, confident",
     relevantTypes: ["saas", "tech", "corporate", "education", "healthcare", "finance"],
+    colors: {
+      primary: "#22746E",
+      secondary: "#081B22",
+      accent: "#E39C37",
+      background: "#F5F6F7",
+      surface: "#FFFFFF",
+      text: "#0D1F24",
+      textMuted: "#3D4F55",
+      border: "#D3DCDF",
+    },
   },
   {
     id: "bold-dynamic",
@@ -58,6 +91,16 @@ export const PALETTES: StylePalette[] = [
     audience: "young adults, active lifestyle",
     tone: "enthusiastic, motivating",
     relevantTypes: ["fitness", "agency", "creative", "entertainment", "travel", "sports", "fashion"],
+    colors: {
+      primary: "#FF3B3B",
+      secondary: "#1A1A2E",
+      accent: "#FF6B6B",
+      background: "#FFF4F0",
+      surface: "#FFFFFF",
+      text: "#0D1B2A",
+      textMuted: "#6B7280",
+      border: "#E5E7EB",
+    },
   },
   {
     id: "elegant-minimal",
@@ -71,6 +114,16 @@ export const PALETTES: StylePalette[] = [
     audience: "discerning clients, art directors",
     tone: "sophisticated, refined",
     relevantTypes: ["portfolio", "fashion", "luxury", "realestate", "photography", "design", "jewelry"],
+    colors: {
+      primary: "#1A1A2E",
+      secondary: "#2D2D2D",
+      accent: "#C9A96E",
+      background: "#FAFAFA",
+      surface: "#FFFFFF",
+      text: "#1A1A2E",
+      textMuted: "#6B7280",
+      border: "#E8E8E8",
+    },
   },
 ];
 
@@ -211,6 +264,7 @@ export function buildProjectInfoFromPalette(
     tone: palette.tone,
     language,
     pages,
+    paletteColors: palette.colors,
   };
 }
 

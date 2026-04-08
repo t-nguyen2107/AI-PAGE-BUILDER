@@ -8,6 +8,8 @@ import {
   type StylesValue,
 } from "../fields/StylesField";
 import { InspectorTabs, type TabId } from "./InspectorTabs";
+import { ContentFieldGrouper } from "./ContentFieldGrouper";
+import { ResponsiveVisibility } from "../fields/ResponsiveVisibility";
 import "./inspector.css";
 
 // ─── Puck context hook (module-level singleton) ──────────────────────
@@ -42,10 +44,10 @@ export function UnifiedInspector({
     return (
       <div className="unified-inspector">
         <div className="inspector-empty">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300", color: "var(--puck-color-grey-08)", fontSize: 24 }}>
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300", color: "var(--inspector-text-dim)", fontSize: 24 }}>
             touch_app
           </span>
-          <p style={{ fontSize: 12, color: "var(--puck-color-grey-07)", marginTop: 4 }}>
+          <p style={{ fontSize: 12, color: "var(--inspector-text-dim)", marginTop: 4 }}>
             Select a component to edit
           </p>
         </div>
@@ -111,7 +113,7 @@ export function UnifiedInspector({
             <div style={{
               width: 16,
               height: 16,
-              border: "2px solid var(--puck-color-azure-04)",
+              border: "2px solid var(--inspector-accent)",
               borderTopColor: "transparent",
               borderRadius: "50%",
               animation: "spin 0.6s linear infinite",
@@ -122,7 +124,9 @@ export function UnifiedInspector({
             {/* Content Tab */}
             {activeTab === "content" && (
               <div className="tab-panel tab-panel--content">
-                {children}
+                <ContentFieldGrouper componentType={selectedItem.type as string}>
+                  {children}
+                </ContentFieldGrouper>
               </div>
             )}
 
@@ -136,9 +140,9 @@ export function UnifiedInspector({
               </div>
             )}
 
-            {/* Advanced Tab */}
-            {activeTab === "advanced" && (
-              <div className="tab-panel tab-panel--advanced">
+            {/* Settings Tab */}
+            {activeTab === "settings" && (
+              <div className="tab-panel tab-panel--settings">
                 {/* Name field */}
                 <div className="puck-field">
                   <label className="puck-field-label">Name</label>
@@ -152,6 +156,12 @@ export function UnifiedInspector({
                     Internal name for AI targeting
                   </p>
                 </div>
+
+                {/* Responsive Visibility */}
+                <ResponsiveVisibility
+                  value={props.hiddenOnBreakpoints as string[] | undefined}
+                  onChange={(val) => updateProp("hiddenOnBreakpoints", val.length > 0 ? val : undefined)}
+                />
 
                 {/* CSS Classes */}
                 <div className="puck-field">

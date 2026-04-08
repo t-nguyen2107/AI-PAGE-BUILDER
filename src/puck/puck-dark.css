@@ -90,3 +90,14 @@
   color: #dfe8ea !important;
   border-color: #344a4f !important;
 }
+
+/* ═─ Responsive Visibility ── */
+@media (max-width: 767px) {
+  .rv-hide-mobile { display: none !important; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .rv-hide-tablet { display: none !important; }
+}
+@media (min-width: 1024px) {
+  .rv-hide-desktop { display: none !important; }
+}

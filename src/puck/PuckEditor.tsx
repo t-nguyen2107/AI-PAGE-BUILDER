@@ -13,6 +13,7 @@ import { createAIPlugin } from "./plugins/ai-plugin";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import "./puck-dark.css";
 import { UnifiedInspector } from "./inspector/UnifiedInspector";
+import { StyleguideProvider, useStyleguideCssVars, type StyleguideColors } from "./inspector/StyleguideContext";
 
 // Puck data sync hook — reads live data from Puck context
 const usePuckData = createUsePuck();
@@ -41,6 +42,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [styleguideId, setStyleguideId] = useState("");
+  const [styleguideColors, setStyleguideColors] = useState<StyleguideColors | null>(null);
   const [previewData, setPreviewData] = useState<Data | null>(null);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -52,6 +54,9 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const handleDataSync = useCallback((d: Data) => {
     setPreviewData(d);
   }, []);
+
+  // Inject styleguide CSS variables into editor DOM so components render with project colors
+  useStyleguideCssVars(styleguideColors);
 
   // Load page data
   useEffect(() => {
@@ -72,7 +77,29 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
 
         // Fetch project styleguideId for AI plugin
         apiClient.getProject(projectId).then((pRes) => {
-          if (pRes.data?.styleguideId) setStyleguideId(pRes.data.styleguideId);
+          if (pRes.data?.styleguideId) {
+            setStyleguideId(pRes.data.styleguideId);
+            // Fetch styleguide colors for inspector context
+            apiClient.getStyleguide(projectId).then((sgRes) => {
+              if (sgRes.data?.colors) {
+                const c = sgRes.data.colors;
+                setStyleguideColors({
+                  primary: c.primary,
+                  secondary: c.secondary,
+                  accent: c.accent,
+                  background: c.background,
+                  surface: c.surface,
+                  text: c.text,
+                  textSecondary: c.textMuted,
+                  border: c.border,
+                  error: c.error,
+                  success: c.success,
+                  warning: c.warning,
+                  ...c.custom,
+                });
+              }
+            }).catch(() => {});
+          }
         }).catch(() => {});
 
         const rawTreeData = page.treeData as unknown;
@@ -160,6 +187,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   return (
     <>
       <div className="h-screen w-screen">
+        <StyleguideProvider colors={styleguideColors}>
         <Puck
           config={config}
           data={data}
@@ -207,6 +235,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
             ),
           }}
         />
+        </StyleguideProvider>
       </div>
       <SettingsPanel
         open={settingsOpen}

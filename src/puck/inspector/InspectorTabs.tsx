@@ -1,6 +1,6 @@
 "use client";
 
-export type TabId = "content" | "style" | "advanced";
+export type TabId = "content" | "style" | "settings";
 
 interface InspectorTabsProps {
   activeTab: TabId;
@@ -10,7 +10,7 @@ interface InspectorTabsProps {
 const TABS: Array<{ id: TabId; icon: string; label: string }> = [
   { id: "content", icon: "edit_note", label: "Content" },
   { id: "style", icon: "palette", label: "Style" },
-  { id: "advanced", icon: "tune", label: "Advanced" },
+  { id: "settings", icon: "tune", label: "Settings" },
 ];
 
 export function InspectorTabs({ activeTab, onTabChange }: InspectorTabsProps) {

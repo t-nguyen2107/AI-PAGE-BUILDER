@@ -22,3 +22,19 @@ export function extractStyleProps(
 
   return style;
 }
+
+/**
+ * Returns CSS class names for responsive visibility hiding.
+ * Usage: on the outermost element of each component.
+ *
+ * Requires CSS rules for .rv-hide-mobile / .rv-hide-tablet / .rv-hide-desktop
+ * (defined in puck-dark.css).
+ */
+export function getResponsiveClass(
+  hiddenOnBreakpoints: string[] | undefined,
+): string {
+  if (!hiddenOnBreakpoints || hiddenOnBreakpoints.length === 0) return "";
+  return hiddenOnBreakpoints
+    .map((bp) => `rv-hide-${bp}`)
+    .join(" ");
+}

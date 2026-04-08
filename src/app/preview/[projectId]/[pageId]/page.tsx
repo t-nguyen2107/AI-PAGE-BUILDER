@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { PreviewPageContent } from "./PreviewPageContent";
 import { convertTreeDataToPuck } from "@/puck/migration";
+import type { StyleguideColors } from "@/puck/inspector/StyleguideContext";
 
 // ISR: revalidate every 60 seconds
 export const revalidate = 60;
@@ -26,6 +27,33 @@ async function getPageData(projectId: string, pageId: string) {
   });
 
   return { page, globalSections };
+}
+
+async function getStyleguideColors(projectId: string): Promise<StyleguideColors | null> {
+  const styleguide = await prisma.styleguide.findUnique({
+    where: { projectId },
+  });
+  if (!styleguide) return null;
+
+  const colors = typeof styleguide.colors === "string"
+    ? JSON.parse(styleguide.colors)
+    : styleguide.colors;
+
+  if (!colors) return null;
+
+  return {
+    primary: colors.primary,
+    secondary: colors.secondary,
+    accent: colors.accent,
+    background: colors.background,
+    surface: colors.surface,
+    text: colors.text,
+    textSecondary: colors.textMuted,
+    border: colors.border,
+    error: colors.error,
+    success: colors.success,
+    warning: colors.warning,
+  };
 }
 
 export async function generateMetadata(props: PreviewPageProps): Promise<Metadata> {
@@ -61,11 +89,15 @@ export default async function PreviewPage(props: PreviewPageProps) {
 
   if (!puckData) notFound();
 
+  // Fetch styleguide colors for CSS variable injection
+  const styleguideColors = await getStyleguideColors(projectId);
+
   return (
     <PreviewPageContent
       data={puckData}
       projectId={projectId}
       pageId={pageId}
+      styleguideColors={styleguideColors}
     />
   );
 }

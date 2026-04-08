@@ -8,6 +8,17 @@ export interface WizardProjectInfo {
   tone: string;
   language: string;
   pages: WizardSitemapPage[];
+  /** Palette colors selected by user (from StylePalettePicker) — used by generate-settings */
+  paletteColors?: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    surface: string;
+    text: string;
+    textMuted: string;
+    border: string;
+  };
 }
 
 export interface WizardSitemapPage {

@@ -1,23 +1,28 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { Render } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { config } from "@/puck/puck.config";
 import type { Data } from "@puckeditor/core";
+import { useStyleguideCssVars, type StyleguideColors } from "@/puck/inspector/StyleguideContext";
 
 interface PreviewPageContentProps {
   data: Data;
   projectId: string;
   pageId: string;
+  styleguideColors?: StyleguideColors | null;
 }
 
 export function PreviewPageContent({
   data,
   projectId,
   pageId,
+  styleguideColors,
 }: PreviewPageContentProps) {
+  // Inject styleguide CSS variables for project-specific colors
+  useStyleguideCssVars(styleguideColors ?? null);
+
   return (
     <>
       {/* Floating back-to-editor button */}
