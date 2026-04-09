@@ -22,9 +22,19 @@ export function useAutoPolish({
   const [isPolishing, setIsPolishing] = useState(false);
   const [progressLabel, setProgressLabel] = useState('');
   const [error, setError] = useState<string | null>(null);
-  
+
   const polishedRef = useRef(false);
   const streamRef = useRef<AbortController | null>(null);
+
+  // Store callbacks in refs to avoid aborting the stream on every re-render.
+  // Inline arrow functions from parent create new references each render,
+  // which would trigger effect cleanup → abort stream → immediate death.
+  const onComponentStreamRef = useRef(onComponentStream);
+  const onCompleteRef = useRef(onComplete);
+  const onErrorRef = useRef(onError);
+  onComponentStreamRef.current = onComponentStream;
+  onCompleteRef.current = onComplete;
+  onErrorRef.current = onError;
 
   useEffect(() => {
     // Only trigger if status is pending and we haven't already polished
@@ -51,18 +61,18 @@ export function useAutoPolish({
         // Skeleton state is detected from treeData (skel_ IDs), so replacing
         // those components on the Puck canvas is sufficient to mark it "complete".
         setIsPolishing(false);
-        onComplete();
+        onCompleteRef.current();
       },
       (err) => {
         setError(err);
         setIsPolishing(false);
-        onError(err);
+        onErrorRef.current(err);
       },
       (step, label) => {
         setProgressLabel(label);
       },
       (component, index, total, replacesSkelId) => {
-        onComponentStream(component as ComponentData, index, total, replacesSkelId);
+        onComponentStreamRef.current(component as ComponentData, index, total, replacesSkelId);
       }
     );
 
@@ -71,7 +81,8 @@ export function useAutoPolish({
         streamRef.current.abort();
       }
     };
-  }, [projectId, pageId, generationStatus, isPolishing, onComponentStream, onComplete, onError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps — callbacks are via refs
+  }, [projectId, pageId, generationStatus, isPolishing]);
 
   return {
     isPolishing,
