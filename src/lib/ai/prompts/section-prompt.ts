@@ -8,6 +8,8 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import type { ComponentInfo } from './component-catalog';
 import type { DesignGuidance } from '../knowledge/design-knowledge';
+import { STOCK_IMAGES, BUSINESS_STOCK_MAP, stockPath } from '@/features/ai/stock-images';
+import type { StockCategory } from '@/features/ai/stock-images';
 
 export interface StyleguideTokens {
   colors?: string;
@@ -29,27 +31,31 @@ export interface SectionPromptContext {
   isMakeup?: boolean;
 }
 
-// ─── Stock images by business category ─────────────────────────────────────────
+// ─── Stock images — build exact path list from registry ──────────────────────
 
-const BUSINESS_IMAGES: Record<string, string> = {
-  'restaurant': '/stock/food/meal-table.webp',
-  'bakery': '/stock/food/meal-table.webp',
-  'coffee': '/stock/drink/coffee-shop.webp',
-  'fitness': '/stock/fitness/gym-workout.webp',
-  'healthcare': '/stock/medical/doctor.webp',
-  'education': '/stock/education/classroom.webp',
-  'travel': '/stock/travel/beach-sunset.webp',
-  'fashion': '/stock/fashion/fashion-show.webp',
-  'real estate': '/stock/realestate/house-modern.webp',
-  'SaaS': '/stock/hero/office-modern.webp',
-  'e-commerce': '/stock/hero/startup-team.webp',
-};
+/** Build a compact stock image hint listing EXACT paths for relevant categories */
+function buildStockImageHint(businessType: string): string {
+  // Find relevant categories for this business type
+  const businessKey = Object.keys(BUSINESS_STOCK_MAP).find(
+    (k) => businessType.toLowerCase().includes(k.toLowerCase()),
+  );
+  const categories: StockCategory[] = businessKey
+    ? [...(BUSINESS_STOCK_MAP[businessKey] ?? [])]
+    : ['hero', 'people'];
 
-function getHeroImage(businessType: string): string {
-  for (const [key, path] of Object.entries(BUSINESS_IMAGES)) {
-    if (businessType.toLowerCase().includes(key.toLowerCase())) return path;
+  // Always include hero, team, testimonials, cta as they're used across all sites
+  const essential: StockCategory[] = ['hero', 'team', 'testimonials', 'cta', 'blog'];
+  const allCategories = [...new Set([...categories, ...essential])];
+
+  const lines: string[] = [];
+  for (const cat of allCategories) {
+    const images = STOCK_IMAGES[cat];
+    if (images?.length) {
+      const paths = images.map((img) => stockPath(img));
+      lines.push(`- ${cat}: ${paths.join(', ')}`);
+    }
   }
-  return '/stock/hero/office-modern.webp';
+  return lines.join('\n');
 }
 
 function getResponseFormatHint(sectionType: string): string {
@@ -77,7 +83,7 @@ export function buildSectionPrompt(
   const designTokensBlock = buildDesignTokensBlock(designGuidance, styleguideData);
 
   // ── Build stock image hints ──
-  const heroImage = getHeroImage(businessType);
+  const stockImageHint = buildStockImageHint(businessType);
 
   // ── Makeup enhancement rules (added when polishing existing sections) ──
   const makeupRules = isMakeup ? `
@@ -87,7 +93,7 @@ You are POLISHING this section — make it visually stunning:
 
 1. **Animation**: Set "animation" prop — use "fade-up" for hero/CTA/stats, "stagger" for grids/galleries/products, "stagger-fade" for testimonials/teams.
 2. **Gradients**: Use gradientFrom/gradientTo on HeroSection/CTASection with the exact color tokens from above. NEVER use flat solid backgrounds for hero or CTA.
-3. **Images**: Fill ALL image props with appropriate stock paths. Hero backgrounds use ${heroImage}, testimonials use /stock/testimonials/avatar-N.webp, products use relevant /stock/ paths.
+3. **Images**: Fill ALL image props using EXACT paths from the stock library below. Do NOT invent filenames — only use paths that are listed.
 4. **Text Polish**: Refine heading text to be compelling and specific to ${businessType}. Make descriptions vivid but concise.
 5. **Visual Variety**: Use variant props — TestimonialSection variant "carousel", CTASection variant "gradient", FeaturesGrid cardStyle "elevated".
 6. **Hover Effects**: Set hoverEffect "lift" on FeaturesGrid and ProductCards.
@@ -119,7 +125,9 @@ Return JSON with this exact structure (do NOT include "type" or "id" — those a
 1. Use the USER'S LANGUAGE for all visible content (headings, descriptions, button labels).
 2. No placeholder text — use realistic, business-specific content.
 3. Tailor content specifically to: ${businessType}.
-4. For images, use: ${heroImage} and /stock/ paths.
+4. For images, you MUST use EXACT paths from this stock library — do NOT invent filenames:
+${stockImageHint}
+   If a path is not listed above, do NOT use it.
 5. Return ONLY valid JSON. No markdown, no explanation, no code fences.
 ${makeupRules}`;
 
