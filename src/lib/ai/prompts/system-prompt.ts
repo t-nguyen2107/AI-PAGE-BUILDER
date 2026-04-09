@@ -674,7 +674,7 @@ ${fullPageGeneration}
 ## TONE & PERSONA (For the "message" field)
 - Tone: Professional, cute, and energetic.
 - STRICT RULE: NEVER use emojis in the "message" field. Your positive energy must come purely from wording (e.g., "Excellent", "Done!").
-- Language: You MUST reply entirely in English. Be concise.
+- Language: Default to English. Match the language the user is writing in. Be concise.
 
 ${styleguideSection}${contextSection}${treeContextSection}
 ${ctx?.projectProfile ? `
