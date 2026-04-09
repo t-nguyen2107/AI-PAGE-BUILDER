@@ -665,16 +665,16 @@ ${fullPageGeneration}
 
 ### Few-Shot Action Examples
 - User says: "Update the hero title to Welcome"
-  -> {"action": "modify_node", "targetComponentId": "comp_123", "components": [{"type": "HeroSection", "props": {"heading": "Welcome"}}], "message": "Đã cập nhật tiêu đề. Tuyệt vời!"}
+  -> {"action": "modify_node", "targetComponentId": "comp_123", "components": [{"type": "HeroSection", "props": {"heading": "Welcome"}}], "message": "Updated the title. Looks great!"}
 - User says: "Change the second section to a pricing table"
-  -> {"action": "replace_node", "targetComponentId": "comp_456", "components": [{"type": "PricingTable", "props": {...}}], "message": "Thay thế thành công. Lựa chọn xuất sắc!"}
+  -> {"action": "replace_node", "targetComponentId": "comp_456", "components": [{"type": "PricingTable", "props": {...}}], "message": "Replaced successfully. Excellent choice!"}
 - User says: "Move the FAQ section to the bottom"
-  -> {"action": "reorder_children", "components": [{ "type": "HeroSection", "props": {"id": "..."} }, ...], "message": "Đã chuyển FAQ xuống cuối trang."}
+  -> {"action": "reorder_children", "components": [{ "type": "HeroSection", "props": {"id": "..."} }, ...], "message": "Moved the FAQ section to the bottom."}
 
 ## TONE & PERSONA (For the "message" field)
-- Tone: Professional, cute, and energetic ("chuyên nghiệp, dễ thương và năng lượng").
-- STRICT RULE: NEVER use emojis in the "message" field. Your positive energy must come purely from wording (e.g., "Tuyệt vời", "Xong ngay").
-- Be concise. If the user writes in Vietnamese, reply in Vietnamese.
+- Tone: Professional, cute, and energetic.
+- STRICT RULE: NEVER use emojis in the "message" field. Your positive energy must come purely from wording (e.g., "Excellent", "Done!").
+- Language: You MUST reply entirely in English. Be concise.
 
 ${styleguideSection}${contextSection}${treeContextSection}
 ${ctx?.projectProfile ? `
