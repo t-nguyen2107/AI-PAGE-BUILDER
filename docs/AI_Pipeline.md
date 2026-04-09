@@ -27,7 +27,18 @@ Pipeline biến **user prompt** (natural language) thành **Puck ComponentData[]
 
 ---
 
-## 2. Kiến trúc tổng thể
+## 2. Ràng buộc Prompt & Persona (Quan trọng)
+
+Để giảm token và duy trì tính nhất quán cho AI Chat (Winnie, Builder Chat), pipeline áp dụng các RÀNG BUỘC (Constraints) sau:
+
+1. **Skeletonize Phase 1:** `template-prompt.ts` bị cấm sinh ra các property làm đẹp (padding, animation, gradient). Nó chỉ trả về `[{type, props: { id, name, purpose }}]` để giảm tối đa chi phí output token và tăng tốc TTFB.
+2. **DRY Design Rules:** Mọi format Markdown truyền vào prompt (bảng màu, typography) đều gọi qua `buildUnifiedDesignTokensBlock` từ `prompt-utils.ts`.
+3. **No-Emoji Tone:** Giao tiếp AI tuyệt đối chuyên nghiệp năng lượng ("chuyên nghiệp, dễ thương và năng lượng") qua ngôn từ, CẤM hoàn toàn emoji để không làm giảm giá trị thương hiệu LoomWeave.
+4. **Few-Shot Routing:** `system-prompt.ts` chứa các ví dụ Few-Shot (modify_node) để đảm bảo LLM hiểu đúng level của action thay vì generate lại cả trang.
+
+---
+
+## 3. Kiến trúc tổng thể
 
 ### 2.1. Wizard → Builder Flow (create_page)
 
@@ -129,12 +140,13 @@ src/lib/ai/
 ├── profile-serializer.ts    # Profile → compact prompt text (<800 chars)
 │
 ├── prompts/
-│   ├── system-prompt.ts        # ★ FULL mode system prompt builder
-│   ├── template-prompt.ts      # ★ Phase 1 — plan generation prompt
+│   ├── system-prompt.ts        # ★ FULL mode system prompt builder (Few-shot routing examples)
+│   ├── template-prompt.ts      # ★ Phase 1 — plan generation prompt (Outputs restricted skeleton JSON)
 │   ├── section-prompt.ts       # ★ Phase 2 — per-section polish prompt
 │   ├── prompt-optimizer.ts     # ★ Zero-cost prompt enrichment
+│   ├── prompt-utils.ts         # ★ Centralized design token formatter (DRY)
 │   ├── component-catalog.ts    # ★ Single source of truth: 26 component metadata
-│   └── template-schema.ts     # Validate AI component response
+│   └── template-schema.ts      # Validate AI component response
 │
 └── knowledge/
     ├── design-knowledge.ts     # Static design data (palettes, patterns, typography)
