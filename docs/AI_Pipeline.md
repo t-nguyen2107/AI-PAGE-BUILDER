@@ -1,7 +1,7 @@
 # AI Generation Pipeline — Technical Documentation
 
 > Tài liệu kỹ thuật cho team improve/extend AI pipeline.
-> Last updated: 2026-04-08
+> Last updated: 2026-04-09
 
 ---
 
@@ -12,64 +12,93 @@ Pipeline biến **user prompt** (natural language) thành **Puck ComponentData[]
 ### Mục tiêu chính:
 - **Prompt → JSON**: User mô tả bằng tiếng Việt/Anh → AI output Puck components
 - **Quality cao**: Animation, gradient, stock images, business-specific content
-- **Progressive UX**: Skeleton loading → từng section hiện dần (makeup mode)
+- **Tốc độ cảm nhận nhanh**: Redirect vào builder trong ~3s, content streaming trực tiếp trên canvas
 - **Multi-provider**: Hỗ trợ Ollama, OpenAI, Anthropic, Gemini
 - **Zero-cost optimization**: Prompt optimizer + design knowledge = không tốn LLM call để phân tích
+- **Reusable makeup**: Hàm polish tái sử dụng cho full page, add section, edit layout
 
-### Hai chế độ hoạt động:
+### Ba chế độ hoạt động:
 
 | Mode | Khi nào dùng | Cách hoạt động |
-|------|-------------|---------------|
-| **Makeup (2-phase)** | `create_page` intent | Phase 1: fast model → plan, Phase 2: main model × N sections song song |
+|------|-------------|----------------|
+| **Wizard → Builder (2-phase)** | `create_page` từ wizard | Phase 1: plan + save skeleton → redirect. Phase 2: auto-polish trong builder |
+| **Makeup (in-builder)** | Chat AI trong builder (create/restyle) | polishSections() streaming trực tiếp trên canvas |
 | **Full AI** | `modify`, `delete`, `unknown` | Single LLM call với full system prompt + conversation history |
 
 ---
 
 ## 2. Kiến trúc tổng thể
 
+### 2.1. Wizard → Builder Flow (create_page)
+
 ```
-User Prompt
+┌─ WIZARD (FinalizeStep) ─────────────────── ~3 giây ────┐
+│                                                         │
+│  Step 1: Create Project + Styleguide + SEO             │
+│                                                         │
+│  Step 2: Plan Only (Flash Lite — fast model)            │
+│  ┌────────────────────────────────────────────────┐     │
+│  │  POST /api/ai/plan                             │     │
+│  │  • optimizePrompt() → businessType, intent     │     │
+│  │  • buildTemplatePrompt() → Flash Lite          │     │
+│  │  • Output: [{type, props sơ bộ}]               │     │
+│  │  • Save skeleton treeData vào DB               │     │
+│  │  • Set page.generationStatus = "pending"       │     │
+│  └────────────────────────────────────────────────┘     │
+│                                                         │
+│  Step 3: router.push(/builder/{projectId})   ← NHANH   │
+└─────────────────────────────────────────────────────────┘
+                        │
+                        ▼
+┌─ BUILDER (auto-detect pending) ────────────────────────┐
+│                                                         │
+│  useAutoPolish() hook detects generationStatus="pending"│
+│                                                         │
+│  Step 1: Render skeletons từ treeData lên canvas       │
+│                                                         │
+│  Step 2: Auto-call polishSections() via streaming API  │
+│  ┌────────────────────────────────────────────────┐    │
+│  │  POST /api/ai/generate/stream                  │    │
+│  │  • polishSections() × N parallel               │    │
+│  │  • SSE: component_stream per section           │    │
+│  │  • Skeleton → real component trên canvas       │    │
+│  └────────────────────────────────────────────────┘    │
+│                                                         │
+│  Step 3: applyComponentDefaults() — fill gaps          │
+│  Step 4: Auto-save treeData + status = "complete"      │
+│                                                         │
+│  ⚠ UI locked (editing disabled) trong khi polishing    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 2.2. In-Builder AI Chat Flow
+
+```
+User types in AIChatPanel
     │
     ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Route: /api/ai/generate/stream                         │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Step 1: Load Context                                ││
-│  │  • Styleguide (colors, typography, spacing, CSS)    ││
-│  │  • Page treeData (existing components)               ││
-│  │  • AI Session (miniContext, history)                  ││
-│  │  • Project AI Profile (business context)             ││
-│  └────────────────────────┬────────────────────────────┘│
-│                           ▼                              │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Step 2: Optimize Prompt (zero-cost, rule-based)     ││
-│  │  • detectLanguage() → vi/en/mixed                   ││
-│  │  • detectIntent() → create_page/modify/delete/...   ││
-│  │  • detectBusinessType() → restaurant/SaaS/...       ││
-│  │  • resolveDesignGuidance() → colors, typography     ││
-│  │  • selectRelevantComponents() → tiered catalog      ││
-│  └────────────────────────┬────────────────────────────┘│
-│                           ▼                              │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Step 2b: RAG Knowledge Lookup                       ││
-│  │  • searchDesignKnowledge() → design context text    ││
-│  └────────────────────────┬────────────────────────────┘│
-│                           ▼                              │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Step 3: Route to Pipeline                           ││
-│  │  intent === 'create_page'                           ││
-│  │    → createMakeupStream()   (2-phase)               ││
-│  │    else                                            ││
-│  │    → createAIStream()       (single LLM call)      ││
-│  └────────────────────────┬────────────────────────────┘│
-│                           ▼                              │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Step 4: SSE Stream → Frontend                       ││
-│  │  • status events (planning, generating, parsing)    ││
-│  │  • plan event (skeleton IDs)                        ││
-│  │  • component_stream events × N                      ││
-│  │  • done event (final result)                        ││
-│  └─────────────────────────────────────────────────────┘│
+│  Route: POST /api/ai/generate/stream                    │
+│                                                         │
+│  Step 1: Load Context (styleguide, session, profile)   │
+│  Step 2: optimizePrompt() → detect intent              │
+│  Step 3: Route by intent:                              │
+│                                                         │
+│  ┌─ create_page ────────────────────────────────────┐  │
+│  │  1. buildTemplatePrompt() → plan                 │  │
+│  │  2. polishSections(plan, ctx, onDone) → stream   │  │
+│  │  3. applyComponentDefaults()                     │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌─ add_section ────────────────────────────────────┐  │
+│  │  polishSection(newComponent, ctx) → single call  │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌─ modify/delete/unknown ──────────────────────────┐  │
+│  │  createAIStream() → single LLM call + history    │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+│  Step 4: SSE Stream → AIChatPanel → Puck canvas        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -81,45 +110,48 @@ User Prompt
 
 ```
 src/lib/ai/
-├── config.ts              # AI config resolver (env vars → typed config)
-├── provider.ts            # Model factory (Ollama/OpenAI/Anthropic/Gemini)
-├── chain.ts               # LangChain chain configuration
-├── streaming.ts           # ★ CORE: 3 stream functions + SSE events
-├── output.ts              # Output validation (AI JSON → AIGenerationResponse)
-├── output-sanitizer.ts    # Clean AI output (strip legacy format)
-├── puck-adapter.ts        # Legacy DOMNode → Puck ComponentData converter
-├── embeddings.ts          # Embedding service (Ollama/OpenAI)
-├── vector-store.ts        # pgvector CRUD + similarity search
-├── memory-manager.ts      # AI profile + memory operations
-├── session-analyzer.ts    # Rule-based insight extraction (zero LLM)
-├── profile-updater.ts     # Merge session insights into profile
-├── profile-serializer.ts  # Profile → compact prompt text (<800 chars)
-├── id.ts                  # nanoid wrapper
-├── utils.ts               # stripEmojis etc.
+├── config.ts                # AI config resolver (env vars → typed config)
+├── provider.ts              # Model factory (Ollama/OpenAI/Anthropic/Gemini)
+├── chain.ts                 # LangChain chain configuration
+├── streaming.ts             # ★ Stream functions (createMakeupStream, createAIStream)
+├── section-polisher.ts      # ★ NEW: Reusable polishSection() + polishSections()
+├── defaults-engine.ts       # ★ NEW: Post-processing (animation, gradient, bg cycle)
+├── output.ts                # Output validation (AI JSON → AIGenerationResponse)
+├── output-sanitizer.ts      # Clean AI output (strip legacy format)
+├── puck-adapter.ts          # Legacy DOMNode → Puck ComponentData converter
+├── section-generator.ts     # Deterministic section plan resolver
+├── embeddings.ts            # Embedding service (Ollama/OpenAI)
+├── vector-store.ts          # pgvector CRUD + similarity search
+├── memory.ts                # Session memory (miniContext, history)
+├── memory-manager.ts        # AI profile + memory operations
+├── session-analyzer.ts      # Rule-based insight extraction (zero LLM)
+├── profile-updater.ts       # Merge session insights into profile
+├── profile-serializer.ts    # Profile → compact prompt text (<800 chars)
 │
 ├── prompts/
-│   ├── system-prompt.ts       # ★ FULL mode system prompt builder
-│   ├── template-prompt.ts     # ★ MAKEUP mode Phase 1 prompt builder
-│   ├── section-prompt.ts      # ★ MAKEUP mode Phase 2 (per-section) prompt
-│   ├── prompt-optimizer.ts    # ★ Zero-cost prompt enrichment
-│   ├── component-catalog.ts   # ★ Single source of truth: 26 component metadata
+│   ├── system-prompt.ts        # ★ FULL mode system prompt builder
+│   ├── template-prompt.ts      # ★ Phase 1 — plan generation prompt
+│   ├── section-prompt.ts       # ★ Phase 2 — per-section polish prompt
+│   ├── prompt-optimizer.ts     # ★ Zero-cost prompt enrichment
+│   ├── component-catalog.ts    # ★ Single source of truth: 26 component metadata
 │   └── template-schema.ts     # Validate AI component response
 │
 └── knowledge/
-    ├── design-knowledge.ts    # Static design data (palettes, patterns, typography)
-    └── knowledge-search.ts    # RAG vector search for design context
+    ├── design-knowledge.ts     # Static design data (palettes, patterns, typography)
+    └── knowledge-search.ts     # RAG vector search for design context
 ```
 
-### 3.2. API Route (`src/app/api/ai/generate/`)
+### 3.2. API Routes (`src/app/api/ai/`)
 
 ```
 src/app/api/ai/
 ├── generate/
-│   ├── route.ts               # Non-streaming generate (legacy)
-│   └── stream/route.ts        # ★ Main streaming endpoint
-├── profile/route.ts           # AI profile CRUD
-├── conversations/route.ts     # Session history
-└── wizard/                    # New project wizard
+│   ├── route.ts                # Non-streaming generate (legacy)
+│   └── stream/route.ts         # ★ Main streaming endpoint (makeup + full mode)
+├── plan/route.ts               # ★ NEW: Plan-only endpoint for wizard (sync)
+├── profile/route.ts            # AI profile CRUD
+├── conversations/route.ts      # Session history
+└── wizard/                     # New project wizard
     ├── chat/route.ts
     ├── generate-settings/route.ts
     └── finalize/route.ts
@@ -130,111 +162,308 @@ src/app/api/ai/
 ```
 src/puck/
 ├── plugins/
-│   └── AIChatPanel.tsx        # ★ Chat UI + progressive rendering
+│   └── AIChatPanel.tsx         # ★ Chat UI + progressive rendering
+├── hooks/
+│   └── useAutoPolish.ts        # ★ NEW: Auto-detect pending → auto-polish
 ├── components/
-│   └── SectionSkeleton.tsx    # ★ Skeleton placeholders (makeup mode)
-├── puck.config.tsx            # 26 component definitions
-└── types.ts                   # Component prop types
+│   └── SectionSkeleton.tsx     # ★ Skeleton placeholders (makeup mode)
+├── puck.config.tsx             # 26 component definitions
+└── types.ts                    # Component prop types
+```
+
+### 3.4. Wizard (`src/app/new-project/`)
+
+```
+src/app/new-project/
+├── page.tsx
+├── NewProjectWizard.tsx
+└── components/
+    ├── FinalizeStep.tsx          # ★ MODIFIED: Plan only → redirect fast
+    ├── WinnieChat.tsx            # Chat-based wizard intake
+    ├── ProjectSettingsStep.tsx   # Styleguide + SEO settings
+    ├── StylePalettePicker.tsx    # Visual style selection
+    ├── StepIndicator.tsx         # Wizard progress indicator
+    └── NewProjectWizardModal.tsx # Modal wrapper
 ```
 
 ---
 
-## 4. Flow chi tiết
+## 4. Reusable Polish System — `section-polisher.ts`
 
-### 4.1. Makeup Mode (create_page intent)
+> **Đây là thay đổi kiến trúc quan trọng nhất:** tách logic polish ra khỏi streaming.ts thành function tái sử dụng.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                   MAKEUP PIPELINE                         │
-│                                                          │
-│  Phase 1: STRUCTURE RESOLVER                             │
-│  ┌─────────────────────────────────────────────────┐     │
-│  │ Input: enrichedPrompt + businessType            │     │
-│  │ Model: FAST model (qwen3.5)                     │     │
-│  │ Prompt: buildTemplatePrompt()                    │     │
-│  │ Output: { components: [{ type, props }] }        │     │
-│  │ Validate: validateTemplateResponse()             │     │
-│  │ SSE: plan event → [skeleton IDs]                 │     │
-│  └──────────────────────┬──────────────────────────┘     │
-│                         │                                 │
-│  Phase 2: PARALLEL MAKEUP (Promise.allSettled)            │
-│  ┌─────────────────────────────────────────────────┐     │
-│  │ For EACH component in plan (PARALLEL):          │     │
-│  │  • buildSectionPrompt(type, catalog, context)   │     │
-│  │  • Model: MAIN model (qwen3.5)                  │     │
-│  │  • Makeup rules: animation, gradient, images    │     │
-│  │  • Validate: validateSingleComponent()          │     │
-│  │  • Fallback: use Phase 1 props if AI fails      │     │
-│  │  SSE: component_stream event per section        │     │
-│  └──────────────────────┬──────────────────────────┘     │
-│                         │                                 │
-│  Assembly:                                                │
-│  • Assign skeleton IDs → props.id                         │
-│  • orderPuckComponents() → sort by section priority       │
-│  • emitComponentStream() → progressive SSE                │
-│  • done event → final AIGenerationResponse                │
-└──────────────────────────────────────────────────────────┘
-```
+### 4.1. API
 
-**SSE Event Timeline:**
-```
-1. status(planning)     → "Planning page layout..."
-2. plan                 → [{ type: "HeaderNav", skeletonId: "skel_abc" }, ...]
-   [Frontend renders SectionSkeleton components]
-3. status(generating)   → "Polishing 7 sections..."
-4. component_stream × N → Each polished section replaces skeleton
-5. done                 → { action: "full_page", components: [...] }
-```
-
-### 4.2. Full AI Mode (modify/delete/unknown)
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                   FULL AI PIPELINE                        │
-│                                                          │
-│  Single LLM Call:                                        │
-│  ┌─────────────────────────────────────────────────┐     │
-│  │ Input: enrichedPrompt                            │     │
-│  │ Model: MAIN model (qwen3.5, maxTokens: 16384)   │     │
-│  │ Prompt: buildChainPrompt()                       │     │
-│  │   • Full component catalog (tiered)              │     │
-│  │   • Styleguide tokens                            │     │
-│  │   • Design intelligence                          │     │
-│  │   • Landing pattern recommendation               │     │
-│  │   • Session history (conversation context)       │     │
-│  │   • Page tree summary (current components)       │     │
-│  │   • Project AI profile                           │     │
-│  │ Stream: model.stream() → accumulate text         │     │
-│  │ Parse: extractJSON() → sanitize → validateOutput │     │
-│  │ SSE: status → component_stream → done            │     │
-│  └─────────────────────────────────────────────────┘     │
-└──────────────────────────────────────────────────────────┘
-```
-
----
-
-## 5. Prompt System — Chi tiết từng Prompt Builder
-
-### 5.1. `buildChainPrompt()` — Full Mode System Prompt
-
-**File:** `src/lib/ai/prompts/system-prompt.ts`
-**Hàm:** `buildChainPrompt(ctx?: PromptContext): ChatPromptTemplate`
-**Khi nào dùng:** Full AI mode (modify, delete, unknown intent)
-
-**Input:**
 ```typescript
-interface PromptContext {
-  styleguideData?: { colors, typography, spacing, cssVariables };
-  miniContext?: string;          // Session action log
-  treeSummary?: string;          // Current page components
-  projectProfile?: string;       // AI profile (<800 chars)
-  componentTiers?: ComponentTierPlan;  // Dynamic catalog tiers
-  designContext?: string;        // RAG knowledge text
-  designGuidance?: DesignGuidance;     // Resolved palette + pattern
+// ── Types ──────────────────────────────────────────────
+
+interface PolishContext {
+  userPrompt: string;
+  businessType?: string;
+  designGuidance?: DesignGuidance;
+  styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
+  designContext?: string;
+  signal?: AbortSignal;
+  timeoutMs?: number;       // Per-section timeout (default: 60_000)
+  isMakeup?: boolean;       // true = polish existing props, false = generate fresh
+}
+
+interface PolishResult {
+  type: string;
+  props: Record<string, unknown>;
+}
+
+// ── Functions ──────────────────────────────────────────
+
+/** Polish a single section (1 LLM call) */
+async function polishSection(
+  component: { type: string; props: Record<string, unknown> },
+  index: number,
+  total: number,
+  ctx: PolishContext,
+): Promise<PolishResult>
+
+/** Polish multiple sections in parallel (N LLM calls) */
+async function polishSections(
+  components: Array<{ type: string; props: Record<string, unknown> }>,
+  ctx: PolishContext,
+  onSectionDone?: (index: number, total: number, result: PolishResult) => void,
+): Promise<PolishResult[]>
+```
+
+### 4.2. Nơi sử dụng
+
+| Context | Function | Số LLM calls |
+|---------|----------|-------------|
+| Wizard → Builder auto-polish | `polishSections(plan, ctx, onDone)` | N parallel |
+| Builder chat: "tạo trang mới" | `polishSections(plan, ctx, onDone)` | N parallel |
+| Builder chat: "thêm pricing table" | `polishSection(component, 0, 1, ctx)` | 1 |
+| Builder chat: "redesign hero" | `polishSection(existing, 0, 1, ctx)` | 1 |
+
+### 4.3. Logic bên trong `polishSection()`
+
+```
+Input: { type: "HeroSection", props: { heading: "..." } }
+  │
+  ├── Lookup COMPONENT_CATALOG[type]
+  │   └── Not found? → return input as-is (no AI call)
+  │
+  ├── buildSectionPrompt(type, catalog, context)
+  │   └── System prompt: component schema + design tokens + makeup rules
+  │
+  ├── createModelBundle({ maxTokens: 4096 })
+  │   └── Main model (Gemini Flash / qwen3.5)
+  │
+  ├── model.invoke(messages, { signal, timeout: 60s })
+  │
+  ├── extractJSON(response) → validateSingleComponent()
+  │   └── Merge: plan.props + polished.props
+  │
+  └── Fallback: return input props if AI fails
+```
+
+---
+
+## 5. Defaults Engine — `defaults-engine.ts`
+
+Post-processing layer chạy **AFTER** AI generation, **BEFORE** emitting to frontend.
+**Zero LLM cost** — pure code-based.
+
+### 5.1. API
+
+```typescript
+function applyComponentDefaults(
+  components: ComponentData[],
+  context?: { businessType?: string; designGuidance?: DesignGuidance },
+): ComponentData[]
+```
+
+### 5.2. What it does
+
+| Phase | Action | Ví dụ |
+|-------|--------|-------|
+| Per-component defaults | Inject animation, variant, hover | HeroSection → `animation: "fade-up"` |
+| Hero background fill | Business type → stock image | restaurant → `/images/stock/restaurant/hero-1.jpg` |
+| Gradient injection | Color palette → gradient values | `gradientFrom: primary, gradientTo: primaryContainer` |
+| Avatar fill | Testimonial/Team → placeholder avatars | `avatarUrl: "/images/stock/avatars/person-1.jpg"` |
+| Background alternation | Visual rhythm across sections | Even: light bg, Odd: muted bg |
+
+### 5.3. Vị trí trong pipeline
+
+```
+AI Output → polishSections() → applyComponentDefaults() → emitComponentStream()
+                                       ↑
+                                  Zero cost, deterministic
+```
+
+---
+
+## 6. Database: Page Generation Status
+
+### Schema change
+
+```prisma
+model Page {
+  ...
+  generationStatus String? @default(null)
+  // null       = normal page (manually created or fully polished)
+  // "pending"  = skeleton saved, waiting for polish
+  // "polishing"= Phase 2 in progress
+  // "complete" = polish finished (transitions to null on next save)
+  ...
 }
 ```
 
-**Output structure:**
+### State machine
+
+```
+null ──[wizard creates page]──→ "pending"
+                                    │
+                      [builder loads, auto-detect]
+                                    │
+                                    ▼
+                               "polishing"
+                                    │
+                      [all sections polished + saved]
+                                    │
+                                    ▼
+                                  null
+```
+
+---
+
+## 7. Flow chi tiết — Phase 1 (Plan)
+
+### 7.1. API: `POST /api/ai/plan`
+
+**Sync endpoint** — chỉ ~1-2 giây.
+
+```typescript
+// Request
+POST /api/ai/plan
+{
+  prompt: string;        // User description
+  projectId: string;
+  pageId: string;
+  styleguideId?: string;
+}
+
+// Response
+{
+  success: true,
+  data: {
+    components: [
+      { type: "HeaderNav", props: { ... } },
+      { type: "HeroSection", props: { ... } },
+      ...
+    ],
+    treeData: {
+      root: { props: { title: "Home" } },
+      content: [/* skeleton ComponentData[] */]
+    }
+  }
+}
+```
+
+**Internal flow:**
+1. Load styleguide + project AI profile (parallel)
+2. `optimizePrompt(prompt)` → businessType, designContext, designGuidance
+3. `buildTemplatePrompt(ctx)` → Flash Lite model
+4. `validateTemplateResponse()` → validate plan
+5. Build skeleton treeData: each component gets `id` but minimal props
+6. Save to DB: `page.treeData = skeleton`, `page.generationStatus = "pending"`
+7. Return plan + treeData
+
+### 7.2. Wizard FinalizeStep (simplified)
+
+```
+BEFORE (15s wait):
+  creating → styleguide → seo → generateFromPromptStream() → WAIT → save → redirect
+
+AFTER (3s wait):
+  creating → styleguide → seo → POST /api/ai/plan (1-2s) → redirect IMMEDIATELY
+```
+
+No more "generating" spinner phase in wizard.
+
+---
+
+## 8. Flow chi tiết — Phase 2 (Polish)
+
+### 8.1. Builder Auto-Polish: `useAutoPolish()` hook
+
+```typescript
+function useAutoPolish(projectId: string, pageId: string) {
+  // Returns:
+  return {
+    isPolishing: boolean;    // True while Phase 2 is running
+    progress: string;        // "3/7 sections ready"
+    cancel: () => void;      // Abort Phase 2
+  };
+
+  // Behavior:
+  // 1. On mount: GET /api/pages/{pageId} → check generationStatus
+  // 2. If "pending":
+  //    a. Disable editing UI
+  //    b. Show progress banner
+  //    c. Call POST /api/ai/generate/stream with existingTreeData
+  //    d. Process SSE events → replace skeletons on canvas
+  //    e. On complete: save treeData + set status = null
+  //    f. Re-enable editing UI
+}
+```
+
+### 8.2. Streaming Polish Flow
+
+```
+Builder loads page (generationStatus = "pending")
+    │
+    ▼
+useAutoPolish() triggers
+    │
+    ├── Show progress banner: "AI is building your page..."
+    ├── Disable editing controls
+    │
+    ▼
+POST /api/ai/generate/stream
+    │
+    ├── SSE: status(planning) → "Planning page layout..."
+    │
+    ├── SSE: plan → [{ type: "HeaderNav", skeletonId: "skel_123" }, ...]
+    │   └── Frontend renders SectionSkeleton components
+    │
+    ├── SSE: status(generating) → "Polishing 7 sections..."
+    │
+    ├── SSE: component_stream(0) → HeaderNav ready
+    │   └── Replace skeleton "skel_123" with real HeaderNav
+    │
+    ├── SSE: component_stream(1) → HeroSection ready
+    │   └── Replace skeleton "skel_456" with real HeroSection
+    │
+    ├── ... (sections stream in as they complete, parallel)
+    │
+    ├── SSE: component_stream(6) → FooterSection ready
+    │
+    ├── applyComponentDefaults() fills any missing visual props
+    │
+    ├── SSE: done → { action: "full_page", components: [...] }
+    │   └── Auto-save treeData to DB
+    │   └── Set generationStatus = null
+    │   └── Re-enable editing
+    │
+    └── Progress banner: "✓ Your page is ready!"
+```
+
+---
+
+## 9. Prompt System — Chi tiết từng Prompt Builder
+
+### 9.1. `buildChainPrompt()` — Full Mode System Prompt
+
+**File:** `src/lib/ai/prompts/system-prompt.ts`
+**Khi nào dùng:** Full AI mode (modify, delete, unknown intent)
+
+**Prompt structure:**
 ```
 [System] → Component Catalog + Styleguide + Design Intelligence + Page Layout
 [History] → Conversation messages from session
@@ -243,49 +472,29 @@ interface PromptContext {
 
 **Các phần chính trong system message:**
 1. **COMPONENT CATALOG** — Dynamic 3-tier catalog (full detail / summary / name-only)
-2. **RESPONSE FORMAT** — JSON structure: `{ action, components, targetComponentId, position, message }`
+2. **RESPONSE FORMAT** — JSON: `{ action, components, targetComponentId, position, message }`
 3. **DESIGN PRINCIPLES** — 7 rules (alternate backgrounds, consistent palette, no emojis...)
-4. **DESIGN INTELLIGENCE** — Color usage, component prop utilization, content quality, layout variety
+4. **DESIGN INTELLIGENCE** — Color usage, component prop utilization, content quality
 5. **RECOMMENDED PAGE LAYOUT** — From `design-knowledge.ts` landing patterns
-6. **FULL PAGE GENERATION** — Section-by-section instructions
-7. **STYLEGUIDE CONSTRAINTS** — Exact color tokens, typography rules, token application rules
-8. **CLARIFICATION RULES** — Default to GENERATE, only clarify when genuinely ambiguous
-9. **MODIFICATION ACTIONS** — 8 action types (full_page, insert_component, modify_node...)
+6. **STYLEGUIDE CONSTRAINTS** — Color tokens, typography rules
+7. **MODIFICATION ACTIONS** — 8 action types (full_page, insert_component, modify_node...)
 
-### 5.2. `buildTemplatePrompt()` — Makeup Phase 1 Prompt
+### 9.2. `buildTemplatePrompt()` — Phase 1 Plan Prompt
 
 **File:** `src/lib/ai/prompts/template-prompt.ts`
-**Hàm:** `buildTemplatePrompt(_ctx?: TemplatePromptContext): ChatPromptTemplate`
-**Khi nào dùng:** Makeup mode Phase 1 — plan component layout
-
-**Input:**
-```typescript
-interface TemplatePromptContext {
-  businessType?: string;
-  businessStyle?: string;
-  language?: string;
-  stockImages?: Record<string, string[]>;
-  styleguideData?: StyleguideTokens;
-  designContext?: string;
-}
-```
-
-**Mục đích:** AI chọn 5-8 components phù hợp và điền props cơ bản. Nhanh — dùng fast model.
-
-**Prompt structure:**
-- System: Component type reference (from `COMPONENT_CATALOG`) + response format + content rules + styleguide tokens + stock image paths
-- Human: User prompt
+**Khi nào dùng:** Plan generation — chọn 5-8 component types + basic props
+**Model:** Flash Lite (fast model)
 
 **Response format:**
 ```json
 { "components": [ { "type": "HeaderNav", "props": { ... } }, ... ] }
 ```
 
-### 5.3. `buildSectionPrompt()` — Makeup Phase 2 Prompt
+### 9.3. `buildSectionPrompt()` — Phase 2 Per-Section Prompt
 
 **File:** `src/lib/ai/prompts/section-prompt.ts`
-**Hàm:** `buildSectionPrompt(sectionType, catalogEntry, context): ChatPromptTemplate`
-**Khi nào dùng:** Makeup mode Phase 2 — polish từng section song song
+**Khi nào dùng:** Polish từng section (called by `polishSection()`)
+**Model:** Main model (Gemini Flash / qwen3.5)
 
 **Input:**
 ```typescript
@@ -300,75 +509,56 @@ interface SectionPromptContext {
 }
 ```
 
-**Prompt structure:**
-- System: Component metadata (1 component only!) + design tokens + stock image hints + **Makeup Enhancement Rules**
-- Human: User prompt
-
 **Makeup Enhancement Rules** (khi `isMakeup = true`):
-1. **Animation** — fade-up cho hero/CTA, stagger cho grids, stagger-fade cho testimonials
+1. **Animation** — fade-up cho hero/CTA, stagger cho grids
 2. **Gradients** — gradientFrom/gradientTo với exact color tokens
-3. **Images** — Fill ALL image props với stock paths phù hợp business type
+3. **Images** — Fill ALL image props từ stock library
 4. **Text Polish** — Compelling, business-specific content
 5. **Visual Variety** — variant props (carousel, gradient, elevated)
 6. **Hover Effects** — "lift" trên FeaturesGrid và ProductCards
-7. **Background Alternation** — Even index: light/gradient, Odd index: muted/dark
+7. **Background Alternation** — Even: light/gradient, Odd: muted/dark
 
-**Response format:**
-```json
-{ "props": { "heading": "...", ... } }
-```
-
-### 5.4. `optimizePrompt()` — Zero-cost Prompt Enrichment
-
-**File:** `src/lib/ai/prompts/prompt-optimizer.ts`
-**Hàm:** `optimizePrompt(rawPrompt: string): OptimizedContext`
-**Chi phí:** Zero — pure rule-based, không gọi LLM
-
-**What it does:**
-1. **detectLanguage()** — Vietnamese markers → vi/en/mixed
-2. **detectIntent()** — Keywords → create_page/add_section/modify/delete/unknown
-3. **detectBusinessType()** — Vietnamese + English keywords → 20+ industry types
-4. **detectStyle()** — Style keywords → modern/minimal/elegant/bold/...
-5. **resolveDesignGuidance()** — Business type → complete color palette + typography
-6. **selectRelevantComponents()** — Intent + business type → 3-tier catalog
-
-**Output:**
+**REQUIRED_PROPS map** — 19 component types có props bắt buộc:
 ```typescript
-interface OptimizedContext {
-  enrichedPrompt: string;     // Context prefix + user prompt + design block
-  businessType: string | null;
-  style: string | null;
-  language: 'vi' | 'en' | 'mixed';
-  intent: Intent;
-  nameRefs: string[];          // @name references
-  designGuidance: DesignGuidance | null;
-  designContext: string | null;
+REQUIRED_PROPS = {
+  HeroSection: ['animation', 'bgImage', 'badge'],
+  FeaturesGrid: ['columns', 'hoverEffect', 'animation'],
+  // ... 17 more types
 }
 ```
 
-**Component Tier Selection Logic:**
+**Response format:**
+```json
+{ "props": { "heading": "...", "animation": "fade-up", ... } }
+```
 
-| Intent | fullDetail | summary | nameOnly |
-|--------|-----------|---------|----------|
-| create_page | structural + business-relevant | rest | — |
-| add_section | structural | all content | — |
-| modify/delete | structural + on-page components | rest | — |
-| unknown | structural | — | all content |
+### 9.4. `optimizePrompt()` — Zero-cost Prompt Enrichment
+
+**File:** `src/lib/ai/prompts/prompt-optimizer.ts`
+**Chi phí:** Zero — pure rule-based, không gọi LLM
+
+**What it does:**
+1. `detectLanguage()` → vi/en/mixed
+2. `detectIntent()` → create_page/add_section/modify/delete/unknown
+3. `detectBusinessType()` → 20+ industry types
+4. `detectStyle()` → modern/minimal/elegant/bold/...
+5. `resolveDesignGuidance()` → complete color palette + typography
+6. `selectRelevantComponents()` → 3-tier catalog
 
 ---
 
-## 6. Design Knowledge System
+## 10. Design Knowledge System
 
-### 6.1. Static Knowledge (`src/lib/ai/knowledge/design-knowledge.ts`)
+### 10.1. Static Knowledge (`design-knowledge.ts`)
 
 Zero-cost data injected trực tiếp vào prompt:
 
-- **PRODUCT_COLOR_PALETTES** — 20+ business types → complete shadcn-compatible color tokens (WCAG compliant)
+- **PRODUCT_COLOR_PALETTES** — 20+ business types → shadcn-compatible color tokens
 - **LANDING_PATTERNS** — Recommended section order per business type
 - **PRODUCT_REASONING** — Style priority, typography mood, anti-patterns
 - **PRODUCT_TYPOGRAPHY** — Font recommendations per industry
 
-### 6.2. RAG Knowledge (`src/lib/ai/knowledge/knowledge-search.ts`)
+### 10.2. RAG Knowledge (`knowledge-search.ts`)
 
 pgvector-powered similarity search:
 - User prompt → embedding → cosine similarity search → design context text
@@ -376,63 +566,49 @@ pgvector-powered similarity search:
 
 ---
 
-## 7. Model Configuration
+## 11. Model Configuration
 
-### 7.1. Config (`src/lib/ai/config.ts`)
+### 11.1. Config (`src/lib/ai/config.ts`)
 
-```typescript
-interface AIConfig {
-  provider: AIProvider;     // ollama | openai | anthropic | gemini
-  model: string;            // default: qwen3.5
-  baseUrl: string;          // default: http://localhost:11434
-  apiKey?: string;
-  temperature: number;      // default: 0.7
-  maxRetries: number;       // default: 2
-  maxTokens: number;        // default: 16384
-}
 ```
-
-**Env vars:**
-```
-AI_PROVIDER=ollama
-AI_MODEL=qwen3.5
-AI_BASE_URL=http://localhost:11434
-AI_API_KEY=
+AI_PROVIDER=gemini          # ollama | openai | anthropic | gemini
+AI_MODEL=gemini-2.5-flash   # Main model
+AI_API_KEY=...
 AI_TEMPERATURE=0.7
 AI_MAX_TOKENS=16384
-AI_MAX_RETRIES=2
 
 # Fast model (for plan generation):
-AI_FAST_MODEL=qwen3.5
-AI_FAST_BASE_URL=http://localhost:11434
-AI_FAST_API_KEY=
+AI_FAST_PROVIDER=gemini
+AI_FAST_MODEL=gemini-3.1-flash-lite
+AI_FAST_API_KEY=...
 ```
 
-### 7.2. Model Usage trong Pipeline
+### 11.2. Model Usage trong Pipeline
 
-| Task | Model | Max Tokens | Timeout |
-|------|-------|-----------|---------|
-| Makeup Phase 1 (plan) | `createFastModelBundle()` | 4096 | 90s |
-| Makeup Phase 2 (per-section) | `createModelBundle()` | 4096 | 60s per section |
-| Full AI mode (stream) | `createModelBundle()` | 16384 | 180s |
-| Wizard (Winnie chat) | `createFastModelBundle()` | 4096 | 90s |
+| Task | Model Factory | Max Tokens | Timeout |
+|------|--------------|-----------|---------|
+| Phase 1: Plan | `createFastModelBundle()` | 4096 | 90s |
+| Phase 2: Per-section polish | `createModelBundle()` | 4096 | 60s/section |
+| Full AI mode | `createModelBundle()` | 16384 | 180s |
+| Wizard chat | `createFastModelBundle()` | 4096 | 90s |
+| Single section polish | `createModelBundle()` | 4096 | 60s |
 
 ---
 
-## 8. SSE Event Types
+## 12. SSE Event Types
 
 ```typescript
 interface SSEEvent {
   type: 'chunk' | 'done' | 'error' | 'status' | 'component_stream' | 'plan';
 
   // status event
-  step?: string;       // 'planning' | 'generating' | 'parsing' | 'validating'
+  step?: string;       // 'planning' | 'generating' | 'parsing' | 'rendering'
   label?: string;      // Human-readable label
 
-  // plan event (makeup Phase 1)
+  // plan event (Phase 1 result)
   plan?: { type: string; skeletonId: string }[];
 
-  // component_stream event
+  // component_stream event (Phase 2, per section)
   component?: ComponentData;
   componentIndex?: number;
   componentTotal?: number;
@@ -448,10 +624,9 @@ interface SSEEvent {
 
 ---
 
-## 9. Output Validation Pipeline
+## 13. Output Validation Pipeline
 
-### 9.1. Template Response (`template-schema.ts`)
-
+### 13.1. Template Response (`template-schema.ts`)
 ```
 AI JSON → validateTemplateResponse()
   ├── Check components array exists, length 1-12
@@ -460,8 +635,7 @@ AI JSON → validateTemplateResponse()
   └── Return { data: PuckComponentPlanRaw, error: null }
 ```
 
-### 9.2. Single Component (`template-schema.ts`)
-
+### 13.2. Single Component (`template-schema.ts`)
 ```
 AI JSON → validateSingleComponent()
   ├── Accept { props: {...} } format (unwrapped)
@@ -470,23 +644,10 @@ AI JSON → validateSingleComponent()
   └── Return { data: PuckComponentRaw, error: null }
 ```
 
-### 9.3. Full Output (`output.ts`)
-
-```
-AI JSON → sanitizeAIResponse() → validateOutput()
-  ├── Validate action (must be in AIAction enum)
-  ├── Handle 'clarify' action (message required)
-  ├── Support legacy 'nodes' field → convert to 'components'
-  ├── Ensure each component has id
-  ├── Strip emojis from text props
-  └── Return AIGenerationResponse
-```
-
-### 9.4. JSON Extraction (`streaming.ts`)
-
+### 13.3. JSON Extraction (`streaming.ts`)
 ```
 Accumulated text → extractJSON()
-  ├── Strip <think/> tags (qwen3.5 reasoning)
+  ├── Strip <think/> tags (qwen reasoning)
   ├── Try direct JSON.parse()
   ├── Try code fence extraction (```json ... ```)
   ├── Try brace matching ({ ... })
@@ -496,53 +657,44 @@ Accumulated text → extractJSON()
 
 ---
 
-## 10. Component Catalog — 26 Components
+## 14. Component Catalog — 26 Components
 
 **File:** `src/lib/ai/prompts/component-catalog.ts`
 
-Single source of truth cho tất cả component metadata:
-
-| Component | Type | Category |
-|-----------|------|----------|
-| HeaderNav | Section | Navigation |
-| HeroSection | Section | Hero |
-| AnnouncementBar | Section | Promotional |
-| FeaturesGrid | Section | Content |
-| FeatureShowcase | Section | Content |
-| StatsSection | Section | Content |
-| LogoGrid | Section | Social Proof |
-| SocialProof | Section | Social Proof |
-| TestimonialSection | Section | Social Proof |
-| PricingTable | Section | Business |
-| ComparisonTable | Section | Business |
-| ProductCards | Section | E-commerce |
-| BlogSection | Section | Content |
-| FAQSection | Section | Content |
-| CTASection | Section | Conversion |
-| NewsletterSignup | Section | Conversion |
-| ContactForm | Section | Conversion |
-| CountdownTimer | Section | Promotional |
-| Banner | Section | Promotional |
-| Gallery | Section | Media |
-| TeamSection | Section | Content |
-| FooterSection | Section | Navigation |
-| RichTextBlock | Atomic | Typography |
-| ImageBlock | Atomic | Media |
-| Spacer | Atomic | Layout |
-| ColumnsLayout | Atomic | Layout |
-
-Mỗi entry trong catalog có:
-- `description` — Full description
-- `shortDescription` — Compact version
-- `propsSignature` — Typed prop reference
-- `recommendedDefaults` — AI should use these
-- `variantTips` — Business-specific guidance (SaaS, E-commerce, Restaurant...)
+| Component | Category | Structural? |
+|-----------|----------|-------------|
+| HeaderNav | Navigation | ✅ |
+| HeroSection | Hero | ✅ |
+| AnnouncementBar | Promotional | |
+| FeaturesGrid | Content | ✅ |
+| FeatureShowcase | Content | |
+| StatsSection | Content | |
+| LogoGrid | Social Proof | |
+| SocialProof | Social Proof | |
+| TestimonialSection | Social Proof | |
+| PricingTable | Business | |
+| ComparisonTable | Business | |
+| ProductCards | E-commerce | |
+| BlogSection | Content | |
+| FAQSection | Content | |
+| CTASection | Conversion | ✅ |
+| NewsletterSignup | Conversion | |
+| ContactForm | Conversion | |
+| CountdownTimer | Promotional | |
+| Banner | Promotional | |
+| Gallery | Media | |
+| TeamSection | Content | |
+| FooterSection | Navigation | ✅ |
+| RichTextBlock | Typography | |
+| ImageBlock | Media | |
+| Spacer | Layout | |
+| ColumnsLayout | Layout | |
 
 ---
 
-## 11. Frontend Integration
+## 15. Frontend Integration
 
-### 11.1. AIChatPanel (`src/puck/plugins/AIChatPanel.tsx`)
+### 15.1. AIChatPanel (`src/puck/plugins/AIChatPanel.tsx`)
 
 Handles:
 - User input → `apiClient.generateFromPromptStream()`
@@ -551,24 +703,32 @@ Handles:
 - Skeleton → polished replacement (makeup mode)
 - Live render animation (components appear one-by-one)
 
-### 11.2. Progressive Rendering Flow
+### 15.2. useAutoPolish Hook (`src/puck/hooks/useAutoPolish.ts`)
+
+Detects `page.generationStatus = "pending"` and auto-triggers Phase 2:
+- Disables editing controls
+- Shows progress banner
+- Streams polished sections into canvas
+- Auto-saves when complete
+- Re-enables editing
+
+### 15.3. Progressive Rendering Flow
 
 ```
 onPlan(plan) → Render SectionSkeleton components
   │
-  ├── skeleton: HeaderNav    ──→ onComponent → replace skeleton
-  ├── skeleton: HeroSection   ──→ onComponent → replace skeleton
-  ├── skeleton: FeaturesGrid  ──→ onComponent → replace skeleton
-  ├── skeleton: CTASection    ──→ onComponent → replace skeleton
-  └── skeleton: FooterSection ──→ onComponent → replace skeleton
+  ├── skeleton: HeaderNav     ──→ onComponent → replace skeleton
+  ├── skeleton: HeroSection    ──→ onComponent → replace skeleton
+  ├── skeleton: FeaturesGrid   ──→ onComponent → replace skeleton
+  ├── skeleton: CTASection     ──→ onComponent → replace skeleton
+  └── skeleton: FooterSection  ──→ onComponent → replace skeleton
   │
   ▼
 onDone(result) → Update chat message "Đã tạo xong N thành phần"
 ```
 
-### 11.3. API Client (`src/lib/api-client.ts`)
+### 15.4. API Client Callbacks
 
-`generateFromPromptStream()` — 7 callbacks:
 ```typescript
 generateFromPromptStream(
   data,           // { prompt, projectId, pageId, styleguideId }
@@ -577,56 +737,54 @@ generateFromPromptStream(
   onError,        // Error message
   onStatus,       // Pipeline step updates
   onComponent,    // Individual component (progressive)
-  onPlan,         // Skeleton plan (makeup mode)
+  onPlan,         // Skeleton plan
 ): AbortController  // For cancellation
 ```
 
 ---
 
-## 12. Areas for Improvement
+## 16. Key Functions — Quick Reference
+
+| Function | File | Purpose |
+|----------|------|---------|
+| `polishSection()` | `section-polisher.ts` | ★ Polish single section (1 LLM call) |
+| `polishSections()` | `section-polisher.ts` | ★ Polish N sections parallel (reusable) |
+| `applyComponentDefaults()` | `defaults-engine.ts` | ★ Post-AI visual polish (zero cost) |
+| `createMakeupStream()` | `streaming.ts` | SSE stream with plan → polish → emit |
+| `createAIStream()` | `streaming.ts` | Single-call full AI pipeline |
+| `optimizePrompt()` | `prompt-optimizer.ts` | Zero-cost prompt enrichment |
+| `selectRelevantComponents()` | `prompt-optimizer.ts` | Dynamic catalog tiering |
+| `buildChainPrompt()` | `system-prompt.ts` | Full mode system prompt |
+| `buildTemplatePrompt()` | `template-prompt.ts` | Phase 1 plan prompt |
+| `buildSectionPrompt()` | `section-prompt.ts` | Phase 2 per-section prompt |
+| `extractJSON()` | `streaming.ts` | Robust JSON extraction from AI text |
+| `validateTemplateResponse()` | `template-schema.ts` | Validate component plan |
+| `validateSingleComponent()` | `template-schema.ts` | Validate single section output |
+| `resolveDesignGuidance()` | `design-knowledge.ts` | Business type → color palette |
+| `createModelBundle()` | `provider.ts` | Main model + JSON call options |
+| `createFastModelBundle()` | `provider.ts` | Fast/lightweight model bundle |
+| `buildTreeSummary()` | `system-prompt.ts` | Puck Data → text summary for AI context |
+
+---
+
+## 17. Areas for Improvement
 
 ### Performance
 - **Caching**: Section prompt results could be cached for similar business types
-- **Streaming per-section**: Currently Phase 2 uses `invoke()` — could stream each section
+- **Streaming per-section**: Phase 2 uses `invoke()` — could stream each section
 - **Prompt size**: System prompt is ~8K tokens — could compress catalog further
 
 ### Quality
-- **Multi-language**: Better Vietnamese content generation (currently English-biased)
+- **Multi-language**: Better Vietnamese content generation
 - **Color consistency**: AI sometimes ignores styleguide tokens — stronger enforcement
 - **Image variety**: Expand stock image library per business type
-- **Animation defaults**: Make animation always-on instead of opt-in
 
 ### Architecture
-- **Streaming mode for Phase 2**: Use `model.stream()` instead of `model.invoke()` per section
 - **Retry logic**: Failed sections could retry once with simplified prompt
 - **A/B testing**: Track which prompt variations produce better results
 - **Cost tracking**: Token counting per provider for cost monitoring
 
 ### New Features
-- **Component-level edit**: User edits specific component → AI only modifies that one
 - **Style transfer**: Apply one site's style to another
 - **Responsive variants**: Generate different layouts for mobile/desktop
 - **SEO optimization pass**: Post-generation SEO audit + auto-fix
-
----
-
-## 13. Quick Reference — Key Functions
-
-| Function | File | Purpose |
-|----------|------|---------|
-| `createMakeupStream()` | `streaming.ts` | 2-phase makeup pipeline |
-| `createAIStream()` | `streaming.ts` | Single-call full AI pipeline |
-| `createTwoPassStream()` | `streaming.ts` | Alternative 2-pass (unused, kept for reference) |
-| `optimizePrompt()` | `prompt-optimizer.ts` | Zero-cost prompt enrichment |
-| `selectRelevantComponents()` | `prompt-optimizer.ts` | Dynamic catalog tiering |
-| `buildChainPrompt()` | `system-prompt.ts` | Full mode system prompt |
-| `buildTemplatePrompt()` | `template-prompt.ts` | Makeup Phase 1 prompt |
-| `buildSectionPrompt()` | `section-prompt.ts` | Makeup Phase 2 per-section prompt |
-| `extractJSON()` | `streaming.ts` | Robust JSON extraction from AI text |
-| `validateTemplateResponse()` | `template-schema.ts` | Validate component plan |
-| `validateSingleComponent()` | `template-schema.ts` | Validate single section output |
-| `validateOutput()` | `output.ts` | Validate full AI response |
-| `resolveDesignGuidance()` | `design-knowledge.ts` | Business type → color palette + typography |
-| `createModelBundle()` | `provider.ts` | Main model + JSON call options |
-| `createFastModelBundle()` | `provider.ts` | Fast/lightweight model bundle |
-| `buildTreeSummary()` | `system-prompt.ts` | Puck Data → text summary for AI context |

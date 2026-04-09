@@ -15,7 +15,7 @@ interface FinalizeStepProps {
   settings: WizardSettings;
 }
 
-type FinalizePhase = "creating" | "styleguide" | "seo" | "generating" | "done" | "error";
+type FinalizePhase = "creating" | "styleguide" | "seo" | "planning" | "generating" | "done" | "error";
 
 interface PhaseInfo {
   phase: FinalizePhase;
@@ -28,6 +28,7 @@ const PHASES: PhaseInfo[] = [
   { phase: "creating", label: "Creating project", description: "Setting up your workspace", icon: "folder_open" },
   { phase: "styleguide", label: "Style guide", description: "Applying colors and typography", icon: "palette" },
   { phase: "seo", label: "SEO setup", description: "Configuring metadata and search", icon: "search" },
+  { phase: "planning", label: "Planning layout", description: "Creating structural skeleton", icon: "architecture" },
   { phase: "generating", label: "AI generation", description: "Building your homepage with AI", icon: "auto_awesome" },
   { phase: "done", label: "All done!", description: "Redirecting to editor...", icon: "check_circle" },
 ];
@@ -126,8 +127,8 @@ export function FinalizeStep({ projectInfo, settings }: FinalizeStepProps) {
       ]);
 
       if (!mountedRef.current) return;
-      setCurrentPhase("generating");
-      progressiveComponentsRef.current = [];
+      setCurrentPhase("planning");
+      
       const prompt = `Create a complete homepage for "${info.name}".
 Business: ${info.idea}
 Target audience: ${info.targetAudience}
@@ -136,51 +137,25 @@ Tone: ${info.tone}
 
 Generate a professional landing page with all essential sections including header, hero, features, and footer.`;
 
-      const generatedResult = await new Promise<AIGenerationResponse | null>((resolve) => {
-        apiClient.generateFromPromptStream(
-          {
-            prompt,
-            projectId,
-            pageId: homePageId,
-            styleguideId,
-          },
-          () => {}, // chunks are raw JSON — not useful for UI display
-          (result) => resolve(result),
-          (err) => {
-            console.error("Homepage generation error:", err);
-            errorRef.current = true;
-            if (mountedRef.current) {
-              setCurrentPhase("error");
-              setErrorMessage(`AI generation failed: ${err}`);
-            }
-            resolve(null);
-          },
-          (_step, label) => {
-            setGenerationProgress(label);
-          },
-          // onComponent — progressive component tracking
-          (component, index, total) => {
-            progressiveComponentsRef.current.push(component);
-            setComponentProgress(`${index + 1}/${total} components`);
-          },
-        );
+      const planRes = await apiClient.generatePlan({
+        prompt,
+        projectId,
+        pageId: homePageId,
+        styleguideId,
       });
 
-      // Save generated components to the page
-      if (generatedResult?.components?.length && mountedRef.current) {
-        const treeData = {
-          root: { props: { title: "Home" } },
-          content: generatedResult.components,
-        };
-        await apiClient.savePage(projectId, homePageId, treeData);
+      if (!mountedRef.current || errorRef.current) return;
+      
+      if (!planRes.success || !planRes.data) {
+        throw new Error(planRes.error?.message || "Failed to generate layout plan");
       }
 
-      if (mountedRef.current && !errorRef.current) {
-        setCurrentPhase("done");
-        setTimeout(() => {
-          r.push(`/builder/${projectId}`);
-        }, 1500);
-      }
+      setCurrentPhase("done");
+      setTimeout(() => {
+        if (mountedRef.current) {
+          r.push(`/builder/${projectId}?pageId=${homePageId}`);
+        }
+      }, 500);
     } catch (err) {
       console.error("Finalize error:", err);
       setCurrentPhase("error");

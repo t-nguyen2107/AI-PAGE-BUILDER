@@ -112,6 +112,11 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ query }),
     }),
+  generatePlan: (data: { prompt: string; projectId: string; pageId: string; styleguideId?: string }) =>
+    request<{ components: any[]; treeData: any }>('/ai/plan', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   /**
    * Stream AI generation with real-time text feedback.

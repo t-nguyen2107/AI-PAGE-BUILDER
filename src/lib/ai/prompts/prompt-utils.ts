@@ -1,0 +1,168 @@
+/**
+ * Centralized utility functions for Prompt Engineering.
+ * Used to construct Design System markdown blocks consistently across
+ * all AI generation phases (planning, polishing, modifying).
+ */
+
+import type { DesignGuidance } from '../knowledge/design-knowledge';
+
+// ---------------------------------------------------------------------------
+// Interfaces
+// ---------------------------------------------------------------------------
+
+export interface ColorPalette {
+  primary?: string;
+  secondary?: string;
+  accent?: string;
+  background?: string;
+  surface?: string;
+  text?: string;
+  textMuted?: string;
+  border?: string;
+  error?: string;
+  success?: string;
+  warning?: string;
+  custom?: Record<string, string>;
+}
+
+export interface TypographySystem {
+  headingFont?: string;
+  bodyFont?: string;
+  monoFont?: string;
+  fontSizes?: Record<string, string>;
+  fontWeights?: Record<string, string>;
+  lineHeights?: Record<string, string>;
+  letterSpacings?: Record<string, string>;
+}
+
+export interface SpacingScale {
+  values?: Record<string, string>;
+}
+
+export interface MinimalStyleguideTokens {
+  colors?: string;       // JSON string → ColorPalette
+  typography?: string;   // JSON string → TypographySystem
+  spacing?: string;      // JSON string → SpacingScale
+  cssVariables?: string; // JSON string → Record<string, string>
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+export function safeParseJson<T>(json: string | undefined | null): T | null {
+  if (!json || typeof json !== 'string') return null;
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function deriveShadowToken(primaryHex?: string): string {
+  if (!primaryHex) return 'rgba(0,0,0,0.1)';
+  const hex = primaryHex.replace('#', '');
+  if (hex.length < 6) return 'rgba(0,0,0,0.1)';
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},0.15)`;
+}
+
+export function deriveGradientPair(colors: ColorPalette): { from: string; to: string } {
+  const from = colors.primary ?? '#3b82f6';
+  const to = colors.accent ?? colors.secondary ?? '#8b5cf6';
+  return { from, to };
+}
+
+// ---------------------------------------------------------------------------
+// Block Builders
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the Styleguide Tokens markdown block used for guiding the AI on
+ * exact hex values, font families, and spacing tokens to use.
+ */
+export function buildUnifiedDesignTokensBlock(
+  designGuidance?: DesignGuidance,
+  styleguideData?: MinimalStyleguideTokens,
+): string {
+  const blocks: string[] = [];
+
+  // ── Design Guidance (from local DB/Vector) ──
+  if (designGuidance) {
+    const { colorPalette: p, reasoning: r, typography: t } = designGuidance;
+    blocks.push(`### Design Direction
+- Style: ${r.stylePriority}
+- Colors: primary=${p.primary}, secondary=${p.secondary}, accent=${p.accent}, background=${p.background}, foreground=${p.foreground}, card=${p.card}, muted=${p.muted}, border=${p.border}
+- Typography: ${t.heading} (headings) + ${t.body} (body)
+- Effects: ${r.keyEffects}
+- Avoid: ${r.antiPatterns}`);
+  }
+
+  // ── Styleguide Colors ──
+  const colors = safeParseJson<ColorPalette>(styleguideData?.colors);
+  if (colors) {
+    const gradient = deriveGradientPair(colors);
+    const shadow = deriveShadowToken(colors.primary);
+    
+    blocks.push(`### Styleguide Colors (USE these exact values)
+  primary: ${colors.primary ?? '(not set)'} → CTAs, primary buttons, nav highlights
+  secondary: ${colors.secondary ?? '(not set)'} → Secondary buttons, supporting elements
+  accent: ${colors.accent ?? '(not set)'} → Badges, tags, icon accents
+  background: ${colors.background ?? '(not set)'} → Page background
+  surface: ${colors.surface ?? '(not set)'} → Card backgrounds, elevated panels
+  text: ${colors.text ?? '(not set)'} → Body text, headings
+  textMuted: ${colors.textMuted ?? '(not set)'} → Subtle text, captions
+  border: ${colors.border ?? '(not set)'} → Dividers, card borders
+  gradient: ${gradient.from} → ${gradient.to} → (use in HeroSection gradientFrom/gradientTo)
+  shadow: ${shadow} (tinted box-shadow for cards)`);
+  }
+
+  // ── Styleguide Typography ──
+  const typography = safeParseJson<TypographySystem>(styleguideData?.typography);
+  if (typography) {
+    const typoLines: string[] = [
+      `  headingFont: ${typography.headingFont ?? 'Inter'} → all headings, hero text, section titles`,
+      `  bodyFont: ${typography.bodyFont ?? 'Inter'} → body text, descriptions, labels`,
+    ];
+    if (typography.monoFont) typoLines.push(`  monoFont: ${typography.monoFont} → code blocks, numbers`);
+    if (typography.fontSizes) {
+      typoLines.push('  Font Sizes:');
+      for (const [k, v] of Object.entries(typography.fontSizes)) typoLines.push(`    ${k}: ${v}`);
+    }
+    blocks.push(`### Styleguide Typography\n${typoLines.join('\n')}`);
+  }
+
+  // ── Styleguide Spacing ──
+  const spacing = safeParseJson<SpacingScale>(styleguideData?.spacing);
+  if (spacing?.values && Object.keys(spacing.values).length > 0) {
+    const spacingLines = Object.entries(spacing.values)
+      .map(([k, v]) => `  ${k}: ${v}`)
+      .join('\n');
+    blocks.push(`### Spacing Scale\n${spacingLines}`);
+  }
+
+  // ── CSS Custom Properties ──
+  const cssVars = safeParseJson<Record<string, string>>(styleguideData?.cssVariables);
+  if (cssVars && Object.keys(cssVars).length > 0) {
+    const varLines = Object.entries(cssVars)
+      .map(([k, v]) => `  ${k}: ${v}`)
+      .join('\n');
+    blocks.push(`### CSS Custom Properties\n${varLines}`);
+  }
+
+  // ── Token Application Rules ──
+  if (colors || typography) {
+    blocks.push(`### Token Rules
+- Apply color values EXACTLY as specified — do NOT invent your own palette.
+- Use gradient tokens for HeroSection gradientFrom/gradientTo props.
+- Use surface color for card backgrounds, shadow token for elevated cards.
+- Use primary color for CTA buttons and highlighted elements.
+- Use accent color for badges, tags, and secondary highlights.
+- Typography: headingFont for all section headings and hero text; bodyFont for descriptions and labels.
+- Alternate section backgrounds: background → surface → dark → gradient.`);
+  }
+
+  return blocks.length > 0 ? blocks.join('\n\n') : '';
+}

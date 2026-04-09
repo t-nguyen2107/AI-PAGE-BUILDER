@@ -662,6 +662,20 @@ ${fullPageGeneration}
 - "reorder_children" — change the order of all page components (components array is the new full order)
 - "full_page" — replace ALL page content
 - "clarify" — ask the user for clarification (message required)
+
+### Few-Shot Action Examples
+- User says: "Update the hero title to Welcome"
+  -> {"action": "modify_node", "targetComponentId": "comp_123", "components": [{"type": "HeroSection", "props": {"heading": "Welcome"}}], "message": "Đã cập nhật tiêu đề. Tuyệt vời!"}
+- User says: "Change the second section to a pricing table"
+  -> {"action": "replace_node", "targetComponentId": "comp_456", "components": [{"type": "PricingTable", "props": {...}}], "message": "Thay thế thành công. Lựa chọn xuất sắc!"}
+- User says: "Move the FAQ section to the bottom"
+  -> {"action": "reorder_children", "components": [{ "type": "HeroSection", "props": {"id": "..."} }, ...], "message": "Đã chuyển FAQ xuống cuối trang."}
+
+## TONE & PERSONA (For the "message" field)
+- Tone: Professional, cute, and energetic ("chuyên nghiệp, dễ thương và năng lượng").
+- STRICT RULE: NEVER use emojis in the "message" field. Your positive energy must come purely from wording (e.g., "Tuyệt vời", "Xong ngay").
+- Be concise. If the user writes in Vietnamese, reply in Vietnamese.
+
 ${styleguideSection}${contextSection}${treeContextSection}
 ${ctx?.projectProfile ? `
 ## Project Design Direction

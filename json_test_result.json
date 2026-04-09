@@ -1,0 +1,303 @@
+{
+  "action": "full_page",
+  "components": [
+    {
+      "type": "HeaderNav",
+      "props": {
+        "id": "comp_nav_main",
+        "name": "header_nav",
+        "logo": "FitForge",
+        "links": [
+          {
+            "label": "Method",
+            "href": "#features"
+          },
+          {
+            "label": "Success Stories",
+            "href": "#testimonials"
+          },
+          {
+            "label": "Results",
+            "href": "#stats"
+          },
+          {
+            "label": "Programs",
+            "href": "#cta"
+          }
+        ],
+        "ctaText": "Start Your Transformation",
+        "ctaHref": "#cta",
+        "sticky": true,
+        "mobileMenu": true,
+        "transparent": false,
+        "showSearch": false
+      }
+    },
+    {
+      "type": "HeroSection",
+      "props": {
+        "id": "comp_hero_impact",
+        "name": "hero_main",
+        "heading": "Elite Fitness for the High-Performance Professional",
+        "subheading": "No fluff. No wasted time. Just science-backed, 30-minute protocols designed to fit the schedule of a modern executive.",
+        "primaryCtaText": "Get Your Custom Plan",
+        "primaryCtaHref": "#cta",
+        "secondaryCtaText": "View Results",
+        "secondaryCtaHref": "#stats",
+        "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop",
+        "gradientFrom": "#F97316",
+        "gradientTo": "#22C55E",
+        "animation": "stagger",
+        "trustBadges": [
+          "Certified Performance Coaches",
+          "500+ Professionals Transformed",
+          "Flexible Scheduling"
+        ],
+        "subtext": "Build something amazing with our platform.",
+        "ctaText": "Get Started",
+        "ctaHref": "#",
+        "align": "center",
+        "layout": "centered",
+        "backgroundOverlay": false,
+        "padding": "96px"
+      }
+    },
+    {
+      "type": "LogoGrid",
+      "props": {
+        "id": "comp_logos_trust",
+        "name": "social_proof_logos",
+        "title": "As Featured In",
+        "logos": [
+          {
+            "src": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Forbes_logo.svg",
+            "alt": "Forbes"
+          },
+          {
+            "src": "https://upload.wikimedia.org/wikipedia/commons/0/02/Health_Magazine_Logo.svg",
+            "alt": "Health"
+          },
+          {
+            "src": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
+            "alt": "Google"
+          },
+          {
+            "src": "https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg",
+            "alt": "IBM"
+          }
+        ],
+        "heading": "Trusted By",
+        "variant": "grid",
+        "grayscale": true,
+        "tooltip": false,
+        "animation": "none"
+      }
+    },
+    {
+      "type": "SectionBlock",
+      "props": {
+        "id": "comp_section_features",
+        "background": "dark",
+        "padding": "lg",
+        "paddingY": "64px",
+        "paddingX": "24px",
+        "maxWidth": "1280px",
+        "bgColor": "",
+        "bgImageUrl": "",
+        "bgOverlay": false,
+        "name": "section_4"
+      }
+    },
+    {
+      "type": "FeaturesGrid",
+      "props": {
+        "id": "comp_features_pillars",
+        "name": "features_grid",
+        "title": "Engineered for Efficiency",
+        "subtitle": "Stop guessing. Start training with a system that respects your time and maximizes your output.",
+        "features": [
+          {
+            "title": "30-Min High Impact",
+            "description": "Scientific protocols designed to trigger maximum metabolic response in minimum time.",
+            "icon": "Zap"
+          },
+          {
+            "title": "Executive Nutrition",
+            "description": "Meal strategies that fuel your brain and body without requiring hours of prep.",
+            "icon": "Coffee"
+          },
+          {
+            "title": "Anywhere Access",
+            "description": "Train in your hotel, home gym, or office with our mobile-first coaching platform.",
+            "icon": "Smartphone"
+          },
+          {
+            "title": "Data-Driven Progress",
+            "description": "We track your metrics to pivot your plan exactly when your body plateaus.",
+            "icon": "BarChart"
+          }
+        ],
+        "cardStyle": "elevated",
+        "hoverEffect": "lift",
+        "animation": "stagger-fade",
+        "columns": 2,
+        "heading": "Our Features",
+        "variant": "grid"
+      }
+    },
+    {
+      "type": "StatsSection",
+      "props": {
+        "id": "comp_stats_proof",
+        "name": "stats_results",
+        "stats": [
+          {
+            "label": "Avg. Body Fat Loss",
+            "value": "12",
+            "suffix": "%"
+          },
+          {
+            "label": "Hours Saved Weekly",
+            "value": "5",
+            "suffix": "+"
+          },
+          {
+            "label": "Energy Increase",
+            "value": "40",
+            "suffix": "%"
+          },
+          {
+            "label": "Success Rate",
+            "value": "98",
+            "suffix": "%"
+          }
+        ],
+        "animated": true,
+        "bgColor": "#1F2937",
+        "textColor": "#F8FAFC",
+        "heading": "Stats",
+        "columns": 4,
+        "duration": 2000,
+        "animation": "none"
+      }
+    },
+    {
+      "type": "TestimonialSection",
+      "props": {
+        "id": "comp_testimonials_pros",
+        "name": "testimonials",
+        "title": "Built by Professionals, For Professionals",
+        "variant": "carousel",
+        "testimonials": [
+          {
+            "quote": "FitForge changed the game for me. I finally have a routine that fits between my morning board meetings and evening client dinners.",
+            "author": "David Chen",
+            "role": "SVP of Operations",
+            "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop"
+          },
+          {
+            "quote": "The focus on efficiency is what sold me. I'm in better shape at 42 than I was at 25, all while working 60-hour weeks.",
+            "author": "Sarah Jenkins",
+            "role": "Tech Founder",
+            "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop"
+          },
+          {
+            "quote": "No more wasted hours in the gym. The data-driven approach is exactly how I run my business, and now it's how I run my health.",
+            "author": "Marcus Thorne",
+            "role": "Management Consultant",
+            "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
+          }
+        ],
+        "heading": "Testimonials",
+        "autoplay": false,
+        "interval": 5000,
+        "animation": "none"
+      }
+    },
+    {
+      "type": "CTASection",
+      "props": {
+        "id": "comp_cta_final",
+        "name": "cta_join",
+        "heading": "Ready to Reclaim Your Peak Performance?",
+        "subheading": "Join the elite group of professionals who refuse to settle for average health. Limited coaching spots available for next month.",
+        "ctaText": "Claim Your Strategy Session",
+        "ctaHref": "#",
+        "variant": "gradient",
+        "gradientFrom": "#F97316",
+        "gradientTo": "#22C55E",
+        "animation": "fade-up",
+        "layout": "centered",
+        "imagePosition": "right"
+      }
+    },
+    {
+      "type": "FooterSection",
+      "props": {
+        "id": "comp_footer_main",
+        "name": "footer",
+        "logo": "FitForge",
+        "description": "Precision fitness engineering for the modern high-performer.",
+        "linkGroups": [
+          {
+            "title": "Programs",
+            "links": [
+              {
+                "label": "Executive 1-on-1",
+                "href": "#"
+              },
+              {
+                "label": "Hybrid Coaching",
+                "href": "#"
+              },
+              {
+                "label": "Corporate Wellness",
+                "href": "#"
+              }
+            ]
+          },
+          {
+            "title": "Company",
+            "links": [
+              {
+                "label": "Our Method",
+                "href": "#"
+              },
+              {
+                "label": "Coaches",
+                "href": "#"
+              },
+              {
+                "label": "Success Stories",
+                "href": "#"
+              }
+            ]
+          },
+          {
+            "title": "Resources",
+            "links": [
+              {
+                "label": "The Forge Blog",
+                "href": "#"
+              },
+              {
+                "label": "Nutrition Guide",
+                "href": "#"
+              },
+              {
+                "label": "Support",
+                "href": "#"
+              }
+            ]
+          }
+        ],
+        "copyright": "© 2024 FitForge Performance. All rights reserved.",
+        "socialLinks": [],
+        "backToTop": false,
+        "newsletterIntegration": false,
+        "showCopyright": true
+      }
+    }
+  ],
+  "message": "Enhanced FitForge with a high-impact dark theme, neon-accented gradients, and improved visual hierarchy designed for busy professionals."
+}

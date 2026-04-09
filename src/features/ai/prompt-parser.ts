@@ -15,6 +15,13 @@ const ACTION_KEYWORDS: Record<string, AIAction[]> = {
   update: [AIAction.MODIFY_NODE],
   edit: [AIAction.MODIFY_NODE],
   style: [AIAction.MODIFY_NODE],
+  improve: [AIAction.MODIFY_NODE],
+  enhance: [AIAction.MODIFY_NODE],
+  better: [AIAction.MODIFY_NODE],
+  fix: [AIAction.MODIFY_NODE],
+  'đẹp hơn': [AIAction.MODIFY_NODE],
+  'tối ưu': [AIAction.MODIFY_NODE],
+
   delete: [AIAction.DELETE_NODE],
   remove: [AIAction.DELETE_NODE],
   replace: [AIAction.REPLACE_NODE],

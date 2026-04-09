@@ -9,8 +9,8 @@ import { AIAction } from "@/types/enums";
 import { generateId } from "@/lib/id";
 import { AIProfileSummary } from "./components/AIProfileSummary";
 import { AIProfileEditor } from "./components/AIProfileEditor";
-
-// ─── Typed Puck selector (module-level to avoid re-creating per render) ──
+import { useAutoPolish } from "../hooks/useAutoPolish";
+import type { ComponentData } from "@puckeditor/core";
 const usePuckSelector = createUsePuck();
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -28,6 +28,7 @@ interface AIChatPanelProps {
   projectId: string;
   pageId: string;
   styleguideId?: string;
+  generationStatus?: string | null;
 }
 
 // ─── Slash commands ─────────────────────────────────────────────────────
@@ -200,7 +201,7 @@ function liveRenderToPuck(
 
 // ─── AIChatPanel Component ─────────────────────────────────────────────
 
-export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProps) {
+export function AIChatPanel({ projectId, pageId, styleguideId, generationStatus }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -219,6 +220,45 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
   const componentCount = usePuckSelector(
     (s) => (s.appState?.data as Data | undefined)?.content?.length ?? 0,
   );
+
+  // Auto-polish phase
+  const { isPolishing, progressLabel: polishProgressLabel } = useAutoPolish({
+    projectId,
+    pageId,
+    generationStatus,
+    onComponentStream: (component, index, total, replacesSkelId) => {
+      // In polish mode, we replace components one by one or insert.
+      // Usually, AI returns targetComponentId so we can construct a REPLACE_NODE action
+      // Currently, streaming doesn't support targetComponentId on the fly nicely without wrapping it
+      // Let's just pass it to liveRenderToPuck as REPLACE_NODE if replacesSkelId is set, else append
+      if (replacesSkelId) {
+        liveRenderTimersRef.current.push(...liveRenderToPuck({
+          action: AIAction.REPLACE_NODE,
+          targetComponentId: replacesSkelId,
+          components: [component],
+        }, dispatch, () => {}));
+      } else {
+        lastPromptRef.current = "Auto polish"; // Hack to keep UI clean
+        progressiveComponentsRef.current.push(component);
+        
+        // Build mock response for applyResponseToPuck
+        dispatch({
+          type: "setData",
+          data: (prev: Data) => {
+            const content = [...(prev.content || [])];
+            content.push(component);
+            return { ...prev, content };
+          }
+        });
+      }
+    },
+    onComplete: () => {
+      // Done polishing
+    },
+    onError: (err) => {
+      // Handle error
+    }
+  });
 
   // Auto-scroll
   useEffect(() => {
@@ -685,15 +725,15 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              loading
-                ? "Generating..."
-                : "Describe what you want to build..."
-            }
-            rows={1}
-            className="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-2 resize-none max-h-[120px] min-h-[36px] leading-relaxed placeholder:text-on-surface-outline outline-none"
-            disabled={loading}
+            disabled={loading || isPolishing}
+            placeholder={isPolishing ? "AI is polishing..." : "Ask AI to generate or modify the page..."}
+            className="resize-none border-0 bg-transparent ring-0 focus:ring-0 text-sm py-3 px-0 placeholder:text-on-surface-variant max-h-32 min-h-12 disabled:opacity-50 w-full outline-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           />
           {loading ? (
             <button
@@ -706,9 +746,10 @@ export function AIChatPanel({ projectId, pageId, styleguideId }: AIChatPanelProp
             </button>
           ) : (
             <button
+              type="button"
               onClick={() => handleSend()}
-              disabled={!input.trim()}
-              className="w-10 h-10 flex items-center justify-center bg-primary text-on-primary rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-30 shrink-0"
+              disabled={!input.trim() || loading || isPolishing}
+              className="p-2 mb-1 flex items-center justify-center rounded-lg bg-primary text-on-primary hover:bg-primary-hover disabled:opacity-50 transition-colors shrink-0 outline-none"
             >
               <span className="material-symbols-outlined text-[18px]">
                 arrow_upward

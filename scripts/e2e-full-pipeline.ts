@@ -166,7 +166,7 @@ async function phase1Wizard() {
     costUsd: 0, details: `projectId: ${finalizeData.projectId?.slice(0, 8)}...`,
   });
 
-  // Step 4: Generate Homepage
+  // Step 4: Plan Phase (Fast Model Skeleton)
   const homepagePrompt = `Create a complete homepage for "${projectInfo.name}".
 Business: ${projectInfo.idea}
 Target audience: ${projectInfo.targetAudience}
@@ -175,6 +175,26 @@ Tone: ${projectInfo.tone}
 
 Generate a professional landing page with all essential sections including header, hero, features, and footer.`;
 
+  const { data: planData, durationMs: planMs } = await postJSON<{
+    components: unknown[]; treeData: unknown;
+  }>(`${BASE_URL}/api/ai/plan`, {
+    prompt: homepagePrompt,
+    projectId: finalizeData.projectId,
+    pageId: finalizeData.homePageId,
+    styleguideId: finalizeData.styleguideId,
+  });
+
+  const planTokensIn = estimateTokens(homepagePrompt + 'template_prompt ~10KB');
+  const planTokensOut = estimateTokens(JSON.stringify(planData));
+
+  log({
+    phase: 'Wizard', step: 'AI Plan (Fast Model)', durationMs: planMs, 
+    tokensIn: planTokensIn, tokensOut: planTokensOut,
+    costUsd: calcCost(planTokensIn, planTokensOut), // Flash Lite
+    details: `${planData?.components?.length ?? 0} skeleton components`,
+  });
+
+  // Step 5: Auto-Polish Phase (Main Model Stream)
   const { events: genEvents, durationMs: genMs, rawText: genRaw } = await readSSE(
     `${BASE_URL}/api/ai/generate/stream`,
     {
@@ -182,19 +202,23 @@ Generate a professional landing page with all essential sections including heade
       projectId: finalizeData.projectId,
       pageId: finalizeData.homePageId,
       styleguideId: finalizeData.styleguideId,
+      isAutoPolish: true,
+      treeDataRaw: planData?.treeData,
     },
   );
 
   const doneGen = genEvents.find((e) => e.type === 'done');
   const genResult = doneGen?.result as { components?: unknown[]; message?: string } | undefined;
   const compCount = genResult?.components?.length ?? 0;
-  const tokensIn = estimateTokens(homepagePrompt + 'template_prompt ~10KB');
+  
+  // Since polishing is per-section, input tokens is relatively higher (prompt per component)
+  const tokensIn = estimateTokens(homepagePrompt + 'section_prompt ~5KB') * compCount;
   const tokensOut = estimateTokens(genRaw);
 
   log({
-    phase: 'Wizard', step: 'Homepage Generation', durationMs: genMs, tokensIn, tokensOut,
-    costUsd: calcCost(tokensIn, tokensOut),
-    details: `${compCount} components: ${(genResult?.components as Array<{ type: string }>)?.map((c) => c.type).join(', ')}`,
+    phase: 'Wizard', step: 'Auto-Polish Stream', durationMs: genMs, tokensIn, tokensOut,
+    costUsd: calcCost(tokensIn, tokensOut, 'gemini-2.5-flash-preview-05-20'),
+    details: `${compCount} components styled: ${(genResult?.components as Array<{ type: string }>)?.map((c) => c.type).join(', ')}`,
   });
 
   return {

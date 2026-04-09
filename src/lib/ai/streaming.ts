@@ -4,8 +4,10 @@ import { buildChainPrompt } from './prompts/system-prompt';
 import { buildTemplatePrompt } from './prompts/template-prompt';
 import { buildSectionPrompt } from './prompts/section-prompt';
 import { validateOutput } from './output';
+import { applyComponentDefaults } from './defaults-engine';
 import { validateTemplateResponse, validateSingleComponent } from './prompts/template-schema';
 import { sanitizeAIResponse } from './output-sanitizer';
+import { polishSections } from './section-polisher';
 import { convertAIResponseNodes, orderPuckComponents } from './puck-adapter';
 import { generateId } from '@/lib/id';
 import type { AIGenerationResponse } from '@/types/ai';
@@ -418,82 +420,33 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
         send({ type: 'status', step: 'generating', label: `Generating ${plan.components.length} sections...` });
 
         // ── PASS 2: Parallel per-section generation ──
-        const sectionResults = await Promise.allSettled(
-          plan.components.map(async (comp, index) => {
-            const catalogEntry = COMPONENT_CATALOG[comp.type];
-            if (!catalogEntry) {
-              // Unknown type — use pass 1 props as-is
-              return { type: comp.type, props: comp.props };
-            }
-
-            const sectionPrompt = buildSectionPrompt(comp.type, catalogEntry, {
-              userPrompt: input,
-              businessType: options.businessType ?? 'general',
-              designGuidance: options.designGuidance,
-              styleguideData: options.styleguideData,
-              designContext: options.designContext,
-              position: { index, total: plan.components.length },
-            });
-
-            const { model: sectionModel, jsonCallOptions: sectionOpts } = createModelBundle({ maxTokens: 4096 });
-            const sectionMessages = await sectionPrompt.formatMessages({ input });
-            const { response_format: _rf2, ...sectionInvokeOpts } = sectionOpts;
-            // Propagate parent signal (client disconnect) + per-section timeout
-            const sectionSignal = options.signal
-              ? AbortSignal.any([options.signal, AbortSignal.timeout(60_000)])
-              : AbortSignal.timeout(60_000);
-            const sectionResponse = await sectionModel.invoke(sectionMessages, {
-              ...sectionInvokeOpts,
-              signal: sectionSignal,
-            });
-
-            const sectionText = typeof sectionResponse.content === 'string'
-              ? sectionResponse.content
-              : Array.isArray(sectionResponse.content)
-                ? sectionResponse.content
-                    .filter((c: unknown): c is { type: string; text: string } =>
-                      typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
-                    .map((c) => c.text)
-                    .join('')
-                : '';
-
-            const sectionParsed = extractJSON(sectionText);
-            if (sectionParsed) {
-              const { data: validated } = validateSingleComponent(sectionParsed);
-              if (validated) {
-                return {
-                  type: comp.type,
-                  props: { ...comp.props, ...validated.props },
-                };
-              }
-            }
-
-            // Fallback: use pass 1 props
-            return { type: comp.type, props: comp.props };
-          }),
+        const sectionResults = await polishSections(
+          plan.components,
+          {
+            userPrompt: input,
+            businessType: options.businessType ?? 'general',
+            designGuidance: options.designGuidance,
+            styleguideData: options.styleguideData,
+            designContext: options.designContext,
+            isMakeup: false,
+            signal: options.signal,
+            timeoutMs: 60_000,
+          }
         );
 
         // ── Assemble final components ──
-        const components: ComponentData[] = sectionResults.map((result, i) => {
-          const fallback = plan.components[i];
-          if (result.status === 'fulfilled' && result.value) {
-            return {
-              type: result.value.type,
-              props: { id: generateId(), ...result.value.props },
-            };
-          }
-          // Log rejection for debugging
-          if (result.status === 'rejected') {
-            console.warn(`[two-pass] Section ${i} (${fallback.type}) failed:`, result.reason);
-          }
-          // Fallback to pass 1 data
-          return {
-            type: fallback.type,
-            props: { id: generateId(), ...fallback.props },
-          };
+        const components: ComponentData[] = sectionResults.map((result) => ({
+          type: result.type,
+          props: { id: generateId(), ...result.props },
+        }));
+
+        // Apply defaults engine — guarantees animations, gradients, images
+        const polished = applyComponentDefaults(components, {
+          businessType: options.businessType,
+          designGuidance: options.designGuidance,
         });
 
-        const ordered = orderPuckComponents(components);
+        const ordered = orderPuckComponents(polished);
 
         // Progressive: emit each component
         emitComponentStream(send, ordered);
@@ -647,84 +600,36 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
         // ── PHASE 2: Parallel Per-Section Makeup ──
         send({ type: 'status', step: 'generating', label: `Polishing ${plan.components.length} sections...` });
 
-        const sectionResults = await Promise.allSettled(
-          plan.components.map(async (comp, index) => {
-            const catalogEntry = COMPONENT_CATALOG[comp.type];
-            if (!catalogEntry) {
-              // Unknown type — use plan props as-is
-              return { type: comp.type, props: comp.props };
-            }
-
-            const sectionPrompt = buildSectionPrompt(comp.type, catalogEntry, {
-              userPrompt: input,
-              businessType: options.businessType ?? 'general',
-              designGuidance: options.designGuidance,
-              styleguideData: options.styleguideData,
-              designContext: options.designContext,
-              position: { index, total: plan.components.length },
-              isMakeup: true,
-            });
-
-            const { model: sectionModel, jsonCallOptions: sectionOpts } = createModelBundle({ maxTokens: 4096 });
-            const sectionMessages = await sectionPrompt.formatMessages({ input });
-            const { response_format: _rf2, ...sectionInvokeOpts } = sectionOpts;
-            // Propagate parent signal (client disconnect) + per-section timeout
-            const sectionSignal = options.signal
-              ? AbortSignal.any([options.signal, AbortSignal.timeout(60_000)])
-              : AbortSignal.timeout(60_000);
-            const sectionResponse = await sectionModel.invoke(sectionMessages, {
-              ...sectionInvokeOpts,
-              signal: sectionSignal,
-            });
-
-            const sectionText = typeof sectionResponse.content === 'string'
-              ? sectionResponse.content
-              : Array.isArray(sectionResponse.content)
-                ? sectionResponse.content
-                    .filter((c: unknown): c is { type: string; text: string } =>
-                      typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
-                    .map((c) => c.text)
-                    .join('')
-                : '';
-
-            const sectionParsed = extractJSON(sectionText);
-            if (sectionParsed) {
-              const { data: validated } = validateSingleComponent(sectionParsed);
-              if (validated) {
-                return {
-                  type: comp.type,
-                  props: { ...comp.props, ...validated.props },
-                };
-              }
-            }
-
-            // Fallback: use plan props
-            return { type: comp.type, props: comp.props };
-          }),
+        const sectionResults = await polishSections(
+          plan.components,
+          {
+            userPrompt: input,
+            businessType: options.businessType ?? 'general',
+            designGuidance: options.designGuidance,
+            styleguideData: options.styleguideData,
+            designContext: options.designContext,
+            isMakeup: true, // triggers makeup rules
+            signal: options.signal,
+            timeoutMs: 60_000,
+          }
         );
 
         // ── Assemble final components ──
         const components: ComponentData[] = sectionResults.map((result, i) => {
-          const fallback = plan.components[i];
           const skelId = skeletonIds[i];
-          if (result.status === 'fulfilled' && result.value) {
-            return {
-              type: result.value.type,
-              props: { id: skelId, ...result.value.props },
-            };
-          }
-          // Log rejection for debugging
-          if (result.status === 'rejected') {
-            console.warn(`[makeup] Section ${i} (${fallback.type}) failed:`, result.reason);
-          }
-          // Fallback to plan data
           return {
-            type: fallback.type,
-            props: { id: skelId, ...fallback.props },
+            type: result.type,
+            props: { id: skelId, ...result.props },
           };
         });
 
-        const ordered = orderPuckComponents(components);
+        // Apply defaults engine — guarantees animations, gradients, images
+        const polished = applyComponentDefaults(components, {
+          businessType: options.businessType,
+          designGuidance: options.designGuidance,
+        });
+
+        const ordered = orderPuckComponents(polished);
 
         // Build skeletonIds for ordered components (id was set before ordering)
         const orderedSkeletonIds = ordered.map((c) => {

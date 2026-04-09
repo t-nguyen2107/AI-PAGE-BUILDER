@@ -6,7 +6,6 @@ import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
 import * as aiMemory from '@/lib/ai/memory';
 import { getProjectProfileText } from '@/lib/ai/memory-manager';
 import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
-import { searchDesignKnowledge } from '@/lib/ai/knowledge/knowledge-search';
 import { parsePrompt } from '@/features/ai/prompt-parser';
 import { generatePuckComponent } from '@/features/ai/component-generator';
 import { prisma } from '@/lib/prisma';
@@ -23,11 +22,13 @@ export async function POST(request: NextRequest) {
     projectId,
     pageId,
     styleguideId,
+    isAutoPolish,
   } = body as {
     prompt: string;
     projectId: string;
     pageId: string;
     styleguideId?: string;
+    isAutoPolish?: boolean;
   };
 
   if (!prompt || !projectId || !pageId) {
@@ -80,6 +81,16 @@ export async function POST(request: NextRequest) {
             if (page?.treeData) {
               treeSummary = buildTreeSummary(page.treeData);
               treeDataRaw = page.treeData;
+              
+              const pageAny = page as any;
+              // Update generationStatus to 'polishing' if this is an auto-polish request
+              if (isAutoPolish && pageAny.generationStatus === 'pending') {
+                // Cast to any to bypass Prisma type cache issues in the AI generated environment
+                await (prisma.page.update as any)({
+                  where: { id: pageId },
+                  data: { generationStatus: 'polishing' }
+                });
+              }
             }
           })(),
           (async () => {
@@ -142,44 +153,54 @@ export async function POST(request: NextRequest) {
 
         // STEP 2: Optimize prompt
         send({ type: 'status', step: 'optimizing', label: 'Optimizing prompt...' });
-        const { enrichedPrompt, intent, businessType, designContext, designGuidance } = optimizePrompt(prompt);
-
-        // Select component catalog tiers based on intent + business type
-        const componentTiers = selectRelevantComponents(intent, businessType, treeSummary);
-
-        // Route: create_page → makeup mode (structure + parallel polish), everything else → full AI mode
-        const useMakeupMode = intent === 'create_page';
-
-        // STEP 2b: RAG — vector knowledge lookup (non-fatal)
-        let ragContext = '';
-        try {
-          const ragResult = await searchDesignKnowledge({ query: prompt, businessType: businessType ?? undefined });
-          ragContext = ragResult.contextText;
-        } catch (e) {
-          console.warn('[ai-stream] RAG lookup failed (non-fatal):', e);
+        
+        let enrichedPrompt = prompt;
+        // The Intent type was previously used from @/features/ai/prompt-parser, let's use string to avoid issues
+        let intent = 'unknown';
+        let businessType: string | null = null;
+        let designContext: string | null = null;
+        let designGuidance: any = null;
+        
+        if (isAutoPolish) {
+          // Auto polish does not need prompt optimization, we just want to polish the skeletons
+          intent = 'modify';
+        } else {
+          const opt = optimizePrompt(prompt);
+          enrichedPrompt = opt.enrichedPrompt;
+          intent = opt.intent;
+          businessType = opt.businessType;
+          designContext = opt.designContext;
+          designGuidance = opt.designGuidance;
         }
 
-        // Format design guidance + merge with RAG knowledge
-        const mergedDesignContext = [designContext, ragContext].filter(Boolean).join('\n') || undefined;
+        // Select component catalog tiers based on intent + business type
+        const componentTiers = selectRelevantComponents(intent as any, businessType, treeSummary);
 
-        // STEP 3-6: Create AI stream
-        let aiStream: ReadableStream<Uint8Array>;
-        try {
-          if (useMakeupMode) {
-            // Makeup mode: structure resolver + parallel per-section polish
-            // Validate treeDataRaw has expected structure before passing
-            const validTreeData = treeDataRaw && typeof treeDataRaw === 'object' && 'content' in (treeDataRaw as Record<string, unknown>)
-              ? treeDataRaw
-              : undefined;
-            aiStream = createMakeupStream(enrichedPrompt, {
-              styleguideData,
-              businessType: businessType ?? undefined,
-              designContext: mergedDesignContext,
-              designGuidance: designGuidance ?? undefined,
-              signal: request.signal,
-              existingTreeData: validTreeData,
-              intent,
-            });
+        // Route: create_page OR isAutoPolish → makeup mode (structure + parallel polish), everything else → full AI mode
+        const useMakeupMode = intent === 'create_page' || isAutoPolish;
+
+          // Since Static KB already covers design knowledge (0 API cost), we skip redundant RAG lookup.
+          const mergedDesignContext = designContext || undefined;
+
+          // STEP 3-6: Create AI stream
+          let aiStream: ReadableStream<Uint8Array>;
+          try {
+            if (useMakeupMode) {
+              // Makeup mode: structure resolver + parallel per-section polish
+              // Validate treeDataRaw has expected structure before passing
+              const validTreeData = treeDataRaw && typeof treeDataRaw === 'object' && 'content' in (treeDataRaw as Record<string, unknown>)
+                ? treeDataRaw
+                : undefined;
+                
+              aiStream = createMakeupStream(enrichedPrompt, {
+                styleguideData,
+                businessType: businessType ?? undefined,
+                designContext: mergedDesignContext,
+                designGuidance: designGuidance ?? undefined,
+                signal: request.signal,
+                existingTreeData: validTreeData,
+                intent: isAutoPolish ? 'modify' : intent,
+              });
           } else {
             // Full mode: single AI call with conversation history
             aiStream = createAIStream(enrichedPrompt, {

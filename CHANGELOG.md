@@ -2,6 +2,19 @@
 
 All notable changes to LoomWeave AI Page Builder.
 
+## [2026-04-09] — AI Prompt Engineering & Persona Optimization
+
+### Added
+- **Centralized Prompt Engineering Utility** — Extracted formatting logic into `src/lib/ai/prompts/prompt-utils.ts` to DRY up the codebase.
+- **Few-Shot Prompting for Action Routing** — Added specific JSON examples in `system-prompt.ts` (`modify_node`, `replace_node`, `reorder_children`) to prevent unnecessary full-page regenerations on minor user requests.
+
+### Changed
+- **Skeletonized Phase 1 Planning** — `template-prompt.ts` now only generates a highly constrained structural skeleton (`type`, `name`, `id`), drastically chopping down input/output tokens sizes.
+- **Persona & Tone Enforcements** — Formally integrated the "Professional, Cute, and Energetic" ("chuyên nghiệp, dễ thương và năng lượng") brand voice across `winnie-system-prompt.ts` and `system-prompt.ts`.
+- **Strict Emoji Prohibition** — Specifically mandated the AI to never use emojis in its conversational responses.
+
+---
+
 ## [2026-04-06] — Gemini Integration + Branding Polish
 
 ### Added

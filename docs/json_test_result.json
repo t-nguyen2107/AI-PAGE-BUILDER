@@ -1,0 +1,194 @@
+{
+  "action": "full_page",
+  "components": [
+    {
+      "type": "AnnouncementBar",
+      "props": {
+        "id": "skel_B29PJhOq6yjTRvHGSgvJa",
+        "message": "Chào mừng bạn đến với Bella Rosa! Giảm ngay 10% cho đặt bàn trước.",
+        "ctaText": "Đặt bàn ngay",
+        "ctaHref": "#contact",
+        "variant": "gradient"
+      }
+    },
+    {
+      "type": "HeaderNav",
+      "props": {
+        "id": "skel_dJb8tcT5G_MF9PygLTgVX",
+        "logo": "Bella Rosa",
+        "links": [
+          {
+            "label": "Menu",
+            "href": "#menu"
+          },
+          {
+            "label": "About",
+            "href": "#about"
+          },
+          {
+            "label": "Gallery",
+            "href": "#gallery"
+          },
+          {
+            "label": "Contact",
+            "href": "#contact"
+          }
+        ],
+        "ctaText": "Reserve a Table",
+        "ctaHref": "#contact",
+        "sticky": true
+      }
+    },
+    {
+      "type": "HeroSection",
+      "props": {
+        "id": "skel_aNTeFk4AF7ze8AQWyOOT6",
+        "heading": "Authentic Italian Flavors in the Heart of the City",
+        "subtext": "Experience the warmth of Italy with our hand-crafted pasta, wood-fired pizzas, and curated wine selection.",
+        "badge": "Now Open for Reservations",
+        "ctaText": "View Our Menu",
+        "ctaHref": "#menu",
+        "ctaSecondaryText": "Book a Table",
+        "ctaSecondaryHref": "#contact",
+        "align": "center",
+        "backgroundUrl": "/stock/food/meal-table.webp",
+        "backgroundOverlay": true,
+        "padding": "128px"
+      }
+    },
+    {
+      "type": "FeaturesGrid",
+      "props": {
+        "id": "skel_uDfbAenupSToP53uAIR7f",
+        "heading": "The Bella Rosa Experience",
+        "subtext": "We combine tradition with fresh, local ingredients to create unforgettable dining moments.",
+        "columns": 3,
+        "features": [
+          {
+            "title": "Hand-Crafted Pasta",
+            "description": "Our pasta is made fresh daily by our chefs, ensuring the perfect texture in every bite."
+          },
+          {
+            "title": "Wood-Fired Pizza",
+            "description": "Authentic Neapolitan-style pizzas baked to perfection in our traditional wood-fired oven."
+          },
+          {
+            "title": "Chef-Curated Wine List",
+            "description": "Explore our extensive collection of Italian wines, hand-picked to complement your meal."
+          }
+        ]
+      }
+    },
+    {
+      "type": "TestimonialSection",
+      "props": {
+        "id": "skel_Gh-Wy4eJRK4i78v_p3wLO",
+        "heading": "What Our Guests Say",
+        "testimonials": [
+          {
+            "quote": "The truffle risotto was the best I have had outside of Italy. Our anniversary dinner here was truly unforgettable.",
+            "author": "Michael Torres",
+            "role": "Food Critic, City Dining Guide",
+            "avatarUrl": "/stock/testimonials/avatar-1.webp"
+          },
+          {
+            "quote": "An incredible atmosphere paired with authentic flavors. It is my go-to spot for business dinners.",
+            "author": "Sarah Jenkins",
+            "role": "Local Entrepreneur",
+            "avatarUrl": "/stock/testimonials/avatar-2.webp"
+          },
+          {
+            "quote": "The staff made us feel so welcome. You can taste the passion in every single dish.",
+            "author": "David Nguyen",
+            "role": "Regular Patron",
+            "avatarUrl": "/stock/testimonials/avatar-3.webp"
+          }
+        ]
+      }
+    },
+    {
+      "type": "CTASection",
+      "props": {
+        "id": "skel_slWrwTjoly7MqfZwbzx84",
+        "heading": "Experience Fine Dining at Its Best",
+        "subtext": "Book your table today and enjoy a complimentary appetizer on your first visit.",
+        "ctaText": "Reserve a Table",
+        "ctaHref": "#contact"
+      }
+    },
+    {
+      "type": "ContactForm",
+      "props": {
+        "id": "skel_1A4dOTmZP3vYlRzGnZ4cm",
+        "heading": "Get in Touch",
+        "subtext": "We would love to host you. Fill out the details below to secure your reservation.",
+        "showPhone": true,
+        "showCompany": false,
+        "buttonText": "Confirm Reservation"
+      }
+    },
+    {
+      "type": "FooterSection",
+      "props": {
+        "id": "skel_hNxCmPRz2xZGsuFhRd3iG",
+        "logo": "Bella Rosa",
+        "description": "Bringing the heart and soul of Italian cuisine to your table with every dish we serve.",
+        "linkGroups": [
+          {
+            "title": "Menu",
+            "links": [
+              {
+                "label": "Lunch",
+                "href": "#"
+              },
+              {
+                "label": "Dinner",
+                "href": "#"
+              },
+              {
+                "label": "Wine List",
+                "href": "#"
+              }
+            ]
+          },
+          {
+            "title": "Visit Us",
+            "links": [
+              {
+                "label": "Reservations",
+                "href": "#contact"
+              },
+              {
+                "label": "Private Events",
+                "href": "#"
+              },
+              {
+                "label": "Gift Cards",
+                "href": "#"
+              }
+            ]
+          },
+          {
+            "title": "Connect",
+            "links": [
+              {
+                "label": "Contact Us",
+                "href": "#contact"
+              },
+              {
+                "label": "Careers",
+                "href": "#"
+              },
+              {
+                "label": "Instagram",
+                "href": "#"
+              }
+            ]
+          }
+        ],
+        "copyright": "© 2026 Bella Rosa Italian Restaurant. All rights reserved."
+      }
+    }
+  ],
+  "message": "Generated page with 8 components"
+}

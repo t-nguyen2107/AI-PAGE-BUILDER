@@ -6,6 +6,7 @@ export interface AIGenerationRequest {
   projectId: string;
   pageId: string;
   styleguideId: string;
+  isAutoPolish?: boolean;
 }
 
 export interface AIGenerationResponse {

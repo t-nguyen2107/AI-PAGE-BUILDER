@@ -56,8 +56,9 @@ model Page {
   twitterCard    String?   @default("summary")
   twitterImage   String?
   structuredData String?   @default("{}")
-  isHomePage     Boolean  @default(false)
-  treeData       String   // JSON string — serialized PageNode tree
+  isHomePage       Boolean  @default(false)
+  generationStatus String?  @default(dbgenerated("NULL")) // null=normal, "pending"=skeleton, "polishing"=in-progress, "complete"=done
+  treeData         String   // JSON string — serialized PageNode tree
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

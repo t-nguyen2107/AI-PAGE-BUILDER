@@ -202,11 +202,11 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
 
   if (language === 'vi') {
     contextParts.push(
-      'User language: Vietnamese. Respond in Vietnamese for the "message" field, but use English for all content text, className values, and node data.',
+      'User language: Vietnamese. ALL visible content (headings, subtext, descriptions, button labels, quotes, FAQ answers, team roles, product descriptions) MUST be in Vietnamese. Use English ONLY for structural JSON keys (type, action, id, href, className, component type names).',
     );
   } else if (language === 'mixed') {
     contextParts.push(
-      'User language: Mixed Vietnamese/English. Respond in Vietnamese for the "message" field, but use English for all content text, className values, and node data.',
+      'User language: Mixed Vietnamese/English. ALL visible content (headings, subtext, descriptions, button labels, quotes, FAQ answers) MUST be in Vietnamese. Use English ONLY for structural JSON keys (type, action, id, href, className, component type names).',
     );
   }
 

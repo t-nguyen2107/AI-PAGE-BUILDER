@@ -41,6 +41,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const [isHomePage, setIsHomePage] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [styleguideId, setStyleguideId] = useState("");
   const [styleguideColors, setStyleguideColors] = useState<StyleguideColors | null>(null);
   const [previewData, setPreviewData] = useState<Data | null>(null);
