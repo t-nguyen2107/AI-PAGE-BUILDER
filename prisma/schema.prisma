@@ -57,7 +57,7 @@ model Page {
   twitterImage   String?
   structuredData String?   @default("{}")
   isHomePage       Boolean  @default(false)
-  generationStatus String?  @default(dbgenerated("NULL")) // null=normal, "pending"=skeleton, "polishing"=in-progress, "complete"=done
+  // generationStatus String?  // TODO: Add column first: ALTER TABLE pages ADD COLUMN "generationStatus" TEXT;
   treeData         String   // JSON string — serialized PageNode tree
 
   createdAt DateTime @default(now())

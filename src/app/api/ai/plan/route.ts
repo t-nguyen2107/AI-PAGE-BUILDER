@@ -100,12 +100,12 @@ export async function POST(request: NextRequest) {
     };
 
     // 5. Save to database with status="pending"
+    // TODO: Add generationStatus once DB column exists (ALTER TABLE pages ADD COLUMN "generationStatus" TEXT;)
     await prisma.page.update({
       where: { id: pageId },
       data: {
         treeData: JSON.stringify(treeData),
-        generationStatus: 'pending',
-      } as any,
+      },
     });
 
     return NextResponse.json({

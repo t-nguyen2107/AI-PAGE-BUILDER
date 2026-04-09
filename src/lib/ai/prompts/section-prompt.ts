@@ -85,8 +85,8 @@ export function buildSectionPrompt(
     LogoGrid: 'animation ("fade-up"), 5-6 logos',
     Banner: 'animation ("fade-up"), variant ("gradient")',
     AnnouncementBar: 'variant ("gradient"), ctaText',
-    HeaderNav: 'sticky (true), 4-5 links, ctaText',
-    FooterSection: '3-4 linkGroups, copyright with current year, description',
+    HeaderNav: 'sticky (true), 4-5 links, ctaText, animation ("fade-down")',
+    FooterSection: '3-4 linkGroups, copyright with current year, description, animation ("fade-up")',
   };
 
   const requiredPropsForType = REQUIRED_PROPS[sectionType] || '';
@@ -96,12 +96,12 @@ export function buildSectionPrompt(
 
 You are POLISHING this section — make it visually stunning. These rules are MANDATORY:
 
-1. **Animation**: You MUST set the "animation" prop. Use "fade-up" for hero/CTA/stats, "stagger" for grids/galleries/products, "stagger-fade" for testimonials/teams.
+1. **Animation**: You MUST set the "animation" prop on EVERY component. Use "fade-up" for hero/CTA/stats/footer, "fade-down" for HeaderNav, "stagger" for grids/galleries/products, "stagger-fade" for testimonials/teams.
 2. **Gradients**: You MUST use gradientFrom/gradientTo on HeroSection and CTASection with the exact color tokens from the palette below. NEVER use flat solid backgrounds for hero or CTA.
-3. **Images**: Fill ALL image props using EXACT paths from the stock library below. Do NOT invent filenames.
+3. **Images**: Fill ALL image props using EXACT paths from the stock library below. Do NOT invent filenames. IMPORTANT: Each section MUST use a DIFFERENT image — never reuse the same path across sections. Pick the most relevant category for each section type.
 4. **Text Polish**: Refine heading text to be compelling and specific to ${businessType}. Make descriptions vivid but concise (2-3 sentences max).
 5. **Visual Variety**: You MUST use variant props — TestimonialSection: variant "carousel", CTASection: variant "gradient", FeaturesGrid: cardStyle "elevated".
-6. **Hover Effects**: You MUST set hoverEffect "lift" on FeaturesGrid and ProductCards.
+6. **Hover Effects**: You MUST set hoverEffect "lift" on FeaturesGrid, ProductCards, and any card-based components.
 7. **Background Alternation**: This is section ${position.index + 1} of ${position.total}. ${position.index % 2 === 0 ? 'Use light or gradient background.' : 'Use muted or dark background for contrast.'}
 ` : '';
 

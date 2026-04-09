@@ -98,9 +98,9 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
   AnnouncementBar: {
     variant: 'gradient',
   },
-  // Structural components — no animation defaults
-  HeaderNav: { sticky: true },
-  FooterSection: {},
+  // Structural components
+  HeaderNav: { sticky: true, animation: 'fade-down' },
+  FooterSection: { animation: 'fade-up' },
   Spacer: {},
   TextBlock: {},
   ImageBlock: {},

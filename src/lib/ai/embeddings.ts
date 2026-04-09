@@ -35,7 +35,7 @@ function inferEmbeddingProvider(): EmbeddingConfig['provider'] {
 const DEFAULT_CONFIG: EmbeddingConfig = {
   provider: inferEmbeddingProvider(),
   model: process.env.EMBEDDING_MODEL ?? (isAiGemini ? 'text-embedding-004' : isAiOpenAi ? 'text-embedding-3-small' : 'nomic-embed-text'),
-  dimensions: parseInt(process.env.EMBEDDING_DIMENSIONS ?? (isAiGemini ? '3072' : isAiOpenAi ? '1536' : '768'), 10),
+  dimensions: parseInt(process.env.EMBEDDING_DIMENSIONS ?? '768', 10),
   baseUrl: process.env.EMBEDDING_BASE_URL ?? process.env.AI_BASE_URL ?? (isAiGemini ? 'https://generativelanguage.googleapis.com/v1beta' : 'http://localhost:11434'),
   apiKey: process.env.EMBEDDING_API_KEY ?? process.env.AI_API_KEY ?? undefined,
 };

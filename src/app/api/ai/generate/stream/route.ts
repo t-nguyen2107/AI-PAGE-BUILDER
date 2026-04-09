@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
-import { writeFileSync } from 'fs';
 import { createAIStream, createMakeupStream } from '@/lib/ai/streaming';
 import { optimizePrompt, selectRelevantComponents } from '@/lib/ai/prompts/prompt-optimizer';
 import { buildTreeSummary } from '@/lib/ai/prompts/system-prompt';
+import { searchDesignKnowledge } from '@/lib/ai/knowledge/knowledge-search';
 import * as aiMemory from '@/lib/ai/memory';
 import { getProjectProfileText } from '@/lib/ai/memory-manager';
 import { analyzeAndUpdateProfile } from '@/lib/ai/profile-updater';
@@ -82,15 +82,10 @@ export async function POST(request: NextRequest) {
               treeSummary = buildTreeSummary(page.treeData);
               treeDataRaw = page.treeData;
               
-              const pageAny = page as any;
-              // Update generationStatus to 'polishing' if this is an auto-polish request
-              if (isAutoPolish && pageAny.generationStatus === 'pending') {
-                // Cast to any to bypass Prisma type cache issues in the AI generated environment
-                await (prisma.page.update as any)({
-                  where: { id: pageId },
-                  data: { generationStatus: 'polishing' }
-                });
-              }
+              // TODO: Update generationStatus once DB column exists
+              // if (isAutoPolish && page.generationStatus === 'pending') {
+              //   await prisma.page.update({ where: { id: pageId }, data: { generationStatus: 'polishing' } });
+              // }
             }
           })(),
           (async () => {
@@ -179,8 +174,17 @@ export async function POST(request: NextRequest) {
         // Route: create_page OR isAutoPolish → makeup mode (structure + parallel polish), everything else → full AI mode
         const useMakeupMode = intent === 'create_page' || isAutoPolish;
 
-          // Since Static KB already covers design knowledge (0 API cost), we skip redundant RAG lookup.
-          const mergedDesignContext = designContext || undefined;
+          // RAG: vector knowledge lookup (non-fatal)
+          let ragContext = '';
+          try {
+            const ragResult = await searchDesignKnowledge({ query: prompt, businessType: businessType ?? undefined });
+            ragContext = ragResult.contextText;
+          } catch (e) {
+            console.warn('[ai-stream] RAG lookup failed (non-fatal):', e);
+          }
+
+          // Merge static design context with RAG knowledge
+          const mergedDesignContext = [designContext, ragContext].filter(Boolean).join('\n') || undefined;
 
           // STEP 3-6: Create AI stream
           let aiStream: ReadableStream<Uint8Array>;
@@ -307,13 +311,6 @@ export async function POST(request: NextRequest) {
               console.error('[ai-profile] Background analysis failed:', err);
             });
           }
-        }
-
-        // Debug: save finalResult JSON for review
-        if (finalResult) {
-          try {
-            writeFileSync('json_test_result.json', JSON.stringify(finalResult, null, 2));
-          } catch { /* non-fatal */ }
         }
 
         close();
