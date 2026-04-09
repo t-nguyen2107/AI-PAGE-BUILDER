@@ -111,7 +111,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
         send({ type: 'status', step: 'generating', label: isTemplateMode ? 'Selecting templates...' : 'Generating with AI...' });
 
         // Template mode generates a FULL page — use main model for quality.
-        // Fast model is too weak to follow detailed prompt instructions (recommendedDefaults, variantTips, color tokens).
+        // Fast model is too weak to follow detailed prompt instructions (recommendedDefaults, color tokens).
         const { model, jsonCallOptions } = createModelBundle({ maxTokens: 16384 });
 
         // Always apply timeout; combine with external signal if provided
@@ -621,7 +621,7 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
             isMakeup: true,
             signal: options.signal,
             timeoutMs: 180_000,
-            useFastModel: true,
+            useFastModel: false, // quality is important for makeup
           },
           // Progressive callback: emit each section as it completes
           (index: number, total: number, result) => {

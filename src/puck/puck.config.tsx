@@ -1141,7 +1141,7 @@ const ImageBlock: ComponentConfig<ImageBlockProps> = {
     },
   },
   defaultProps: {
-    src: "/stock/hero/gradient-purple.webp",
+    src: "https://picsum.photos/seed/hero-gradient-purple/1200/800",
     alt: "Image",
     width: "100%",
     borderRadius: "md",
@@ -1346,12 +1346,12 @@ const Gallery: ComponentConfig<GalleryProps> = {
     lightbox: false,
     hoverEffect: "none",
     images: [
-      { src: "/stock/features/analytics-dashboard.webp", alt: "Image 1" },
-      { src: "/stock/features/collaboration.webp", alt: "Image 2" },
-      { src: "/stock/features/data-charts.webp", alt: "Image 3" },
-      { src: "/stock/blog/writing.webp", alt: "Image 4" },
-      { src: "/stock/blog/notebook.webp", alt: "Image 5" },
-      { src: "/stock/blog/laptop-coffee.webp", alt: "Image 6" },
+      { src: "https://picsum.photos/seed/features-analytics/800/600", alt: "Image 1" },
+      { src: "https://picsum.photos/seed/features-collaboration/800/600", alt: "Image 2" },
+      { src: "https://picsum.photos/seed/features-data-charts/800/600", alt: "Image 3" },
+      { src: "https://picsum.photos/seed/blog-writing/800/500", alt: "Image 4" },
+      { src: "https://picsum.photos/seed/blog-notebook/800/500", alt: "Image 5" },
+      { src: "https://picsum.photos/seed/blog-laptop-coffee/800/500", alt: "Image 6" },
     ],
   },
   render: GalleryRender,
@@ -1640,7 +1640,7 @@ const FeatureShowcase: ComponentConfig<FeatureShowcaseProps> = {
   defaultProps: {
     heading: "Why Choose Us",
     subtext: "Discover what makes our platform stand out.",
-    imageUrl: "/stock/features/analytics-dashboard.webp",
+    imageUrl: "https://picsum.photos/seed/features-analytics/800/600",
     features: [
       { title: "Lightning Fast", description: "Optimized for speed with instant load times.", icon: "speed" },
       { title: "Secure by Default", description: "Enterprise-grade security built into every layer.", icon: "shield" },

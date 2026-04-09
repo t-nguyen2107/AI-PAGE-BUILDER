@@ -1,11 +1,56 @@
 /**
  * Stock Image Mapper — maps business types to relevant stock images.
  *
- * All images are WebP, served from `/stock/{path}`.
- * Reference: STOCK_IMAGES.md
+ * All images served via Picsum Photos (https://picsum.photos).
+ * Uses deterministic seeds so the same path always returns the same image.
+ * No API key required, unlimited requests, fast CDN.
  */
 
-// ─── Stock categories with all available images ───────────────────────────
+// ─── Picsum dimension presets per category ────────────────────────────────
+
+const CATEGORY_SIZES: Record<string, [number, number]> = {
+  hero:         [1200, 800],
+  team:         [200, 200],
+  testimonials: [100, 100],
+  features:     [800, 600],
+  cta:          [1200, 400],
+  blog:         [800, 500],
+  food:         [800, 600],
+  drink:        [600, 600],
+  family:       [800, 600],
+  travel:       [1200, 800],
+  people:       [600, 400],
+  children:     [600, 400],
+  nature:       [1200, 800],
+  fitness:      [800, 600],
+  pets:         [600, 400],
+  education:    [800, 600],
+  medical:      [800, 600],
+  realestate:   [1200, 800],
+  fashion:      [600, 800],
+  lifestyle:    [800, 600],
+  technology:   [1200, 800],
+};
+
+const DEFAULT_SIZE: [number, number] = [800, 600];
+
+// ─── Public: Picsum URL builder ───────────────────────────────────────────
+
+/**
+ * Generate a deterministic Picsum URL from a seed string.
+ * Same seed always returns the same image.
+ */
+export function picsumUrl(seed: string, width: number, height: number): string {
+  const cleanSeed = seed.replace(/[^a-z0-9]/gi, '-');
+  return `https://picsum.photos/seed/${cleanSeed}/${width}/${height}`;
+}
+
+/**
+ * Get dimensions for a stock category.
+ */
+export function categorySize(category: string): [number, number] {
+  return CATEGORY_SIZES[category] ?? DEFAULT_SIZE;
+}
 
 export const STOCK_IMAGES = {
   hero: [
@@ -247,9 +292,12 @@ export const USAGE_STOCK_MAP: Record<string, StockCategory[]> = {
 
 // ─── Helper functions ─────────────────────────────────────────────────────
 
-/** Get full path for a stock image */
+/** Get full Picsum URL for a stock image path (deterministic via seed) */
 export function stockPath(path: string): string {
-  return `/stock/${path}`;
+  const category = path.split('/')[0];
+  const [w, h] = CATEGORY_SIZES[category] ?? DEFAULT_SIZE;
+  const seed = path.replace(/\.\w+$/, ''); // strip extension for clean seed
+  return picsumUrl(seed, w, h);
 }
 
 /** Get a random stock image from a specific category */

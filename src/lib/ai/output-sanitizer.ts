@@ -132,7 +132,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     maxWidth: 'lg',
   },
   ImageBlock: {
-    src: '/stock/hero/gradient-purple.webp',
+    src: 'https://picsum.photos/seed/hero-gradient-purple/1200/800',
     alt: 'Image',
     width: '100%',
     borderRadius: 'md',
@@ -151,7 +151,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   Gallery: {
     heading: 'Gallery',
-    images: [{ src: '/stock/hero/gradient-purple.webp', alt: 'Image' }],
+    images: [{ src: 'https://picsum.photos/seed/hero-gradient-purple/1200/800', alt: 'Image' }],
     columns: 3,
     variant: 'grid',
     lightbox: false,
@@ -178,13 +178,13 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     quickView: false,
     saleBadge: false,
     hoverEffect: 'none',
-    products: [{ name: 'Product', price: '$29', imageUrl: '/stock/hero/gradient-purple.webp', href: '#', inStock: true }],
+    products: [{ name: 'Product', price: '$29', imageUrl: 'https://picsum.photos/seed/hero-gradient-purple/1200/800', href: '#', inStock: true }],
     columns: 3,
   },
   FeatureShowcase: {
     heading: 'Why Choose Us',
     description: 'Discover what makes us different.',
-    imageUrl: '/stock/hero/gradient-purple.webp',
+    imageUrl: 'https://picsum.photos/seed/hero-gradient-purple/1200/800',
     features: [{ title: 'Feature', description: 'Description', icon: 'zap' }],
     imagePosition: 'right',
     animation: 'none',

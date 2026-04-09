@@ -132,10 +132,11 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
 
         setData(puckData);
 
-        // Detect skeleton state: if any component has a "skel_" prefixed ID, page needs auto-polish
+        // Detect skeleton state: if any component has a "skel_" prefixed ID OR is a SectionSkeleton type, page needs auto-polish
         const hasSkeletons = (puckData.content ?? []).some(
-          (c) => typeof (c.props as Record<string, unknown>)?.id === 'string'
-            && ((c.props as Record<string, unknown>).id as string).startsWith('skel_'),
+          (c) => c.type === 'SectionSkeleton'
+            || (typeof (c.props as Record<string, unknown>)?.id === 'string'
+              && ((c.props as Record<string, unknown>).id as string).startsWith('skel_')),
         );
         if (hasSkeletons) {
           setGenerationStatus('pending');

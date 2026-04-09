@@ -469,7 +469,7 @@ interface PromptContext {
 function buildComponentEntry(name: string, info: import('./component-catalog').ComponentInfo): string {
   let entry = `### ${name}\n${info.description}\nProps: ${info.propsSignature}`;
   if (info.recommendedDefaults) entry += `\nRecommended defaults: ${info.recommendedDefaults}`;
-  if (info.variantTips) entry += `\nVariant tips: ${info.variantTips}`;
+
   return entry;
 }
 
@@ -491,7 +491,7 @@ function buildDynamicCatalog(tiers?: ComponentTierPlan): string {
 
   const parts: string[] = [];
 
-  // Tier 1: Full detail (includes recommendedDefaults + variantTips)
+  // Tier 1: Full detail (includes recommendedDefaults)
   for (const name of tiers.fullDetail) {
     const info = COMPONENT_CATALOG[name];
     if (info) {

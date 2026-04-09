@@ -17,7 +17,7 @@ export function generateHeroTWDarkBg(props?: Record<string, unknown>): SectionNo
   const ctaText = (props?.ctaText as string) ?? 'Get Started';
   const ctaHref = (props?.ctaHref as string) ?? '#';
   const ctaSecondaryText = (props?.ctaSecondaryText as string) ?? 'Learn More';
-  const backgroundUrl = (props?.backgroundUrl as string) ?? '/stock/hero/tech-dark.webp';
+  const backgroundUrl = (props?.backgroundUrl as string) ?? 'https://picsum.photos/seed/hero-tech-dark/1200/800';
   const rawStats = props?.stats as Array<{ value: string; label: string }> | undefined;
   const stats = rawStats ?? [
     { value: '500+', label: 'Components' },

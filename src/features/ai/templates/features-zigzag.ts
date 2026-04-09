@@ -9,9 +9,9 @@ interface ZigzagFeatureItem {
 }
 
 const DEFAULT_ITEMS: ZigzagFeatureItem[] = [
-  { title: 'Blazing Fast', description: 'Optimized for speed with lightning-fast load times and zero lag interactions that keep your users engaged.', imageUrl: '/stock/features/analytics-dashboard.webp' },
-  { title: 'Bank-Grade Security', description: 'Enterprise-level encryption and security protocols to protect your data around the clock.', imageUrl: '/stock/features/data-charts.webp' },
-  { title: 'Seamless Integration', description: 'Connect with your favorite tools and workflows in minutes, not days.', imageUrl: '/stock/features/collaboration.webp' },
+  { title: 'Blazing Fast', description: 'Optimized for speed with lightning-fast load times and zero lag interactions that keep your users engaged.', imageUrl: 'https://picsum.photos/seed/features-analytics/800/600' },
+  { title: 'Bank-Grade Security', description: 'Enterprise-level encryption and security protocols to protect your data around the clock.', imageUrl: 'https://picsum.photos/seed/features-data-charts/800/600' },
+  { title: 'Seamless Integration', description: 'Connect with your favorite tools and workflows in minutes, not days.', imageUrl: 'https://picsum.photos/seed/features-collaboration/800/600' },
 ];
 
 function generateZigzagBlock(item: ZigzagFeatureItem, index: number, now: string): ComponentNode {
@@ -28,7 +28,7 @@ function generateZigzagBlock(item: ZigzagFeatureItem, index: number, now: string
     type: NodeType.ELEMENT,
     tag: SemanticTag.IMG,
     className: 'zigzag-image',
-    src: item.imageUrl ?? '/stock/features/analytics-dashboard.webp',
+    src: item.imageUrl ?? 'https://picsum.photos/seed/features-analytics/800/600',
     attributes: { alt: item.title, loading: 'lazy' },
     meta: { createdAt: now, updatedAt: now },
   };

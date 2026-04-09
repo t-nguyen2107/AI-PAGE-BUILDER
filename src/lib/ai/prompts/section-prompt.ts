@@ -3,7 +3,7 @@ import { COMPONENT_CATALOG, type ComponentInfo } from './component-catalog';
 import type { DesignGuidance } from '../knowledge/design-knowledge';
 import { STOCK_IMAGES, BUSINESS_STOCK_MAP, stockPath } from '@/features/ai/stock-images';
 import type { StockCategory } from '@/features/ai/stock-images';
-import { buildUnifiedDesignTokensBlock, type MinimalStyleguideTokens } from './prompt-utils';
+import { buildUnifiedDesignTokensBlock, buildSystemLevelDesignRules, type MinimalStyleguideTokens } from './prompt-utils';
 
 export interface SectionPromptContext {
   userPrompt: string;
@@ -126,58 +126,46 @@ export function buildSectionPrompt(
 
   const stockImageHint = buildStockImageHint(businessType);
 
-  const REQUIRED_PROPS: Record<string, string> = {
-    HeroSection: 'animation ("fade-up"), backgroundUrl OR gradientFrom+gradientTo (use rich multi-tone gradients, NEVER flat solid), backgroundOverlay (true if using image), padding ("128px" for hero, never less), badge (compelling 2-4 word label like "Trusted by 10,000+" or "New Menu This Season")',
-    FeaturesGrid: 'animation ("stagger"), cardStyle ("elevated" or "glass"), hoverEffect ("lift"), columns (3), icon on EVERY feature (use Material Symbols icon names)',
-    TestimonialSection: 'animation ("stagger-fade"), variant ("carousel"), avatarUrl on EVERY testimonial, 3-4 testimonials with SPECIFIC measurable results (e.g. "reduced costs by 40%" NOT "great service")',
-    CTASection: 'animation ("fade-up"), variant ("gradient"), gradientFrom + gradientTo from palette colors (use distinct complementary colors for visual impact)',
-    PricingTable: 'animation ("stagger"), highlightedBadge ("Most Popular" on middle tier), 3 tiers with realistic specific feature lists',
-    StatsSection: 'animation ("fade-up"), animated (true), columns (4), cardStyle ("gradient" or "bordered"), 4 stats with BELIEVABLE non-round numbers',
-    FAQSection: 'animation ("fade-up"), 5-6 items with reassuring next-step answers',
-    Gallery: 'animation ("stagger"), columns (3), 6+ images with descriptive alt text',
-    ProductCards: 'animation ("stagger"), hoverEffect ("lift"), columns (3), realistic prices like "$49.99"',
-    TeamSection: 'animation ("stagger"), avatarUrl on EVERY member (use /stock/team/person-N.webp), specific role titles not generic "Team Member"',
-    BlogSection: 'animation ("stagger"), columns (3), 3 posts with imageUrl and realistic recent dates',
-    FeatureShowcase: 'animation ("fade-up"), image (stock path), 2-3 features with specific titles',
-    ContactForm: 'animation ("fade-up"), showPhone (true), showCompany (true), buttonText with action verb',
-    NewsletterSignup: 'animation ("fade-up"), buttonText, placeholder, subtext with SPECIFIC value proposition (not generic "stay updated")',
-    LogoGrid: 'animation ("fade-up"), 5-6 logos with realistic company names',
-    Banner: 'animation ("fade-up"), variant ("gradient")',
-    AnnouncementBar: 'variant ("gradient"), ctaText',
-    HeaderNav: 'sticky (true), 4-5 links matching page section headings, ctaText with action verb, animation ("fade-down")',
-    FooterSection: '3-4 linkGroups, copyright with current year, description (1-sentence mission), animation ("fade-up")',
+  const CONTENT_PROPS: Record<string, string> = {
+    HeroSection: 'heading, subtext, ctaText, badge text, trustBadges (3-4 items)',
+    FeaturesGrid: 'heading, subtext, 4-6 features with title + description + icon name',
+    TestimonialSection: 'heading, 3-4 testimonials with specific quote + author + role',
+    CTASection: 'heading, subtext, ctaText',
+    PricingTable: 'heading, 3 tiers with name + price + realistic feature list',
+    StatsSection: 'heading, 4 stats with believable values and labels',
+    FAQSection: 'heading, 5-6 items with question + actionable answer',
+    Gallery: 'heading, 6+ images with descriptive alt text',
+    ProductCards: 'heading, 4-6 products with name + price + description',
+    TeamSection: 'heading, 3-4 members with name + specific role title',
+    BlogSection: 'heading, 3 posts with title + excerpt + date',
+    ContactForm: 'heading, subtext, buttonText',
+    NewsletterSignup: 'heading, subtext with SPECIFIC value proposition, buttonText',
+    HeaderNav: 'logo, 4-5 links with labels matching page sections, ctaText',
+    FooterSection: 'logo, description, 3-4 linkGroups',
+    FeatureShowcase: 'heading, description, 2-3 features with specific titles',
+    LogoGrid: 'heading, 5-6 logos with realistic company names',
+    Banner: 'heading, subtext, ctaText',
+    AnnouncementBar: 'message, ctaText',
+    CountdownTimer: 'heading, endDate',
   };
 
-  const requiredPropsForType = REQUIRED_PROPS[sectionType] || '';
-
-  const designStyleRule = `
-## DESIGN STYLE (MANDATORY)
-You MUST include a "designStyle" prop on EVERY section component. Use the exact value from the "designStyle prop" line in the Design Direction section above. This prop controls card styles, typography, borders, shadows, and hover effects. Available values: elevated, minimal, glassmorphism, brutalism, neobrutalism, soft-ui, aurora, bento.`;
+  const contentPropsForType = CONTENT_PROPS[sectionType] || '';
 
   const makeupRules = isMakeup ? `
-## ★ VISUAL POLISH REQUIREMENTS (CRITICAL — READ FIRST)
+## ★ POLISH RULES (MANDATORY)
 
-You are POLISHING this section — make it VISUALLY STUNNING and MODERN. These rules are MANDATORY:
-
-1. **Animation**: You MUST set the "animation" prop on EVERY component. Use "fade-up" for hero/CTA/stats/footer, "fade-down" for HeaderNav, "stagger" for grids/galleries/products, "stagger-fade" for testimonials/teams.
-2. **Gradients**: You MUST use gradientFrom/gradientTo on HeroSection and CTASection with the exact color tokens from the palette below. Use RICH multi-tone gradients (e.g. primary to accent, not primary to primary). NEVER use flat solid backgrounds for hero or CTA.
-3. **Images**: Fill ALL image props using EXACT paths from the stock library below. Do NOT invent filenames. IMPORTANT: Each section MUST use a DIFFERENT image — never reuse the same path across sections. Pick the most relevant category for each section type.
-4. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content tailored to ${businessType}. AVOID generic clichés like "crafted with passion", "high-quality", "best in class", "world-class", "innovative solutions". Instead use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits. Make every word earn its place.
-5. **Visual Variety**: You MUST use variant props — TestimonialSection: variant "carousel", CTASection: variant "gradient", FeaturesGrid: cardStyle "elevated" or "glass", StatsSection: cardStyle "gradient" or "bordered".
-6. **Hover Effects**: You MUST set hoverEffect "lift" on FeaturesGrid, ProductCards, and any card-based components.
-7. **Background Alternation**: This is section ${position.index + 1} of ${position.total}. ${position.index % 2 === 0 ? 'Use light or gradient background.' : 'Use muted or dark background for contrast.'}
-8. **Badge**: HeroSection MUST include a badge — a short 2-4 word credibility label (e.g. "Trusted by 10,000+", "Since 2010", "Award Winning", "Free Shipping").
-9. **Trust Elements**: Add trustBadges to HeroSection when relevant (3-4 short trust indicators like "No credit card required", "14-day free trial", "24/7 support").
-10. **Padding**: HeroSection padding MUST be "128px" for maximum visual impact. Never use small padding on hero sections.
+1. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content tailored to ${businessType}. AVOID generic clichés. Use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits.
+2. **Images**: Fill ALL image props using EXACT paths from the stock library below. Each section MUST use a DIFFERENT image.
+3. **Visual styling is auto-applied**: Do NOT set animation, cardStyle, hoverEffect, variant, columns, gradientFrom/gradientTo, or padding props — these are injected automatically based on the design style.
 ` : '';
 
-  const requiredPropsBlock = requiredPropsForType ? `
-## REQUIRED PROPS for ${sectionType}
-You MUST include these props in your output: ${requiredPropsForType}
+  const contentPropsBlock = contentPropsForType ? `
+## Content Fields for ${sectionType}
+Focus on these content fields: ${contentPropsForType}
 ` : '';
 
   const systemMessageRaw = `You are generating section ${position.index + 1} of ${position.total} for a ${businessType} landing page.
-${designStyleRule}${makeupRules}${requiredPropsBlock}
+${makeupRules}${contentPropsBlock}
 ## Component: ${sectionType}
 
 Description: ${catalogEntry.description}
@@ -186,9 +174,9 @@ Props Signature: ${catalogEntry.propsSignature}
 
 ${catalogEntry.recommendedDefaults ? `Recommended Defaults: ${catalogEntry.recommendedDefaults}` : ''}
 
-${catalogEntry.variantTips ? `Variant Tips: ${catalogEntry.variantTips}` : ''}
-
 ${designTokensBlock}
+
+${buildSystemLevelDesignRules()}
 
 ${designContext ? `## Design Intelligence\n${designContext}\n` : ''}
 ## Response Format
@@ -240,78 +228,74 @@ export function buildBatchSectionPrompt(
   context: BatchSectionPromptContext,
 ): ChatPromptTemplate {
   const { businessType, businessName, designGuidance, styleguideData, designContext, isMakeup } = context;
-  const designTokensBlock = buildUnifiedDesignTokensBlock(designGuidance, styleguideData, { skipUxRules: isMakeup });
+  const designTokensBlock = buildUnifiedDesignTokensBlock(designGuidance, styleguideData);
   const sectionTypes = sections.map(s => s.type);
-  const stockImageHint = isMakeup
-    ? buildBatchStockImageHint(businessType, sectionTypes)
-    : buildStockImageHint(businessType);
+  const stockImageHint = buildBatchStockImageHint(businessType, sectionTypes);
   const total = sections.length;
 
   // Build per-section catalog entries (compact — avoid bloating prompt)
   const sectionCatalog = sections.map((s, i) => {
     const entry = COMPONENT_CATALOG[s.type];
     if (!entry) return `${i + 1}. **${s.type}**: (no catalog entry)`;
-    return `${i + 1}. **${s.type}** (section ${i + 1}/${total})
-   Description: ${entry.shortDescription}
-   Props: ${entry.propsSignature}
-   Current plan: ${JSON.stringify(s.props).substring(0, 150)}`;
+    const lines = [
+      `${i + 1}. **${s.type}** (section ${i + 1}/${total})`,
+      `   Description: ${entry.shortDescription}`,
+    ];
+    // Skip full propsSignature for makeup — model only modifies existing props
+    if (!isMakeup) {
+      lines.push(`   Props: ${entry.propsSignature}`);
+    }
+    lines.push(`   Current plan: ${JSON.stringify(s.props).substring(0, 150)}`);
+    return lines.join('\n');
   }).join('\n');
 
-  const REQUIRED_PROPS: Record<string, string> = {
-    HeroSection: 'animation ("fade-up"), gradientFrom+gradientTo (rich gradient, NEVER flat solid), backgroundOverlay, padding ("128px"), badge (2-4 word credibility label)',
-    FeaturesGrid: 'animation ("stagger"), cardStyle ("elevated"), hoverEffect ("lift"), columns (3)',
-    TestimonialSection: 'animation ("stagger-fade"), variant ("carousel"), avatarUrl on EVERY testimonial, 3-4 testimonials with specific measurable results',
-    CTASection: 'animation ("fade-up"), variant ("gradient"), gradientFrom+gradientTo from palette',
-    PricingTable: 'animation ("stagger"), highlightedBadge ("Most Popular"), 3 tiers with realistic features',
-    StatsSection: 'animation ("fade-up"), animated (true), columns (4), cardStyle ("gradient"), 4 believable stats',
-    FAQSection: 'animation ("fade-up"), 5-6 items with actionable answers',
-    Gallery: 'animation ("stagger"), columns (3), 6+ images with alt text',
-    ProductCards: 'animation ("stagger"), hoverEffect ("lift"), columns (3), realistic prices',
-    TeamSection: 'animation ("stagger"), avatarUrl on every member (/stock/team/person-N.webp), specific role titles',
-    BlogSection: 'animation ("stagger"), columns (3), imageUrl on every post, recent dates',
-    ContactForm: 'animation ("fade-up"), showPhone (true), showCompany (true)',
-    HeaderNav: 'sticky (true), 4-5 links, ctaText with action verb, animation ("fade-down")',
-    FooterSection: '3-4 linkGroups, copyright, description, animation ("fade-up")',
-    Banner: 'animation ("fade-up"), variant ("gradient")',
-    AnnouncementBar: 'variant ("gradient"), ctaText',
+  const CONTENT_PROPS: Record<string, string> = {
+    HeroSection: 'heading, subtext, ctaText, badge text, trustBadges (3-4 items)',
+    FeaturesGrid: 'heading, subtext, 4-6 features with title + description + icon name',
+    TestimonialSection: 'heading, 3-4 testimonials with specific quote + author + role',
+    CTASection: 'heading, subtext, ctaText',
+    PricingTable: 'heading, 3 tiers with name + price + realistic feature list',
+    StatsSection: 'heading, 4 stats with believable values and labels',
+    FAQSection: 'heading, 5-6 items with question + actionable answer',
+    Gallery: 'heading, 6+ images with descriptive alt text',
+    ProductCards: 'heading, 4-6 products with name + price + description',
+    TeamSection: 'heading, 3-4 members with name + specific role title',
+    BlogSection: 'heading, 3 posts with title + excerpt + date',
+    ContactForm: 'heading, subtext, buttonText',
+    HeaderNav: 'logo, 4-5 links with labels matching page sections, ctaText',
+    FooterSection: 'logo, description, 3-4 linkGroups',
+    Banner: 'heading, subtext, ctaText',
+    AnnouncementBar: 'message, ctaText',
   };
 
-  const requiredPropsList = sections.map((s) => {
-    const req = REQUIRED_PROPS[s.type];
+  const contentPropsList = sections.map((s) => {
+    const req = CONTENT_PROPS[s.type];
     return req ? `- **${s.type}**: ${req}` : `- **${s.type}**: fill in all relevant props`;
   }).join('\n');
 
   const businessNameStr = businessName || businessType;
 
-  const designStyleRule = `
-## DESIGN STYLE (MANDATORY)
-You MUST include a "designStyle" prop on EVERY section component. Use the exact value from the "designStyle prop" line in the Design Direction section above. This prop controls card styles, typography, borders, shadows, and hover effects. Available values: elevated, minimal, glassmorphism, brutalism, neobrutalism, soft-ui, aurora, bento.`;
-
   const makeupRules = isMakeup ? `
-## ★ VISUAL POLISH RULES (MANDATORY)
+## ★ POLISH RULES (MANDATORY)
 
-1. **Animation**: EVERY component MUST have "animation" prop. "fade-up" for hero/CTA/stats/footer, "fade-down" for HeaderNav, "stagger" for grids/galleries/products, "stagger-fade" for testimonials/teams.
-2. **Gradients**: HeroSection and CTASection MUST use gradientFrom/gradientTo with palette colors. Rich multi-tone gradients — NEVER flat solid backgrounds.
-3. **Images**: Fill ALL image props using EXACT paths from stock library. Each section MUST use a DIFFERENT image.
-4. **Content Quality**: Write SPECIFIC, COMPELLING content for "${businessNameStr}" (${businessType}). NO generic clichés. Use concrete numbers, specific dish/product names, real-sounding testimonials with measurable outcomes.
-5. **Visual Variety**: Use variant props — TestimonialSection: variant "carousel", CTASection: variant "gradient", FeaturesGrid: cardStyle "elevated".
-6. **Hover Effects**: hoverEffect "lift" on FeaturesGrid, ProductCards.
-7. **Background Alternation**: Alternate light/muted backgrounds across sections for visual rhythm.
-8. **Badge**: HeroSection MUST include a compelling 2-4 word badge.
+1. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content for "${businessNameStr}" (${businessType}). AVOID generic clichés. Use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits.
+2. **Images**: Fill ALL image props using EXACT paths from the stock library below. Each section MUST use a DIFFERENT image.
+3. **Visual styling is auto-applied**: Do NOT set animation, cardStyle, hoverEffect, variant, columns, gradientFrom/gradientTo, or padding props — these are injected automatically based on the design style.
 ` : '';
 
   const systemMessageRaw = `You are polishing ALL sections of a ${businessType} landing page for "${businessNameStr}" in a single pass.
 
-${designStyleRule}
 ${makeupRules}
 ## Sections to Polish (${total} total)
 
 ${sectionCatalog}
 
-## Required Props per Section
-${requiredPropsList}
+## Content Fields per Section
+${contentPropsList}
 
 ${designTokensBlock}
+
+${buildSystemLevelDesignRules()}
 
 ${designContext ? `## Design Intelligence\n${designContext}\n` : ''}
 ## Stock Image Library (use EXACT paths — do NOT invent filenames)

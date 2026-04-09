@@ -21,7 +21,7 @@ export function generateHeroBackgroundImage(props?: Record<string, unknown>): Se
     'Experience culinary excellence in an atmosphere designed for unforgettable moments.';
   const ctaText = (props?.ctaText as string) ?? 'Reserve a Table';
   const ctaHref = (props?.ctaHref as string) ?? '#';
-  const backgroundUrl = (props?.backgroundUrl as string) ?? '/stock/food/meal-table.webp';
+  const backgroundUrl = (props?.backgroundUrl as string) ?? 'https://picsum.photos/seed/food-meal-table/800/600';
 
   const now = new Date().toISOString();
   const sectionId = generateId();

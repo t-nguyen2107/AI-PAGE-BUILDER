@@ -223,7 +223,15 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
               } else if (event.type === "done" && event.extractedInfo) {
                 const info = event.extractedInfo as WinnieResponse;
                 chatHistory.current.push({ role: "assistant", content: info.reply });
-                if (info.collectedInfo) setCollectedInfo((prev) => ({ ...prev, ...info.collectedInfo }));
+                if (info.collectedInfo) setCollectedInfo((prev) => {
+                  const incoming = info.collectedInfo!;
+                  const merged = { ...prev, ...incoming };
+                  // Preserve paletteColors if Winnie didn't explicitly set it this turn
+                  if (incoming.paletteColors === null && prev?.paletteColors) {
+                    merged.paletteColors = prev.paletteColors;
+                  }
+                  return merged;
+                });
                 if (info.isComplete) {
                   setIsComplete(true);
                 }
@@ -272,6 +280,7 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       tone: collectedInfo.tone ?? "professional",
       language: collectedInfo.language ?? "en",
       pages: collectedInfo.pages ?? [{ title: "Home", slug: "home", description: "Homepage" }],
+      paletteColors: collectedInfo.paletteColors ?? undefined,
     };
     onComplete(fullInfo);
   };
@@ -309,7 +318,8 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
   const showPalettePicker =
     !!(collectedInfo?.name && collectedInfo?.idea) &&
     !isComplete &&
-    !isStreaming;
+    !isStreaming &&
+    !collectedInfo?.paletteColors;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

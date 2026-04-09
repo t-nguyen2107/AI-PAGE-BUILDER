@@ -2,6 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import type { WizardProjectInfo } from "@/types/wizard";
+import { detectBusinessType } from "@/lib/ai/knowledge/business-detect";
+import { resolveDesignGuidance, LANDING_PATTERNS } from "@/lib/ai/knowledge/design-knowledge";
 
 // ── Palette definitions ──────────────────────────────────────────────
 
@@ -127,93 +129,56 @@ export const PALETTES: StylePalette[] = [
   },
 ];
 
-// ── Business type → best palette mapping ───────────────────────────
-const BUSINESS_PALETTE_HINTS: Record<string, string[]> = {
-  restaurant: ["warm-cozy"],
-  bakery: ["warm-cozy"],
-  cafe: ["warm-cozy"],
-  hospitality: ["warm-cozy"],
-  food: ["warm-cozy"],
-  coffee: ["warm-cozy"],
-  nonprofit: ["warm-cozy"],
-  saas: ["clean-modern"],
-  tech: ["clean-modern"],
-  corporate: ["clean-modern"],
-  education: ["clean-modern"],
-  healthcare: ["clean-modern"],
-  finance: ["clean-modern"],
-  fitness: ["bold-dynamic"],
-  agency: ["bold-dynamic"],
-  creative: ["bold-dynamic"],
-  entertainment: ["bold-dynamic"],
-  travel: ["bold-dynamic"],
-  sports: ["bold-dynamic"],
-  fashion: ["bold-dynamic"],
-  portfolio: ["elegant-minimal"],
-  luxury: ["elegant-minimal"],
-  realestate: ["elegant-minimal"],
-  photography: ["elegant-minimal"],
-  design: ["elegant-minimal"],
-  jewelry: ["elegant-minimal"],
+// ── Business type → best palette mapping (derived from shared knowledge) ──────
+
+/** Map canonical business types (from business-detect) to palette IDs. */
+const BUSINESS_PALETTE_MAP: Record<string, string> = {
+  // warm-cozy
+  "restaurant/dining": "warm-cozy",
+  "bakery/pastry shop": "warm-cozy",
+  "coffee shop/cafe": "warm-cozy",
+  "travel/hospitality": "warm-cozy",
+  "food/delivery": "warm-cozy",
+  "nonprofit/charity": "warm-cozy",
+  // clean-modern
+  "SaaS/technology": "clean-modern",
+  "education/training": "clean-modern",
+  "healthcare/medical": "clean-modern",
+  "B2B/service": "clean-modern",
+  "productivity/tool": "clean-modern",
+  "AI/chatbot": "clean-modern",
+  // bold-dynamic
+  "fitness/gym": "bold-dynamic",
+  "creative agency": "bold-dynamic",
+  "fashion/clothing": "bold-dynamic",
+  "event/conference": "bold-dynamic",
+  "music/podcast": "bold-dynamic",
+  // elegant-minimal
+  "personal portfolio": "elegant-minimal",
+  "e-commerce/luxury": "elegant-minimal",
+  "real estate": "elegant-minimal",
+  "law firm/legal": "elegant-minimal",
 };
 
-// ── Business → suggested pages ────────────────────────────────────
-const BUSINESS_PAGES: Record<string, Array<{ title: string; slug: string; description: string }>> = {
-  restaurant: [
-    { title: "Home", slug: "home", description: "Welcome page with hero and featured dishes" },
-    { title: "Menu", slug: "menu", description: "Full food and drink menu" },
-    { title: "About", slug: "about", description: "Restaurant story and team" },
-    { title: "Contact", slug: "contact", description: "Location, hours, and reservations" },
-  ],
-  bakery: [
-    { title: "Home", slug: "home", description: "Welcome page with featured products" },
-    { title: "Products", slug: "products", description: "Product showcase" },
-    { title: "About", slug: "about", description: "Our story and craft" },
-    { title: "Contact", slug: "contact", description: "Location and orders" },
-  ],
-  cafe: [
-    { title: "Home", slug: "home", description: "Welcome page with ambiance highlights" },
-    { title: "Menu", slug: "menu", description: "Drinks and food menu" },
-    { title: "About", slug: "about", description: "Our story" },
-    { title: "Contact", slug: "contact", description: "Location and hours" },
-  ],
-  saas: [
-    { title: "Home", slug: "home", description: "Landing page with features and pricing" },
-    { title: "Features", slug: "features", description: "Detailed feature breakdown" },
-    { title: "Pricing", slug: "pricing", description: "Plans comparison" },
-    { title: "About", slug: "about", description: "Company story" },
-    { title: "Contact", slug: "contact", description: "Contact form" },
-  ],
-  portfolio: [
-    { title: "Home", slug: "home", description: "Portfolio showcase" },
-    { title: "Work", slug: "work", description: "Full gallery" },
-    { title: "About", slug: "about", description: "Bio and skills" },
-    { title: "Contact", slug: "contact", description: "Get in touch" },
-  ],
-  ecommerce: [
-    { title: "Home", slug: "home", description: "Shop homepage" },
-    { title: "Shop", slug: "shop", description: "Product catalog" },
-    { title: "About", slug: "about", description: "Brand story" },
-    { title: "Contact", slug: "contact", description: "Customer support" },
-  ],
-  agency: [
-    { title: "Home", slug: "home", description: "Agency landing page" },
-    { title: "Services", slug: "services", description: "Service offerings" },
-    { title: "Portfolio", slug: "portfolio", description: "Case studies" },
-    { title: "Contact", slug: "contact", description: "Get a quote" },
-  ],
-  fitness: [
-    { title: "Home", slug: "home", description: "Gym landing with classes" },
-    { title: "Classes", slug: "classes", description: "Class schedule" },
-    { title: "Trainers", slug: "trainers", description: "Meet our trainers" },
-    { title: "Contact", slug: "contact", description: "Membership info" },
-  ],
-  blog: [
-    { title: "Home", slug: "home", description: "Blog homepage" },
-    { title: "About", slug: "about", description: "About the author" },
-    { title: "Contact", slug: "contact", description: "Contact form" },
-  ],
-};
+/** Resolve palette ID from a detected business type, with fuzzy fallback. */
+function resolvePaletteId(businessType: string | null): string | null {
+  if (!businessType) return null;
+  // Direct match
+  if (BUSINESS_PALETTE_MAP[businessType]) return BUSINESS_PALETTE_MAP[businessType];
+  // Fuzzy: check if any map key is contained in the business type or vice versa
+  const norm = businessType.toLowerCase();
+  for (const [key, paletteId] of Object.entries(BUSINESS_PALETTE_MAP)) {
+    const normKey = key.toLowerCase();
+    if (norm.includes(normKey) || normKey.includes(norm)) return paletteId;
+  }
+  // Word-level fallback
+  const words = norm.split(/[\s/\\]+/).filter(w => w.length > 3);
+  for (const [key, paletteId] of Object.entries(BUSINESS_PALETTE_MAP)) {
+    const normKey = key.toLowerCase();
+    if (words.some(w => normKey.includes(w))) return paletteId;
+  }
+  return null;
+}
 
 // Default pages fallback
 const DEFAULT_PAGES: Array<{ title: string; slug: string; description: string }> = [
@@ -222,28 +187,33 @@ const DEFAULT_PAGES: Array<{ title: string; slug: string; description: string }>
   { title: "Contact", slug: "contact", description: "Contact information" },
 ];
 
-// ── Helper: detect business type from idea text ───────────────────
-function detectBusinessType(idea: string): string | null {
-  const lower = idea.toLowerCase();
-  for (const type of Object.keys(BUSINESS_PALETTE_HINTS)) {
-    if (lower.includes(type)) return type;
-  }
-  // Fuzzy match
-  if (lower.includes("shop") || lower.includes("store") || lower.includes("sell")) return "ecommerce";
-  if (lower.includes("gym") || lower.includes("yoga") || lower.includes("workout")) return "fitness";
-  if (lower.includes("photo") || lower.includes("gallery") || lower.includes("art")) return "portfolio";
-  if (lower.includes("food") || lower.includes("dining")) return "restaurant";
-  if (lower.includes("article") || lower.includes("writing") || lower.includes("content")) return "blog";
-  return null;
+/** Derive page suggestions from design-knowledge LANDING_PATTERNS. */
+function derivePagesFromGuidance(businessType: string | null): typeof DEFAULT_PAGES {
+  const guidance = businessType ? resolveDesignGuidance(businessType) : null;
+  if (!guidance) return DEFAULT_PAGES;
+
+  const sectionOrder = guidance.pattern.sectionOrder;
+  // Extract unique page-like section names (skip HeaderNav/FooterSection/AnnouncementBar)
+  const skipSections = new Set(["HeaderNav", "FooterSection", "AnnouncementBar"]);
+  const pageSections = sectionOrder.filter(s => !skipSections.has(s));
+  if (pageSections.length === 0) return DEFAULT_PAGES;
+
+  // Map section types to human-readable page entries
+  return pageSections.map(section => ({
+    title: section.replace(/([A-Z])/g, " $1").trim(),
+    slug: section.replace(/([A-Z])/g, "-$1").toLowerCase().replace(/^-/, ""),
+    description: `Auto-generated ${section} page`,
+  }));
 }
 
 // ── Helper: get ranked palettes for a business type ───────────────────────
 export function getRankedPalettes(businessType: string | null): StylePalette[] {
-  const hints = businessType ? BUSINESS_PALETTE_HINTS[businessType] : null;
-  if (!hints) return PALETTES;
-  const ranked = [...hints.map((id) => PALETTES.find((p) => p.id === id)!).filter(Boolean)];
-  const rest = PALETTES.filter((p) => !hints.includes(p.id));
-  return [...ranked, ...rest];
+  const paletteId = resolvePaletteId(businessType);
+  if (!paletteId) return PALETTES;
+  const matched = PALETTES.find((p) => p.id === paletteId);
+  if (!matched) return PALETTES;
+  const rest = PALETTES.filter((p) => p.id !== paletteId);
+  return [matched, ...rest];
 }
 
 // ── Helper: build full project info from palette selection ──────────────────────
@@ -254,7 +224,7 @@ export function buildProjectInfoFromPalette(
   language: string,
 ): WizardProjectInfo {
   const businessType = detectBusinessType(idea);
-  const pages = (businessType && BUSINESS_PAGES[businessType]) || DEFAULT_PAGES;
+  const pages = derivePagesFromGuidance(businessType);
 
   return {
     name,

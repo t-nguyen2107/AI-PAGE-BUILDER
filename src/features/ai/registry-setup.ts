@@ -189,9 +189,9 @@ export function initializeRegistry(): void {
       heading: 'Gallery',
       columns: 3,
       images: [
-        { src: '/stock/features/analytics-dashboard.webp', caption: 'Dashboard' },
-        { src: '/stock/features/collaboration.webp', caption: 'Collaboration' },
-        { src: '/stock/features/data-charts.webp', caption: 'Analytics' },
+        { src: 'https://picsum.photos/seed/features-analytics/800/600', caption: 'Dashboard' },
+        { src: 'https://picsum.photos/seed/features-collaboration/800/600', caption: 'Collaboration' },
+        { src: 'https://picsum.photos/seed/features-data-charts/800/600', caption: 'Analytics' },
       ],
     },
   });
@@ -207,10 +207,10 @@ export function initializeRegistry(): void {
       heading: 'Our Team',
       subtitle: 'Meet the people behind our success',
       members: [
-        { name: 'Sarah Johnson', role: 'CEO & Founder', avatarUrl: '/stock/team/person-1.webp' },
-        { name: 'Mike Chen', role: 'Lead Designer', avatarUrl: '/stock/team/person-2.webp' },
-        { name: 'Emily Davis', role: 'Head of Engineering', avatarUrl: '/stock/team/person-3.webp' },
-        { name: 'James Wilson', role: 'Marketing Director', avatarUrl: '/stock/team/person-4.webp' },
+        { name: 'Sarah Johnson', role: 'CEO & Founder', avatarUrl: 'https://picsum.photos/seed/team-person-1/200/200' },
+        { name: 'Mike Chen', role: 'Lead Designer', avatarUrl: 'https://picsum.photos/seed/team-person-2/200/200' },
+        { name: 'Emily Davis', role: 'Head of Engineering', avatarUrl: 'https://picsum.photos/seed/team-person-3/200/200' },
+        { name: 'James Wilson', role: 'Marketing Director', avatarUrl: 'https://picsum.photos/seed/team-person-4/200/200' },
       ],
     },
   });
@@ -245,9 +245,9 @@ export function initializeRegistry(): void {
       heading: 'Latest Posts',
       subtitle: 'Stay updated with our latest articles',
       posts: [
-        { title: 'Getting Started with LoomWeave', excerpt: 'Learn how to create your first website in minutes.', imageUrl: '/stock/blog/writing.webp' },
-        { title: 'Design Tips for Modern Websites', excerpt: 'Best practices for creating beautiful, user-friendly layouts.', imageUrl: '/stock/blog/notebook.webp' },
-        { title: 'The Future of No-Code Platforms', excerpt: 'How no-code tools are changing the way we build.', imageUrl: '/stock/blog/laptop-coffee.webp' },
+        { title: 'Getting Started with LoomWeave', excerpt: 'Learn how to create your first website in minutes.', imageUrl: 'https://picsum.photos/seed/blog-writing/800/500' },
+        { title: 'Design Tips for Modern Websites', excerpt: 'Best practices for creating beautiful, user-friendly layouts.', imageUrl: 'https://picsum.photos/seed/blog-notebook/800/500' },
+        { title: 'The Future of No-Code Platforms', excerpt: 'How no-code tools are changing the way we build.', imageUrl: 'https://picsum.photos/seed/blog-laptop-coffee/800/500' },
       ],
     },
   });
@@ -314,7 +314,7 @@ export function initializeRegistry(): void {
       subtext: 'Create beautiful, responsive websites in minutes with our intuitive builder.',
       ctaText: 'Get Started',
       ctaHref: '#',
-      backgroundUrl: '/stock/hero/office-modern.webp',
+      backgroundUrl: 'https://picsum.photos/seed/hero-office-modern/1200/800',
     },
   });
 
@@ -329,7 +329,7 @@ export function initializeRegistry(): void {
       subtext: 'Experience culinary excellence in every dish we serve.',
       ctaText: 'View Menu',
       ctaHref: '#',
-      backgroundUrl: '/stock/food/meal-table.webp',
+      backgroundUrl: 'https://picsum.photos/seed/food-meal-table/800/600',
     },
   });
 
@@ -410,7 +410,7 @@ export function initializeRegistry(): void {
     defaultContent: {
       heading: 'What People Say',
       quotes: [
-        { quote: 'This product changed the way our team works. We\'ve seen a 3x improvement in productivity since switching.', author: 'Sarah Johnson', role: 'CTO, TechCorp', avatarUrl: '/stock/testimonials/avatar-1.webp' },
+        { quote: 'This product changed the way our team works. We\'ve seen a 3x improvement in productivity since switching.', author: 'Sarah Johnson', role: 'CTO, TechCorp', avatarUrl: 'https://picsum.photos/seed/testimonial-avatar-1/100/100' },
       ],
     },
   });
@@ -532,7 +532,7 @@ export function initializeRegistry(): void {
       ctaText: 'Get Started',
       ctaHref: '#',
       ctaSecondaryText: 'Learn More',
-      backgroundUrl: '/stock/hero/tech-dark.webp',
+      backgroundUrl: 'https://picsum.photos/seed/hero-tech-dark/1200/800',
     },
   });
 
@@ -563,7 +563,7 @@ export function initializeRegistry(): void {
       ctaText: 'Get Started',
       ctaHref: '#',
       ctaSecondaryText: 'Learn More',
-      backgroundUrl: '/stock/hero/office-modern.webp',
+      backgroundUrl: 'https://picsum.photos/seed/hero-office-modern/1200/800',
     },
   });
 

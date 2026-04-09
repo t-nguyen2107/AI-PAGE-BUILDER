@@ -142,7 +142,7 @@ export async function polishSectionsStream(
   });
 
   const { model, jsonCallOptions } = ctx.useFastModel
-    ? createFastModelBundle({ maxTokens: 8192 })
+    ? createFastModelBundle({ maxTokens: 10240 })
     : createModelBundle({ maxTokens: 16384 });
   const messages = await batchPrompt.formatMessages({ input: ctx.userPrompt });
   const { response_format: _rf, ...streamCallOpts } = jsonCallOptions;

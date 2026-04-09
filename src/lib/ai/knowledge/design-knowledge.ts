@@ -1898,7 +1898,7 @@ export function formatDesignGuidance(guidance: DesignGuidance, businessType?: st
   lines.push(`[Style] ${s.promptHint}`);
   lines.push(`[Conversion Tips] ${pat.conversionTip}`);
   lines.push(`[Anti-Patterns] ${r.antiPatterns}`);
-  lines.push(UX_DESIGN_RULES);
+  // UX_DESIGN_RULES moved to system prompt level via buildSystemLevelDesignRules() in prompt-utils.ts
 
   return lines.join('\n');
 }

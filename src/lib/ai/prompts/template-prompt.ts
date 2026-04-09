@@ -19,21 +19,6 @@ export interface TemplatePromptContext {
 // Variant tip extraction
 // ---------------------------------------------------------------------------
 
-function extractBusinessVariantTip(businessType: string): string {
-  const main = businessType.split('/')[0];
-  return main.charAt(0).toUpperCase() + main.slice(1);
-}
-
-function extractVariantTipForBusiness(variantTips: string, businessLabel: string): string | null {
-  const re = new RegExp(`${escapeRegExp(businessLabel)}\\s*:\\s*(.+?)(?=\\.\\s+[A-Z][a-z]+:|$)`, 'is');
-  const match = variantTips.match(re);
-  return match ? match[1].trim() : null;
-}
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /**
  * Build the compact Phase 1 (Planning) Puck component selection prompt.
  */
@@ -45,16 +30,10 @@ export function buildTemplatePrompt(_ctx?: TemplatePromptContext): ChatPromptTem
   // Use the unified block builder
   const designTokensBlock = buildUnifiedDesignTokensBlock(_ctx?.designGuidance, _ctx?.styleguideData);
 
-  const businessLabel = _ctx?.businessType ? extractBusinessVariantTip(_ctx?.businessType) : null;
-
   // Build skeleton component type reference (skipping heavy props)
   const componentRef = Object.entries(COMPONENT_CATALOG)
     .map(([name, info]) => {
-      let entry = `- **${name}**: ${info.description}`;
-      if (businessLabel && info.variantTips) {
-        const tip = extractVariantTipForBusiness(info.variantTips, businessLabel);
-        if (tip) entry += ` (Tip: ${tip})`;
-      }
+      const entry = `- **${name}**: ${info.description}`;
       return entry;
     })
     .join('\n');
@@ -70,7 +49,7 @@ Return JSON with this exact skeleton structure:
 { "components": [ { "type": "HeaderNav", "props": { "purpose": "Main navigation" } }, { "type": "HeroSection", "props": { "heading": "Main bold headline" } } ] }
 
 ## Content Rules
-1. Pick 5-8 components per page. Typical order: AnnouncementBar (opt), HeaderNav, HeroSection, FeaturesGrid, TestimonialSection, CTASection, FooterSection.
+1. Pick 8-10 components per page. ALWAYS include HeaderNav and FooterSection. Typical order: AnnouncementBar (opt), HeaderNav, HeroSection, FeaturesGrid, StatsSection, TestimonialSection, PricingTable, CTASection, FooterSection.
 2. Provide a "heading" or "purpose" in props so Phase 2 understands what this section is for.
 3. Use the USER'S LANGUAGE for visible text.
 ${extraRules.join('\n')}

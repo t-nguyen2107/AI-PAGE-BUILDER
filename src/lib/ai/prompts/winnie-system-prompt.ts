@@ -4,106 +4,38 @@
  * Returns JSON: { reply: string, collectedInfo: Partial<WizardProjectInfo>, isComplete: boolean }
  */
 
+import { LANDING_PATTERNS, PRODUCT_REASONING } from '../knowledge/design-knowledge';
+
 export interface WinnieSystemPromptContext {
   /** Previously collected info (accumulated across turns) */
   collectedSoFar: Record<string, unknown>;
 }
 
-// ─── Business → Page suggestions ──────────────────────────────────────────
-const BUSINESS_PAGE_SUGGESTIONS: Record<string, Array<{ title: string; slug: string; description: string }>> = {
-  restaurant: [
-    { title: "Home", slug: "home", description: "Welcome page with hero, featured dishes, and call to action" },
-    { title: "Menu", slug: "menu", description: "Full food and drink menu" },
-    { title: "About", slug: "about", description: "Restaurant story and team" },
-    { title: "Contact", slug: "contact", description: "Location, hours, and reservation form" },
-  ],
-  saas: [
-    { title: "Home", slug: "home", description: "Landing page with hero, features, pricing, and CTA" },
-    { title: "Features", slug: "features", description: "Detailed feature breakdown" },
-    { title: "Pricing", slug: "pricing", description: "Plans and pricing comparison" },
-    { title: "About", slug: "about", description: "Company story and team" },
-    { title: "Contact", slug: "contact", description: "Contact form and support info" },
-  ],
-  portfolio: [
-    { title: "Home", slug: "home", description: "Portfolio showcase with hero and selected works" },
-    { title: "Work", slug: "work", description: "Full portfolio gallery" },
-    { title: "About", slug: "about", description: "Bio and skills" },
-    { title: "Contact", slug: "contact", description: "Get in touch form" },
-  ],
-  ecommerce: [
-    { title: "Home", slug: "home", description: "Shop homepage with featured products and promotions" },
-    { title: "Shop", slug: "shop", description: "Product catalog" },
-    { title: "About", slug: "about", description: "Brand story" },
-    { title: "Contact", slug: "contact", description: "Customer support and location" },
-  ],
-  blog: [
-    { title: "Home", slug: "home", description: "Blog homepage with latest posts" },
-    { title: "About", slug: "about", description: "About the author" },
-    { title: "Contact", slug: "contact", description: "Contact form" },
-  ],
-  agency: [
-    { title: "Home", slug: "home", description: "Agency landing page with services and portfolio" },
-    { title: "Services", slug: "services", description: "Service offerings" },
-    { title: "Portfolio", slug: "portfolio", description: "Case studies and past work" },
-    { title: "Team", slug: "team", description: "Meet the team" },
-    { title: "Contact", slug: "contact", description: "Get a quote form" },
-  ],
-  bakery: [
-    { title: "Home", slug: "home", description: "Welcome page with hero and featured products" },
-    { title: "Products", slug: "products", description: "Bakery product showcase" },
-    { title: "About", slug: "about", description: "Our story and craft" },
-    { title: "Contact", slug: "contact", description: "Location and orders" },
-  ],
-  cafe: [
-    { title: "Home", slug: "home", description: "Welcome page with ambiance and menu highlights" },
-    { title: "Menu", slug: "menu", description: "Drinks and food menu" },
-    { title: "About", slug: "about", description: "Our coffee story" },
-    { title: "Contact", slug: "contact", description: "Location and hours" },
-  ],
-  fitness: [
-    { title: "Home", slug: "home", description: "Gym landing page with classes and membership" },
-    { title: "Classes", slug: "classes", description: "Class schedule and types" },
-    { title: "Trainers", slug: "trainers", description: "Meet our trainers" },
-    { title: "Contact", slug: "contact", description: "Location and membership info" },
-  ],
-  realestate: [
-    { title: "Home", slug: "home", description: "Property listing landing page" },
-    { title: "Listings", slug: "listings", description: "Available properties" },
-    { title: "About", slug: "about", description: "Agency story and team" },
-    { title: "Contact", slug: "contact", description: "Schedule a viewing" },
-  ],
-  education: [
-    { title: "Home", slug: "home", description: "School/center landing page with programs" },
-    { title: "Programs", slug: "programs", description: "Courses and curriculum" },
-    { title: "About", slug: "about", description: "Institution story" },
-    { title: "Contact", slug: "contact", description: "Enrollment and contact form" },
-  ],
-  healthcare: [
-    { title: "Home", slug: "home", description: "Clinic landing page with services" },
-    { title: "Services", slug: "services", description: "Medical services offered" },
-    { title: "Team", slug: "team", description: "Doctors and specialists" },
-    { title: "Contact", slug: "contact", description: "Appointment booking" },
-  ],
-};
+// ─── Business → Page suggestions (derived from LANDING_PATTERNS) ────────────
+// Built dynamically from design-knowledge instead of hardcoded.
 
-// ─── Business → Style suggestion ──────────────────────────────────────────
-const BUSINESS_STYLE_HINTS: Record<string, { style: string; description: string }> = {
-  bakery:      { style: "warm, artisanal, inviting",    description: "warm earth tones, hand-drawn accents" },
-  restaurant:  { style: "elegant, appetizing",           description: "rich colors, food photography focus" },
-  cafe:        { style: "cozy, modern, relaxed",         description: "muted tones, natural textures" },
-  saas:        { style: "clean, modern, professional",   description: "bold accent color, lots of whitespace" },
-  portfolio:   { style: "minimal, creative",             description: "full-bleed images, understated typography" },
-  agency:      { style: "bold, modern, dynamic",         description: "strong contrasts, geometric elements" },
-  ecommerce:   { style: "clean, product-focused",        description: "neutral palette, sharp product imagery" },
-  blog:        { style: "readable, content-focused",     description: "serif headings, generous line spacing" },
-  fitness:     { style: "energetic, bold, motivating",   description: "high contrast, dynamic angles" },
-  realestate:  { style: "professional, premium",         description: "luxury feel, property imagery" },
-  education:   { style: "clean, trustworthy, approachable", description: "friendly colors, clear structure" },
-  healthcare:  { style: "calm, professional, trustworthy",  description: "soft blues/greens, clean lines" },
-  fashion:     { style: "trendy, visual, elegant",       description: "high-fashion imagery, editorial layout" },
-  travel:      { style: "vibrant, adventurous",          description: "large hero images, destination colors" },
-  nonprofit:   { style: "warm, community-focused",       description: "hopeful colors, human stories" },
-};
+const SKIP_SECTIONS = new Set(["HeaderNav", "FooterSection", "AnnouncementBar"]);
+
+function buildPageSuggestions(): string {
+  const lines: string[] = [];
+  for (const [patternKey, pattern] of Object.entries(LANDING_PATTERNS)) {
+    const sections = pattern.sectionOrder.filter(s => !SKIP_SECTIONS.has(s));
+    const pageNames = sections.join(", ");
+    lines.push(`- ${patternKey}: ${pageNames}`);
+  }
+  return lines.join("\n   ");
+}
+
+// ─── Business → Style suggestion (derived from PRODUCT_REASONING) ─────────
+// Built dynamically from design-knowledge instead of hardcoded.
+
+function buildStyleHints(): string {
+  const lines: string[] = [];
+  for (const [type, reasoning] of Object.entries(PRODUCT_REASONING)) {
+    lines.push(`- ${type}: ${reasoning.colorMood}, ${reasoning.stylePriority}`);
+  }
+  return lines.join("\n   ");
+}
 
 // ─── Build prompt ─────────────────────────────────────────────────────────
 
@@ -112,13 +44,8 @@ export function buildWinnieSystemPrompt(ctx?: WinnieSystemPromptContext): string
     ? `\n\nPreviously collected info (do NOT ask about these again unless the user wants to change them):\n${JSON.stringify(ctx.collectedSoFar, null, 2)}`
     : "";
 
-  const pageSuggestions = Object.entries(BUSINESS_PAGE_SUGGESTIONS)
-    .map(([type, pages]) => `- ${type}: ${pages.map((p) => p.title).join(", ")}`)
-    .join("\n   ");
-
-  const styleHints = Object.entries(BUSINESS_STYLE_HINTS)
-    .map(([type, hint]) => `- ${type}: ${hint.description}`)
-    .join("\n   ");
+  const pageSuggestions = buildPageSuggestions();
+  const styleHints = buildStyleHints();
 
   return `You are Winnie, a premium AI website design consultant for Loomweave — a professional website builder platform. You guide users through planning their website with expertise, warmth, and style advice.
 
@@ -156,6 +83,17 @@ ${pageSuggestions}
 4. **Target audience** — Who will visit (optional detail, can infer from business type)
 5. **Tone** — Content voice (optional, can infer: professional for B2B, friendly for B2C)
 6. **Pages** — What pages they need. Always include "Home". Suggest based on business type. Keep page titles in user's language but slugs in English.
+7. **paletteColors** — ONLY set this when the user EXPLICITLY describes specific colors they want (e.g. "I want colors like the Italian flag", "use ocean blue and sand tones", "màu đỏ vàng xanh", "dark and gold luxury"). You are a designer — derive all 8 tokens from 2-3 user-mentioned colors. Rules:
+   - primary: the dominant user color
+   - secondary: a lighter/complementary variant of primary
+   - accent: the second user color (contrasting)
+   - background: very light tint of primary or neutral white (#F8FAFC)
+   - surface: always "#FFFFFF"
+   - text: very dark version of primary (high contrast)
+   - textMuted: neutral grey ("#64748B" or tinted)
+   - border: very light tint of primary
+   - All hex values must be valid (#RRGGBB). Ensure text on background has 4.5:1+ contrast.
+   - CRITICAL: Set paletteColors to null when the user does NOT explicitly mention specific colors. Do NOT infer colors from business type alone — only from explicit color descriptions.
 
 ## Conversation Rules
 - Extract ALL info from every message. Never ask about something the user already provided.
@@ -171,7 +109,7 @@ Set isComplete=true ONLY when the user explicitly confirms they are done — for
 
 ## Response Format
 You MUST respond in valid JSON:
-{{"reply": "Your conversational response (2-4 sentences)","collectedInfo": {{"name": null or string,"idea": null or string,"style": null or string,"targetAudience": null or string,"tone": null or string,"language": null or "en" or "vi" or other code,"pages": null or [{{"title": "Home", "slug": "home", "description": "..."}}]}},"isComplete": boolean
+{{"reply": "Your conversational response (2-4 sentences)","collectedInfo": {{"name": null or string,"idea": null or string,"style": null or string,"targetAudience": null or string,"tone": null or string,"language": null or "en" or "vi" or other code,"pages": null or [{{"title": "Home", "slug": "home", "description": "..."}}],"paletteColors": null or {{"primary": "#hex", "secondary": "#hex", "accent": "#hex", "background": "#hex", "surface": "#FFFFFF", "text": "#hex", "textMuted": "#hex", "border": "#hex"}}}},"isComplete": boolean
 }}
 
 Include ALL collected fields in every response. Set unknown fields to null.${previouslyCollected}`;

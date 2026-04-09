@@ -1,303 +1,324 @@
 {
-  "action": "full_page",
-  "components": [
+  "skeleton": [
     {
       "type": "HeaderNav",
       "props": {
-        "id": "comp_nav_main",
-        "name": "header_nav",
-        "logo": "FitForge",
-        "links": [
-          {
-            "label": "Method",
-            "href": "#features"
-          },
-          {
-            "label": "Success Stories",
-            "href": "#testimonials"
-          },
-          {
-            "label": "Results",
-            "href": "#stats"
-          },
-          {
-            "label": "Programs",
-            "href": "#cta"
-          }
-        ],
-        "ctaText": "Start Your Transformation",
-        "ctaHref": "#cta",
-        "sticky": true,
-        "mobileMenu": true,
-        "transparent": false,
-        "showSearch": false
+        "id": "skel_test_header_01",
+        "purpose": "Main navigation for restaurant website"
       }
     },
     {
       "type": "HeroSection",
       "props": {
-        "id": "comp_hero_impact",
-        "name": "hero_main",
-        "heading": "Elite Fitness for the High-Performance Professional",
-        "subheading": "No fluff. No wasted time. Just science-backed, 30-minute protocols designed to fit the schedule of a modern executive.",
-        "primaryCtaText": "Get Your Custom Plan",
-        "primaryCtaHref": "#cta",
-        "secondaryCtaText": "View Results",
-        "secondaryCtaHref": "#stats",
-        "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop",
-        "gradientFrom": "#F97316",
-        "gradientTo": "#22C55E",
-        "animation": "stagger",
-        "trustBadges": [
-          "Certified Performance Coaches",
-          "500+ Professionals Transformed",
-          "Flexible Scheduling"
-        ],
-        "subtext": "Build something amazing with our platform.",
-        "ctaText": "Get Started",
-        "ctaHref": "#",
-        "align": "center",
-        "layout": "centered",
-        "backgroundOverlay": false,
-        "padding": "96px"
-      }
-    },
-    {
-      "type": "LogoGrid",
-      "props": {
-        "id": "comp_logos_trust",
-        "name": "social_proof_logos",
-        "title": "As Featured In",
-        "logos": [
-          {
-            "src": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Forbes_logo.svg",
-            "alt": "Forbes"
-          },
-          {
-            "src": "https://upload.wikimedia.org/wikipedia/commons/0/02/Health_Magazine_Logo.svg",
-            "alt": "Health"
-          },
-          {
-            "src": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
-            "alt": "Google"
-          },
-          {
-            "src": "https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg",
-            "alt": "IBM"
-          }
-        ],
-        "heading": "Trusted By",
-        "variant": "grid",
-        "grayscale": true,
-        "tooltip": false,
-        "animation": "none"
-      }
-    },
-    {
-      "type": "SectionBlock",
-      "props": {
-        "id": "comp_section_features",
-        "background": "dark",
-        "padding": "lg",
-        "paddingY": "64px",
-        "paddingX": "24px",
-        "maxWidth": "1280px",
-        "bgColor": "",
-        "bgImageUrl": "",
-        "bgOverlay": false,
-        "name": "section_4"
+        "id": "skel_test_hero_02",
+        "heading": "Experience Culinary Excellence",
+        "subtext": "Where fresh ingredients meet professional craftsmanship."
       }
     },
     {
       "type": "FeaturesGrid",
       "props": {
-        "id": "comp_features_pillars",
-        "name": "features_grid",
-        "title": "Engineered for Efficiency",
-        "subtitle": "Stop guessing. Start training with a system that respects your time and maximizes your output.",
+        "id": "skel_test_feat_03",
+        "title": "Our Culinary Commitment",
         "features": [
           {
-            "title": "30-Min High Impact",
-            "description": "Scientific protocols designed to trigger maximum metabolic response in minimum time.",
-            "icon": "Zap"
+            "title": "Farm-to-Table",
+            "description": "Fresh ingredients from local farmers."
           },
           {
-            "title": "Executive Nutrition",
-            "description": "Meal strategies that fuel your brain and body without requiring hours of prep.",
-            "icon": "Coffee"
+            "title": "Expert Chefs",
+            "description": "Award-winning culinary professionals."
           },
           {
-            "title": "Anywhere Access",
-            "description": "Train in your hotel, home gym, or office with our mobile-first coaching platform.",
-            "icon": "Smartphone"
-          },
-          {
-            "title": "Data-Driven Progress",
-            "description": "We track your metrics to pivot your plan exactly when your body plateaus.",
-            "icon": "BarChart"
+            "title": "Exquisite Ambiance",
+            "description": "Sophisticated setting for memorable evenings."
           }
-        ],
-        "cardStyle": "elevated",
-        "hoverEffect": "lift",
-        "animation": "stagger-fade",
-        "columns": 2,
-        "heading": "Our Features",
-        "variant": "grid"
+        ]
       }
     },
     {
-      "type": "StatsSection",
+      "type": "Gallery",
       "props": {
-        "id": "comp_stats_proof",
-        "name": "stats_results",
-        "stats": [
-          {
-            "label": "Avg. Body Fat Loss",
-            "value": "12",
-            "suffix": "%"
-          },
-          {
-            "label": "Hours Saved Weekly",
-            "value": "5",
-            "suffix": "+"
-          },
-          {
-            "label": "Energy Increase",
-            "value": "40",
-            "suffix": "%"
-          },
-          {
-            "label": "Success Rate",
-            "value": "98",
-            "suffix": "%"
-          }
-        ],
-        "animated": true,
-        "bgColor": "#1F2937",
-        "textColor": "#F8FAFC",
-        "heading": "Stats",
-        "columns": 4,
-        "duration": 2000,
-        "animation": "none"
-      }
-    },
-    {
-      "type": "TestimonialSection",
-      "props": {
-        "id": "comp_testimonials_pros",
-        "name": "testimonials",
-        "title": "Built by Professionals, For Professionals",
-        "variant": "carousel",
-        "testimonials": [
-          {
-            "quote": "FitForge changed the game for me. I finally have a routine that fits between my morning board meetings and evening client dinners.",
-            "author": "David Chen",
-            "role": "SVP of Operations",
-            "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop"
-          },
-          {
-            "quote": "The focus on efficiency is what sold me. I'm in better shape at 42 than I was at 25, all while working 60-hour weeks.",
-            "author": "Sarah Jenkins",
-            "role": "Tech Founder",
-            "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop"
-          },
-          {
-            "quote": "No more wasted hours in the gym. The data-driven approach is exactly how I run my business, and now it's how I run my health.",
-            "author": "Marcus Thorne",
-            "role": "Management Consultant",
-            "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
-          }
-        ],
-        "heading": "Testimonials",
-        "autoplay": false,
-        "interval": 5000,
-        "animation": "none"
+        "id": "skel_test_gal_04",
+        "heading": "A Visual Taste",
+        "purpose": "Food photography showcase"
       }
     },
     {
       "type": "CTASection",
       "props": {
-        "id": "comp_cta_final",
-        "name": "cta_join",
-        "heading": "Ready to Reclaim Your Peak Performance?",
-        "subheading": "Join the elite group of professionals who refuse to settle for average health. Limited coaching spots available for next month.",
-        "ctaText": "Claim Your Strategy Session",
-        "ctaHref": "#",
-        "variant": "gradient",
-        "gradientFrom": "#F97316",
-        "gradientTo": "#22C55E",
-        "animation": "fade-up",
-        "layout": "centered",
-        "imagePosition": "right"
+        "id": "skel_test_cta_05",
+        "heading": "Ready to dine with us?",
+        "subtext": "Book your table today.",
+        "buttonText": "Reserve a Table"
       }
     },
     {
       "type": "FooterSection",
       "props": {
-        "id": "comp_footer_main",
-        "name": "footer",
-        "logo": "FitForge",
-        "description": "Precision fitness engineering for the modern high-performer.",
+        "id": "skel_test_foot_06",
+        "purpose": "Contact and social links"
+      }
+    }
+  ],
+  "polished": [
+    {
+      "type": "HeaderNav",
+      "props": {
+        "id": "skel_test_header_01",
+        "sticky": true,
+        "animation": "fade-down",
+        "logo": "Restaurant",
+        "links": [
+          {
+            "label": "Home",
+            "href": "#"
+          },
+          {
+            "label": "About",
+            "href": "#about"
+          },
+          {
+            "label": "Services",
+            "href": "#services"
+          },
+          {
+            "label": "Contact",
+            "href": "#contact"
+          }
+        ],
+        "ctaText": "Get Started",
+        "ctaHref": "#contact"
+      }
+    },
+    {
+      "type": "HeroSection",
+      "props": {
+        "id": "skel_test_hero_02",
+        "heading": "Experience Culinary Excellence",
+        "subtext": "Where fresh ingredients meet professional craftsmanship.",
+        "animation": "fade-up",
+        "backgroundOverlay": true,
+        "padding": "128px",
+        "align": "center",
+        "layout": "centered",
+        "gradientFrom": "#2563EB",
+        "gradientTo": "#EA580C",
+        "badge": "Reserve Your Table",
+        "backgroundUrl": "https://picsum.photos/seed/food-meal-table/1200/800"
+      }
+    },
+    {
+      "type": "FeaturesGrid",
+      "props": {
+        "id": "skel_test_feat_03",
+        "title": "Our Culinary Commitment",
+        "features": [
+          {
+            "title": "Farm-to-Table",
+            "description": "Fresh ingredients from local farmers."
+          },
+          {
+            "title": "Expert Chefs",
+            "description": "Award-winning culinary professionals."
+          },
+          {
+            "title": "Exquisite Ambiance",
+            "description": "Sophisticated setting for memorable evenings."
+          }
+        ],
+        "animation": "stagger",
+        "cardStyle": "elevated",
+        "hoverEffect": "lift",
+        "columns": 3
+      }
+    },
+    {
+      "type": "Gallery",
+      "props": {
+        "id": "skel_test_gal_04",
+        "heading": "A Visual Taste",
+        "animation": "stagger",
+        "columns": 3,
+        "images": [
+          {
+            "src": "/stock/food/meal-table.webp",
+            "alt": "A Visual Taste image 1"
+          },
+          {
+            "src": "/stock/food/salad.webp",
+            "alt": "A Visual Taste image 2"
+          },
+          {
+            "src": "/stock/food/steak.webp",
+            "alt": "A Visual Taste image 3"
+          },
+          {
+            "src": "/stock/food/sushi.webp",
+            "alt": "A Visual Taste image 4"
+          },
+          {
+            "src": "/stock/food/burger.webp",
+            "alt": "A Visual Taste image 5"
+          },
+          {
+            "src": "/stock/food/pancakes.webp",
+            "alt": "A Visual Taste image 6"
+          }
+        ],
+        "bgColor": "muted"
+      }
+    },
+    {
+      "type": "CTASection",
+      "props": {
+        "id": "skel_test_cta_05",
+        "heading": "Ready to dine with us?",
+        "subtext": "Book your table today.",
+        "buttonText": "Reserve a Table",
+        "animation": "fade-up",
+        "variant": "gradient",
+        "gradientFrom": "#2563EB",
+        "gradientTo": "#EA580C"
+      }
+    },
+    {
+      "type": "FooterSection",
+      "props": {
+        "id": "skel_test_foot_06",
+        "animation": "fade-up",
+        "logo": "Restaurant",
+        "description": "Welcome to Restaurant. We're dedicated to providing exceptional service and quality.",
         "linkGroups": [
           {
-            "title": "Programs",
+            "title": "Quick Links",
             "links": [
               {
-                "label": "Executive 1-on-1",
+                "label": "Home",
                 "href": "#"
               },
               {
-                "label": "Hybrid Coaching",
-                "href": "#"
+                "label": "About Us",
+                "href": "#about"
               },
               {
-                "label": "Corporate Wellness",
-                "href": "#"
+                "label": "Services",
+                "href": "#services"
+              },
+              {
+                "label": "Contact",
+                "href": "#contact"
               }
             ]
           },
           {
-            "title": "Company",
+            "title": "Support",
             "links": [
               {
-                "label": "Our Method",
-                "href": "#"
+                "label": "FAQ",
+                "href": "#faq"
               },
               {
-                "label": "Coaches",
-                "href": "#"
+                "label": "Privacy Policy",
+                "href": "/privacy"
               },
               {
-                "label": "Success Stories",
-                "href": "#"
-              }
-            ]
-          },
-          {
-            "title": "Resources",
-            "links": [
-              {
-                "label": "The Forge Blog",
-                "href": "#"
-              },
-              {
-                "label": "Nutrition Guide",
-                "href": "#"
-              },
-              {
-                "label": "Support",
-                "href": "#"
+                "label": "Terms of Service",
+                "href": "/terms"
               }
             ]
           }
         ],
-        "copyright": "© 2024 FitForge Performance. All rights reserved.",
-        "socialLinks": [],
-        "backToTop": false,
-        "newsletterIntegration": false,
-        "showCopyright": true
+        "copyright": "© 2026 Restaurant. All rights reserved."
       }
     }
   ],
-  "message": "Enhanced FitForge with a high-impact dark theme, neon-accented gradients, and improved visual hierarchy designed for busy professionals."
+  "events": [
+    {
+      "type": "status",
+      "step": "planning",
+      "label": "Planning page layout..."
+    },
+    {
+      "type": "plan"
+    },
+    {
+      "type": "status",
+      "step": "generating",
+      "label": "Polishing 6 sections..."
+    },
+    {
+      "type": "status",
+      "step": "rendering",
+      "label": "Streaming 6 components..."
+    },
+    {
+      "type": "component_stream",
+      "replacesSkelId": "skel_test_header_01"
+    },
+    {
+      "type": "component_stream",
+      "replacesSkelId": "skel_test_hero_02"
+    },
+    {
+      "type": "component_stream",
+      "replacesSkelId": "skel_test_feat_03"
+    },
+    {
+      "type": "component_stream",
+      "replacesSkelId": "skel_test_gal_04"
+    },
+    {
+      "type": "component_stream",
+      "replacesSkelId": "skel_test_cta_05"
+    },
+    {
+      "type": "component_stream",
+      "replacesSkelId": "skel_test_foot_06"
+    },
+    {
+      "type": "done"
+    }
+  ],
+  "qualityChecks": [
+    {
+      "name": "All skeleton components polished",
+      "pass": true,
+      "detail": "6/6 components"
+    },
+    {
+      "name": "Components have animation",
+      "pass": true,
+      "detail": "6 components with animation"
+    },
+    {
+      "name": "HeroSection has gradient",
+      "pass": true,
+      "detail": "gradientFrom=#2563EB"
+    },
+    {
+      "name": "component_stream has replacesSkelId",
+      "pass": true,
+      "detail": "6/6 events with replacesSkelId"
+    },
+    {
+      "name": "Done event received",
+      "pass": true,
+      "detail": "1 done events"
+    },
+    {
+      "name": "No errors",
+      "pass": true,
+      "detail": "0 errors"
+    },
+    {
+      "name": "Polished components have animation or enrichment",
+      "pass": true,
+      "detail": "Prop counts: HeaderNav(7), HeroSection(12), FeaturesGrid(7), Gallery(6), CTASection(8), FooterSection(6)"
+    }
+  ],
+  "meta": {
+    "elapsed": "30.6s",
+    "eventCount": 11
+  }
 }

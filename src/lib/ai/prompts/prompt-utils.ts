@@ -98,13 +98,36 @@ export function deriveGradientPair(colors: ColorPalette): { from: string; to: st
 // ---------------------------------------------------------------------------
 
 /**
+ * System-level design rules injected at the system prompt level.
+ * These apply to ALL sections and should NOT be repeated per-section.
+ * Token Rules and UX Design Rules are now at system prompt level via this function.
+ */
+export function buildSystemLevelDesignRules(): string {
+  return `### Token Rules
+- Apply color values EXACTLY as specified — do NOT invent your own palette.
+- Use gradient tokens for HeroSection gradientFrom/gradientTo props.
+- Use surface color for card backgrounds, shadow token for elevated cards.
+- Use primary color for CTA buttons and highlighted elements.
+- Use accent color for badges, tags, and secondary highlights.
+- Typography: headingFont for all section headings and hero text; bodyFont for descriptions and labels.
+- Alternate section backgrounds: background → surface → dark → gradient.
+
+### UX Design Rules (MANDATORY)
+- Contrast: Minimum 4.5:1 for text, 3:1 for large text. Descriptive alt text on images.
+- Layout: Base font 16px minimum. Line-height 1.5-1.7 for body. Section padding 96-128px.
+- Animation: Duration 150-300ms transitions, 500-700ms reveals. Use transform (translateY, scale) for hover, NEVER animate width/height. Stagger delay 80-120ms between elements.
+- Touch targets: Minimum 44×44px. Card padding 24-32px, border-radius 12-16px.
+- Content: Specific compelling headings (NO "Welcome", "About Us"). Concrete descriptions 2-3 sentences max. Action verb CTAs ("Get Started", "Book a Demo").
+- Anti-Patterns: NO placeholder text, NO generic clichés ("world-class", "innovative solutions"), NO emoji as icons in professional contexts.`;
+}
+
+/**
  * Builds the Styleguide Tokens markdown block used for guiding the AI on
  * exact hex values, font families, and spacing tokens to use.
  */
 export function buildUnifiedDesignTokensBlock(
   designGuidance?: DesignGuidance,
   styleguideData?: MinimalStyleguideTokens,
-  options?: { skipUxRules?: boolean },
 ): string {
   const blocks: string[] = [];
 
@@ -173,28 +196,7 @@ export function buildUnifiedDesignTokensBlock(
     blocks.push(`### CSS Custom Properties\n${varLines}`);
   }
 
-  // ── Token Application Rules ──
-  if (colors || typography) {
-    blocks.push(`### Token Rules
-- Apply color values EXACTLY as specified — do NOT invent your own palette.
-- Use gradient tokens for HeroSection gradientFrom/gradientTo props.
-- Use surface color for card backgrounds, shadow token for elevated cards.
-- Use primary color for CTA buttons and highlighted elements.
-- Use accent color for badges, tags, and secondary highlights.
-- Typography: headingFont for all section headings and hero text; bodyFont for descriptions and labels.
-- Alternate section backgrounds: background → surface → dark → gradient.`);
-  }
-
-  // ── UX Design Rules — skip for makeup mode (defaults engine handles this)
-  if (!options?.skipUxRules) {
-    blocks.push(`### UX Design Rules (MANDATORY)
-- Contrast: Minimum 4.5:1 for text, 3:1 for large text. Descriptive alt text on images.
-- Layout: Base font 16px minimum. Line-height 1.5-1.7 for body. Section padding 96-128px.
-- Animation: Duration 150-300ms transitions, 500-700ms reveals. Use transform (translateY, scale) for hover, NEVER animate width/height. Stagger delay 80-120ms between elements.
-- Touch targets: Minimum 44×44px. Card padding 24-32px, border-radius 12-16px.
-- Content: Specific compelling headings (NO "Welcome", "About Us"). Concrete descriptions 2-3 sentences max. Action verb CTAs ("Get Started", "Book a Demo").
-- Anti-Patterns: NO placeholder text, NO generic clichés ("world-class", "innovative solutions"), NO emoji as icons in professional contexts.`);
-  }
+  // Token Rules and UX Design Rules are now at system prompt level via buildSystemLevelDesignRules()
 
   return blocks.length > 0 ? blocks.join('\n\n') : '';
 }

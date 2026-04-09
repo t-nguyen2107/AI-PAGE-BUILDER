@@ -9,6 +9,8 @@
 
 import type { ComponentData } from '@puckeditor/core';
 import type { DesignGuidance, ColorPalette } from './knowledge/design-knowledge';
+import { mapStylePriorityToDesignStyle } from './prompts/prompt-utils';
+import { picsumUrl } from '../../features/ai/stock-images';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,32 +130,32 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
 // ─── Business Type → Hero Background Image Mapping ────────────────────────────
 
 const HERO_BACKGROUNDS: Record<string, string> = {
-  'SaaS/technology': '/stock/hero/tech-dark.webp',
-  'e-commerce/store': '/stock/fashion/shopping-bags.webp',
-  'e-commerce/luxury': '/stock/fashion/fashion-show.webp',
-  'restaurant/dining': '/stock/food/meal-table.webp',
-  'bakery/pastry shop': '/stock/food/pancakes.webp',
-  'coffee shop/cafe': '/stock/drink/coffee-shop.webp',
-  'spa/wellness': '/stock/lifestyle/spa-relax.webp',
-  'fitness/gym': '/stock/fitness/gym-workout.webp',
-  'real estate': '/stock/realestate/luxury-home.webp',
-  'education/training': '/stock/education/campus.webp',
-  'healthcare/medical': '/stock/medical/doctor.webp',
-  'fashion/clothing': '/stock/fashion/runway.webp',
-  'travel/hospitality': '/stock/travel/tropical-beach.webp',
-  'law firm/legal': '/stock/hero/office-modern.webp',
-  'construction/architecture': '/stock/hero/office-modern.webp',
-  'personal portfolio': '/stock/hero/coding-screen.webp',
-  'creative agency': '/stock/hero/gradient-purple.webp',
-  'blog/media': '/stock/blog/writing.webp',
-  'nonprofit/charity': '/stock/people/friends-laughing.webp',
-  'event/conference': '/stock/people/concert-crowd.webp',
-  'crypto/web3': '/stock/hero/tech-dark.webp',
-  'B2B/service': '/stock/hero/team-meeting.webp',
-  'productivity/tool': '/stock/hero/coding-screen.webp',
-  'AI/chatbot': '/stock/technology/robot-ai.webp',
-  'food/delivery': '/stock/food/burger.webp',
-  'music/podcast': '/stock/people/concert-crowd.webp',
+  'SaaS/technology':           picsumUrl('hero-tech-dark', 1200, 800),
+  'e-commerce/store':          picsumUrl('fashion-shopping', 1200, 800),
+  'e-commerce/luxury':         picsumUrl('fashion-luxury', 1200, 800),
+  'restaurant/dining':         picsumUrl('food-meal-table', 1200, 800),
+  'bakery/pastry shop':        picsumUrl('food-pancakes', 1200, 800),
+  'coffee shop/cafe':          picsumUrl('drink-coffee-shop', 1200, 800),
+  'spa/wellness':              picsumUrl('lifestyle-spa', 1200, 800),
+  'fitness/gym':               picsumUrl('fitness-gym', 1200, 800),
+  'real estate':               picsumUrl('realestate-luxury-home', 1200, 800),
+  'education/training':        picsumUrl('education-campus', 1200, 800),
+  'healthcare/medical':        picsumUrl('medical-doctor', 1200, 800),
+  'fashion/clothing':          picsumUrl('fashion-runway', 1200, 800),
+  'travel/hospitality':        picsumUrl('travel-tropical-beach', 1200, 800),
+  'law firm/legal':            picsumUrl('hero-office-modern', 1200, 800),
+  'construction/architecture': picsumUrl('hero-office-modern', 1200, 800),
+  'personal portfolio':        picsumUrl('hero-coding', 1200, 800),
+  'creative agency':           picsumUrl('hero-gradient-purple', 1200, 800),
+  'blog/media':                picsumUrl('blog-writing', 1200, 800),
+  'nonprofit/charity':         picsumUrl('people-friends', 1200, 800),
+  'event/conference':          picsumUrl('people-concert', 1200, 800),
+  'crypto/web3':               picsumUrl('hero-tech-dark', 1200, 800),
+  'B2B/service':               picsumUrl('hero-team-meeting', 1200, 800),
+  'productivity/tool':         picsumUrl('hero-coding', 1200, 800),
+  'AI/chatbot':                picsumUrl('technology-robot', 1200, 800),
+  'food/delivery':             picsumUrl('food-burger', 1200, 800),
+  'music/podcast':             picsumUrl('people-concert', 1200, 800),
 };
 
 // ─── Background Alternation Pattern ───────────────────────────────────────────
@@ -237,7 +239,12 @@ export function applyComponentDefaults(
       }
     }
 
-    // 1b. Inject gradients from palette
+    // 1b. Inject designStyle from design guidance
+    if (!props.designStyle && ctx.designGuidance?.reasoning?.stylePriority) {
+      props.designStyle = mapStylePriorityToDesignStyle(ctx.designGuidance.reasoning.stylePriority);
+    }
+
+    // 1c. Inject gradients from palette
     if (palette) {
       injectGradients(comp.type, props, palette, ctx.businessType);
     }
@@ -417,7 +424,7 @@ function alternateBackgrounds(components: ComponentData[]): ComponentData[] {
 function fillTestimonialAvatars(testimonials: Array<Record<string, unknown>>): void {
   testimonials.forEach((t, i) => {
     if (!t.avatarUrl || typeof t.avatarUrl !== 'string' || t.avatarUrl.trim() === '') {
-      t.avatarUrl = `/stock/testimonials/avatar-${(i % 4) + 1}.webp`;
+      t.avatarUrl = picsumUrl(`testimonial-avatar-${i}`, 100, 100);
     }
   });
 }
@@ -425,7 +432,7 @@ function fillTestimonialAvatars(testimonials: Array<Record<string, unknown>>): v
 function fillTeamAvatars(members: Array<Record<string, unknown>>): void {
   members.forEach((m, i) => {
     if (!m.avatarUrl || typeof m.avatarUrl !== 'string' || m.avatarUrl.trim() === '') {
-      m.avatarUrl = `/stock/team/person-${(i % 6) + 1}.webp`;
+      m.avatarUrl = picsumUrl(`team-person-${i}`, 200, 200);
     }
   });
 }
@@ -433,14 +440,14 @@ function fillTeamAvatars(members: Array<Record<string, unknown>>): void {
 // ─── Business Type → Stock Image Category Mapping ────────────────────────────
 
 const GALLERY_STOCK: Record<string, string[]> = {
-  'restaurant/dining': ['/stock/food/meal-table.webp', '/stock/food/salad.webp', '/stock/food/steak.webp', '/stock/food/sushi.webp', '/stock/food/burger.webp', '/stock/food/pancakes.webp'],
-  'bakery/pastry shop': ['/stock/food/pancakes.webp', '/stock/food/toast-breakfast.webp', '/stock/food/healthy-bowl.webp', '/stock/food/vegetables.webp', '/stock/food/pizza.webp', '/stock/food/salad.webp'],
-  'coffee shop/cafe': ['/stock/drink/coffee-shop.webp', '/stock/food/pancakes.webp', '/stock/food/toast-breakfast.webp', '/stock/food/healthy-bowl.webp', '/stock/food/vegetables.webp', '/stock/food/salad.webp'],
-  'fitness/gym': ['/stock/fitness/gym-workout.webp', '/stock/lifestyle/spa-relax.webp', '/stock/food/healthy-bowl.webp', '/stock/food/vegetables.webp', '/stock/people/friends-laughing.webp', '/stock/hero/office-modern.webp'],
-  'real estate': ['/stock/realestate/luxury-home.webp', '/stock/hero/office-modern.webp', '/stock/travel/tropical-beach.webp', '/stock/food/meal-table.webp', '/stock/lifestyle/spa-relax.webp', '/stock/education/campus.webp'],
-  'travel/hospitality': ['/stock/travel/tropical-beach.webp', '/stock/food/meal-table.webp', '/stock/people/friends-laughing.webp', '/stock/lifestyle/spa-relax.webp', '/stock/hero/office-modern.webp', '/stock/education/campus.webp'],
-  'fashion/clothing': ['/stock/fashion/runway.webp', '/stock/fashion/fashion-show.webp', '/stock/fashion/shopping-bags.webp', '/stock/people/friends-laughing.webp', '/stock/lifestyle/spa-relax.webp', '/stock/food/meal-table.webp'],
-  default: ['/stock/food/meal-table.webp', '/stock/people/friends-laughing.webp', '/stock/lifestyle/spa-relax.webp', '/stock/hero/office-modern.webp', '/stock/education/campus.webp', '/stock/travel/tropical-beach.webp'],
+  'restaurant/dining': [0,1,2,3,4,5].map(i => picsumUrl(`food-restaurant-${i}`, 800, 600)),
+  'bakery/pastry shop': [0,1,2,3,4,5].map(i => picsumUrl(`food-bakery-${i}`, 800, 600)),
+  'coffee shop/cafe': [0,1,2,3,4,5].map(i => picsumUrl(`drink-cafe-${i}`, 800, 600)),
+  'fitness/gym': [0,1,2,3,4,5].map(i => picsumUrl(`fitness-gym-${i}`, 800, 600)),
+  'real estate': [0,1,2,3,4,5].map(i => picsumUrl(`realestate-${i}`, 1200, 800)),
+  'travel/hospitality': [0,1,2,3,4,5].map(i => picsumUrl(`travel-${i}`, 1200, 800)),
+  'fashion/clothing': [0,1,2,3,4,5].map(i => picsumUrl(`fashion-${i}`, 600, 800)),
+  default: [0,1,2,3,4,5].map(i => picsumUrl(`gallery-default-${i}`, 800, 600)),
 };
 
 function getGalleryStock(businessType?: string): string[] {
@@ -537,9 +544,9 @@ function fillFooterContent(props: Props, businessType?: string, businessName?: s
 function fillTestimonialContent(props: Props): void {
   if (!Array.isArray(props.testimonials) || props.testimonials.length === 0) {
     props.testimonials = [
-      { quote: 'Absolutely love this place! The quality and service are outstanding.', author: 'Sarah M.', role: 'Verified Customer', avatarUrl: '/stock/testimonials/avatar-1.webp', rating: 5 },
-      { quote: "Best experience I've had. Highly recommend to everyone.", author: 'James K.', role: 'Regular Visitor', avatarUrl: '/stock/testimonials/avatar-2.webp', rating: 5 },
-      { quote: 'Fantastic from start to finish. Will definitely be coming back!', author: 'Emily R.', role: 'Happy Customer', avatarUrl: '/stock/testimonials/avatar-3.webp', rating: 4 },
+      { quote: 'Absolutely love this place! The quality and service are outstanding.', author: 'Sarah M.', role: 'Verified Customer', avatarUrl: picsumUrl('testimonial-default-0', 100, 100), rating: 5 },
+      { quote: "Best experience I've had. Highly recommend to everyone.", author: 'James K.', role: 'Regular Visitor', avatarUrl: picsumUrl('testimonial-default-1', 100, 100), rating: 5 },
+      { quote: 'Fantastic from start to finish. Will definitely be coming back!', author: 'Emily R.', role: 'Happy Customer', avatarUrl: picsumUrl('testimonial-default-2', 100, 100), rating: 4 },
     ];
   }
 }

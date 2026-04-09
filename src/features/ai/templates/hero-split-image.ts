@@ -20,7 +20,7 @@ export function generateHeroSplitImage(props?: Record<string, unknown>): Section
     'Create stunning, responsive websites with our intuitive drag-and-drop builder. No coding required.';
   const ctaText = (props?.ctaText as string) ?? 'Get Started';
   const ctaHref = (props?.ctaHref as string) ?? '#';
-  const backgroundUrl = (props?.backgroundUrl as string) ?? '/stock/hero/office-modern.webp';
+  const backgroundUrl = (props?.backgroundUrl as string) ?? 'https://picsum.photos/seed/hero-office-modern/1200/800';
 
   const now = new Date().toISOString();
   const sectionId = generateId();

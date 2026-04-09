@@ -9,20 +9,20 @@ export type ImageValue = {
 };
 
 const SUGGESTED_IMAGES = [
-  "/stock/hero/hero-1.jpg",
-  "/stock/hero/hero-2.jpg",
-  "/stock/hero/hero-3.jpg",
-  "/stock/hero/hero-4.jpg",
-  "/stock/hero/hero-5.jpg",
-  "/stock/bg/bg-1.jpg",
-  "/stock/bg/bg-2.jpg",
-  "/stock/bg/bg-3.jpg",
-  "/stock/team/team-1.jpg",
-  "/stock/team/team-2.jpg",
-  "/stock/team/team-3.jpg",
-  "/stock/team/team-4.jpg",
-  "/stock/testimonial/testimonial-1.jpg",
-  "/stock/testimonial/testimonial-2.jpg",
+  "https://picsum.photos/seed/hero-picker-1/1200/800",
+  "https://picsum.photos/seed/hero-picker-2/1200/800",
+  "https://picsum.photos/seed/hero-picker-3/1200/800",
+  "https://picsum.photos/seed/hero-picker-4/1200/800",
+  "https://picsum.photos/seed/hero-picker-5/1200/800",
+  "https://picsum.photos/seed/bg-1/1200/800",
+  "https://picsum.photos/seed/bg-2/1200/800",
+  "https://picsum.photos/seed/bg-3/1200/800",
+  "https://picsum.photos/seed/team-picker-1/200/200",
+  "https://picsum.photos/seed/team-picker-2/200/200",
+  "https://picsum.photos/seed/team-picker-3/200/200",
+  "https://picsum.photos/seed/team-picker-4/200/200",
+  "https://picsum.photos/seed/testimonial-picker-1/100/100",
+  "https://picsum.photos/seed/testimonial-picker-2/100/100",
 ];
 
 export function ImagePickerField({

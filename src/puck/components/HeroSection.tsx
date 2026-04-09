@@ -66,6 +66,10 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
       ? "rgba(0,0,0,0.5)"
       : undefined;
 
+  // Extract style overrides but exclude padding — hero manages its own padding
+  const metaStyles = extractStyleProps(metaRest);
+  delete metaStyles.padding;
+
   const sectionStyle: React.CSSProperties = {
     ...(backgroundUrl && !videoUrl
       ? {
@@ -79,7 +83,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
         }
       : {}),
     padding: `${paddingValue} 24px`,
-    ...extractStyleProps(metaRest),
+    ...metaStyles,
   };
 
   const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;

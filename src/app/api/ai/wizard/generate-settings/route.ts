@@ -1,63 +1,14 @@
 import { NextRequest } from "next/server";
 import { createFastModelBundle } from "@/lib/ai/provider";
 import { generateStyleguideFromBusinessType } from "@/lib/ai/knowledge/auto-styleguide";
+import { detectBusinessType } from "@/lib/ai/knowledge/business-detect";
 
 import type { WizardProjectInfo, GenerateSettingsResponse } from "@/types/wizard";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { generateCssVariables } from "@/lib/css-variables";
 
-// ─── Business type detection ──────────────────────────────────────────────────
-
-const BUSINESS_KEYWORDS: Array<{ type: string; keywords: string[] }> = [
-  { type: "restaurant/dining", keywords: ["restaurant", "nhà hàng", "ẩm thực", "dining", "food"] },
-  { type: "bakery/pastry shop", keywords: ["bakery", "tiệm bánh", "bánh", "pastry", "cake"] },
-  { type: "coffee shop/cafe", keywords: ["coffee", "cafe", "cà phê", "quán cà phê", "espresso"] },
-  { type: "spa/wellness", keywords: ["spa", "massage", "wellness", "yoga", "thư giãn"] },
-  { type: "fitness/gym", keywords: ["gym", "fitness", "thể hình", "workout", "training"] },
-  { type: "SaaS/technology", keywords: ["saas", "software", "app", "platform", "tool", "dashboard", "api"] },
-  { type: "e-commerce/store", keywords: ["shop", "store", "ecommerce", "bán hàng", "cửa hàng", "retail"] },
-  { type: "e-commerce/luxury", keywords: ["luxury", "cao cấp", "premium", "boutique"] },
-  { type: "real estate", keywords: ["real estate", "bất động sản", "property", "nhà đất"] },
-  { type: "education/training", keywords: ["education", "course", "đào tạo", "học", "training", "academy"] },
-  { type: "healthcare/medical", keywords: ["healthcare", "medical", "y tế", "phòng khám", "clinic", "hospital"] },
-  { type: "fashion/clothing", keywords: ["fashion", "thời trang", "clothing", "áo", "quần"] },
-  { type: "travel/hospitality", keywords: ["travel", "du lịch", "hotel", "khách sạn", "tour"] },
-  { type: "law firm/legal", keywords: ["law", "legal", "luật", "pháp lý", "attorney"] },
-  { type: "construction/architecture", keywords: ["construction", "xây dựng", "architecture", "kiến trúc"] },
-  { type: "personal portfolio", keywords: ["portfolio", "cv", "resume", "personal", "cá nhân"] },
-  { type: "creative agency", keywords: ["agency", "creative", "design", "thiết kế", "studio"] },
-  { type: "blog/media", keywords: ["blog", "news", "tạp chí", "media", "magazine"] },
-  { type: "nonprofit/charity", keywords: ["nonprofit", "charity", "từ thiện", "community"] },
-  { type: "event/conference", keywords: ["event", "conference", "sự kiện", "hội nghị"] },
-  { type: "crypto/web3", keywords: ["crypto", "blockchain", "web3", "nft", "defi"] },
-  { type: "B2B/service", keywords: ["b2b", "enterprise", "consulting", "tư vấn"] },
-  { type: "food/delivery", keywords: ["delivery", "giao đồ ăn", "food delivery", "ship đồ ăn"] },
-  { type: "music/podcast", keywords: ["music", "podcast", "nhạc", "âm nhạc"] },
-  { type: "AI/chatbot", keywords: ["ai", "chatbot", "machine learning", "ml"] },
-  { type: "productivity/tool", keywords: ["productivity", "tool", "automation", "workflow"] },
-];
-
-function detectBusinessType(projectInfo: WizardProjectInfo): string {
-  const text = [
-    projectInfo.idea,
-    projectInfo.name,
-    projectInfo.style,
-    projectInfo.targetAudience,
-  ].join(" ").toLowerCase();
-
-  let bestMatch = "";
-  let bestScore = 0;
-
-  for (const { type, keywords } of BUSINESS_KEYWORDS) {
-    const score = keywords.reduce((acc, kw) => acc + (text.includes(kw) ? 1 : 0), 0);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = type;
-    }
-  }
-
-  return bestMatch;
-}
+// ─── Business type detection (uses shared utility) ──────────────────────────
+// detectBusinessType is imported from @/lib/ai/knowledge/business-detect
 
 // ─── Fallback styleguide (when no business type match) ────────────────────────
 
@@ -119,7 +70,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Generate styleguide deterministically (instant — no LLM)
-    const businessType = detectBusinessType(projectInfo);
+    const businessType = detectBusinessType(
+      [projectInfo.idea, projectInfo.name, projectInfo.style, projectInfo.targetAudience].join(" "),
+    );
     const autoResult = businessType ? generateStyleguideFromBusinessType(businessType) : null;
 
     let styleguide: GenerateSettingsResponse["styleguide"];

@@ -40,14 +40,16 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
       }
     : { ...extractStyleProps(metaRest) };
 
-  // Variant-based styling
+  // Variant-based styling — always include padding from design tokens
   const getVariantClasses = () => {
-    if (hasBg) return "text-white";
+    // Extract padding classes from ds.section.base (e.g., "py-24 px-6")
+    const sectionPadding = ds.section.base.split(' ').filter(c => c.startsWith('py-') || c.startsWith('px-')).join(' ');
+    if (hasBg) return `text-white ${sectionPadding}`;
     switch (variant) {
       case "gradient":
-        return "bg-primary text-primary-foreground relative overflow-hidden";
+        return `bg-primary text-primary-foreground relative overflow-hidden ${sectionPadding}`;
       case "dark":
-        return "bg-foreground text-background";
+        return `bg-foreground text-background ${sectionPadding}`;
       default:
         return ds.section.base;
     }

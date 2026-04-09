@@ -13,7 +13,7 @@ const DEFAULT_TESTIMONIAL: TestimonialData = {
   quote: 'This platform completely transformed how our team approaches web design. What used to take weeks now takes hours. The AI-powered builder understands exactly what we need and delivers stunning results every time.',
   author: 'Sarah Johnson',
   role: 'CTO, TechCorp',
-  avatarUrl: '/stock/testimonials/avatar-1.webp',
+  avatarUrl: 'https://picsum.photos/seed/testimonial-avatar-1/100/100',
 };
 
 /**

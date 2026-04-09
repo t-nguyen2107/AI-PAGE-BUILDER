@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { HeaderNavProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
   const {
@@ -15,9 +16,12 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
     mobileMenu = true,
     transparent = false,
     showSearch = false,
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -65,7 +69,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
             className="h-8 w-auto object-contain"
           />
         ) : (
-          <span className="text-xl font-bold tracking-tight text-foreground">{logo}</span>
+          <span className={`text-xl tracking-tight text-foreground ${ds.typography.h3}`}>{logo}</span>
         )}
       </div>
 
@@ -145,7 +149,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
         {ctaText && ctaHref && (
           <a
             href={ctaHref}
-            className="hidden md:inline-block rounded-full px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+            className={`hidden md:inline-block px-5 py-2 text-sm ${ds.button.primary} bg-primary text-primary-foreground`}
           >
             {ctaText}
           </a>
@@ -232,7 +236,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
             {ctaText && ctaHref && (
               <a
                 href={ctaHref}
-                className="mt-6 block rounded-full px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 text-center"
+                className={`mt-6 block px-5 py-2 text-sm text-center ${ds.button.primary} bg-primary text-primary-foreground`}
                 onClick={() => setMenuOpen(false)}
               >
                 {ctaText}
