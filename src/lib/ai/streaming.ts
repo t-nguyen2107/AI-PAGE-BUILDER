@@ -589,12 +589,15 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
 
         // ── Emit plan event for skeleton rendering ──
         const skeletonIds = plan.components.map(() => `skel_${generateId()}`);
+        const skeletonPlan = plan.components.map((c, i) => ({
+          type: c.type,
+          skeletonId: skeletonIds[i],
+        }));
+        console.log('[makeup] SKELETON PLAN:', JSON.stringify(skeletonPlan, null, 2));
+        console.log('[makeup] SKELETON RAW PROPS:', JSON.stringify(plan.components.map(c => ({ type: c.type, propKeys: Object.keys(c.props) })), null, 2));
         send({
           type: 'plan',
-          plan: plan.components.map((c, i) => ({
-            type: c.type,
-            skeletonId: skeletonIds[i],
-          })),
+          plan: skeletonPlan,
         });
 
         // ── PHASE 2: Parallel Per-Section Makeup ──
@@ -631,7 +634,13 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
 
         const ordered = orderPuckComponents(polished);
 
-        // Build skeletonIds for ordered components (id was set before ordering)
+        console.log('[makeup] POLISHED RESULT:', JSON.stringify(ordered.map(c => ({
+          type: c.type,
+          id: (c.props as Record<string, unknown>)?.id,
+          animation: (c.props as Record<string, unknown>)?.animation,
+          gradientFrom: (c.props as Record<string, unknown>)?.gradientFrom,
+          hoverEffect: (c.props as Record<string, unknown>)?.hoverEffect,
+        })), null, 2));
         const orderedSkeletonIds = ordered.map((c) => {
           const id = (c.props as Record<string, unknown>)?.id;
           return typeof id === 'string' ? id : '';

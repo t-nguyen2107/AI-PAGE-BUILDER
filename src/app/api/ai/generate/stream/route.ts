@@ -157,8 +157,16 @@ export async function POST(request: NextRequest) {
         let designGuidance: any = null;
         
         if (isAutoPolish) {
-          // Auto polish does not need prompt optimization, we just want to polish the skeletons
+          // Auto polish: skip prompt optimization but load business context from profile
           intent = 'modify';
+          try {
+            const profile = await prisma.projectAIProfile.findUnique({ where: { projectId } });
+            if (profile) {
+              businessType = profile.businessType || null;
+              // Build a contextual prompt from profile for section content generation
+              enrichedPrompt = `Polish a ${profile.businessType || 'general'} website for "${profile.businessName || 'Business'}". Target audience: ${profile.targetAudience || 'general'}. Tone: ${profile.tone || 'professional'}. Style: ${profile.preferredStyle || 'modern'}.`;
+            }
+          } catch { /* non-fatal */ }
         } else {
           const opt = optimizePrompt(prompt);
           enrichedPrompt = opt.enrichedPrompt;
