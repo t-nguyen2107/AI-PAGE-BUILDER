@@ -21,26 +21,92 @@ import {
 const INDUSTRY_MAP: Array<{ keywords: string[]; type: string; style: string }> = [
   // Vietnamese
   { keywords: ['tiệm bánh', 'bánh ngọt', 'bánh kem', 'patisserie'], type: 'bakery/pastry shop', style: 'warm, friendly, inviting, artisanal' },
-  { keywords: ['nhà hàng', 'quán ăn', 'ẩm thực', 'mon ăn'], type: 'restaurant/dining', style: 'elegant, appetizing, warm' },
+  { keywords: ['nhà hàng', 'quán ăn', 'ẩm thực', 'món ăn'], type: 'restaurant/dining', style: 'elegant, appetizing, warm' },
   { keywords: ['cà phê', 'quán cà phê', 'cafe', 'coffee shop'], type: 'coffee shop/cafe', style: 'cozy, modern, relaxed' },
   { keywords: ['spa', 'massage', 'thư giãn', 'wellness'], type: 'spa/wellness', style: 'calm, elegant, minimal, soothing' },
   { keywords: ['fitness', 'gym', 'thể hình', 'thể thao', 'phòng gym'], type: 'fitness/gym', style: 'energetic, bold, motivating' },
   { keywords: ['bất động sản', 'nhà đất', 'real estate', 'property'], type: 'real estate', style: 'professional, trustworthy, premium' },
   { keywords: ['giáo dục', 'trung tâm', 'khóa học', 'education', 'school'], type: 'education/training', style: 'clean, trustworthy, approachable' },
   { keywords: ['y tế', 'phòng khám', 'bệnh viện', 'clinic', 'medical', 'health'], type: 'healthcare/medical', style: 'clean, professional, calming, trustworthy' },
-  { keywords: ['thời trang', 'quần áo', 'fashion', 'clothing', 'thời trang'], type: 'fashion/clothing', style: 'trendy, visual, elegant' },
+  { keywords: ['thời trang', 'quần áo', 'fashion', 'clothing'], type: 'fashion/clothing', style: 'trendy, visual, elegant' },
   { keywords: ['du lịch', 'travel', 'tour', 'khách sạn', 'hotel', 'resort'], type: 'travel/hospitality', style: 'adventurous, vibrant, inviting' },
   { keywords: ['luật', 'pháp lý', 'law firm', 'legal', 'attorney'], type: 'law firm/legal', style: 'professional, authoritative, trustworthy' },
   { keywords: ['xây dựng', 'kiến trúc', 'construction', 'architecture'], type: 'construction/architecture', style: 'bold, structural, professional' },
-  // English
+  // English — Tech & SaaS
   { keywords: ['saas', 'software', 'startup', 'app'], type: 'SaaS/technology', style: 'modern, clean, professional, tech-forward' },
+  { keywords: ['micro saas', 'indie hacker', 'bootstrap'], type: 'Micro SaaS', style: 'modern, clean, professional' },
+  { keywords: ['b2b', 'enterprise', 'business service'], type: 'B2B', style: 'professional, trustworthy, navy' },
+  { keywords: ['ai', 'chatbot', 'artificial intelligence', 'machine learning', 'llm'], type: 'AI/Chatbot Platform', style: 'futuristic, purple, intelligent' },
+  { keywords: ['developer', 'ide', 'code', 'dev tool', 'programming'], type: 'Developer Tool / IDE', style: 'technical, dark, precise' },
+  { keywords: ['cybersecurity', 'security', 'vpn', 'privacy'], type: 'Cybersecurity Platform', style: 'dark, professional, secure' },
+  { keywords: ['analytics', 'dashboard', 'data visualization', 'bi', 'business intelligence'], type: 'Analytics', style: 'clean, data-focused, blue' },
+  { keywords: ['crm', 'client management', 'sales pipeline'], type: 'CRM & Client Management', style: 'professional, clean, trustworthy' },
+  { keywords: ['productivity', 'task', 'project management', 'collaboration', 'remote work'], type: 'Productivity', style: 'clean, teal, focused' },
+  { keywords: ['design system', 'component library', 'ui kit'], type: 'Design System/Component Library', style: 'indigo, systematic, documented' },
+  // English — Finance
+  { keywords: ['fintech', 'finance', 'banking', 'investment', 'trading'], type: 'Fintech/Crypto', style: 'dark, professional, green indicators' },
+  { keywords: ['financial dashboard', 'trading', 'stock', 'portfolio'], type: 'Financial', style: 'dark, green positive, data-dense' },
+  { keywords: ['insurance', 'coverage', 'policy'], type: 'Insurance Platform', style: 'professional, trustworthy, navy' },
+  { keywords: ['personal finance', 'budget', 'expense', 'money management'], type: 'Personal Finance Tracker', style: 'clean, green, trustworthy' },
+  // English — Commerce
+  { keywords: ['ecommerce', 'e-commerce', 'shop', 'store', 'online store'], type: 'e-commerce/store', style: 'clean, product-focused, trustworthy' },
+  { keywords: ['luxury', 'premium', 'high-end', 'luxe'], type: 'Luxury/Premium Brand', style: 'dark, gold, sophisticated' },
+  { keywords: ['marketplace', 'peer-to-peer', 'p2p', 'platform'], type: 'Marketplace (P2P)', style: 'vibrant, trustworthy, clean' },
+  { keywords: ['subscription', 'subscription box', 'box service'], type: 'Subscription Box Service', style: 'vibrant, playful, engaging' },
+  { keywords: ['food delivery', 'delivery', 'on-demand', 'takeout'], type: 'Food Delivery / On-Demand', style: 'appetizing, fast, urgent' },
+  { keywords: ['grocery', 'supermarket'], type: 'Grocery & Shopping List', style: 'fresh, green, organized' },
+  // English — Content & Media
+  { keywords: ['blog', 'news', 'magazine', 'content'], type: 'blog/media', style: 'readable, clean, content-focused' },
+  { keywords: ['podcast', 'podcast platform'], type: 'Podcast Platform', style: 'dark, warm accent, audio' },
+  { keywords: ['video streaming', 'ott', 'netflix', 'streaming', 'video platform'], type: 'Video Streaming/OTT', style: 'dark, cinematic, immersive' },
+  { keywords: ['music streaming', 'music', 'spotify', 'audio'], type: 'Music Streaming', style: 'dark, warm accent, immersive' },
+  { keywords: ['newsletter', 'email newsletter', 'substack'], type: 'Newsletter Platform', style: 'clean, readable, content-focused' },
+  // English — Social & Community
+  { keywords: ['social media', 'social network', 'community'], type: 'Social Media', style: 'vibrant, engaging, rose' },
+  { keywords: ['dating', 'dating app', 'match', 'tinder'], type: 'Dating', style: 'warm, inviting, playful' },
+  { keywords: ['creator', 'creator economy', 'influencer', 'youtube', 'tiktok'], type: 'Creator Economy', style: 'bold, pink, creative' },
+  { keywords: ['membership', 'community platform', 'forum'], type: 'Membership/Community', style: 'warm, trustworthy, connected' },
+  // English — Health & Wellness
+  { keywords: ['mental health', 'therapy', 'counseling', 'psychologist'], type: 'Mental Health', style: 'calm, safe, soothing' },
+  { keywords: ['meditation', 'mindfulness', 'calm', 'headspace'], type: 'Meditation & Mindfulness', style: 'serene, calm, minimal' },
+  { keywords: ['dental', 'dentist', 'ortho', 'teeth'], type: 'Dental Practice', style: 'clean, professional, trustworthy' },
+  { keywords: ['pharmacy', 'drug store', 'medicine', 'medication'], type: 'Pharmacy/Drug Store', style: 'clean, professional, green' },
+  { keywords: ['veterinary', 'vet', 'pet clinic', 'animal hospital'], type: 'Veterinary Clinic', style: 'warm, friendly, trustworthy' },
+  { keywords: ['pet', 'pet tech', 'dog', 'cat', 'animal'], type: 'Pet Tech', style: 'friendly, playful, warm' },
+  // English — Lifestyle & Services
   { keywords: ['portfolio', 'personal', 'resume', 'cv'], type: 'personal portfolio', style: 'minimal, creative, clean' },
   { keywords: ['agency', 'studio', 'creative'], type: 'creative agency', style: 'bold, artistic, modern' },
-  { keywords: ['ecommerce', 'e-commerce', 'shop', 'store', 'online store'], type: 'e-commerce/store', style: 'clean, product-focused, trustworthy' },
-  { keywords: ['blog', 'news', 'magazine', 'content'], type: 'blog/media', style: 'readable, clean, content-focused' },
+  { keywords: ['photography', 'photo studio', 'photographer'], type: 'Photography Studio', style: 'visual, dark, elegant' },
+  { keywords: ['marketing', 'seo', 'advertising', 'digital marketing'], type: 'Marketing Agency', style: 'bold, vibrant, modern' },
   { keywords: ['charity', 'nonprofit', 'foundation', 'cause'], type: 'nonprofit/charity', style: 'warm, trustworthy, community-focused' },
   { keywords: ['event', 'conference', 'wedding', 'festival'], type: 'event/conference', style: 'vibrant, exciting, organized' },
+  { keywords: ['wedding', 'wedding planning', 'bride', 'groom'], type: 'Wedding/Event Planning', style: 'elegant, romantic, premium' },
+  { keywords: ['hotel', 'hospitality', 'accommodation', 'lodging'], type: 'Hotel/Hospitality', style: 'elegant, inviting, premium' },
+  { keywords: ['coworking', 'coworking space', 'shared office'], type: 'Coworking Space', style: 'modern, collaborative, clean' },
+  { keywords: ['florist', 'flower', 'plant', 'garden'], type: 'Florist/Plant Shop', style: 'fresh, organic, green' },
+  { keywords: ['brewery', 'winery', 'craft beer', 'wine'], type: 'Brewery/Winery', style: 'warm, artisanal, rich' },
+  { keywords: ['church', 'religious', 'temple', 'mosque'], type: 'Church/Religious Organization', style: 'warm, dignified, welcoming' },
+  { keywords: ['sports', 'sports team', 'club', 'league', 'athletic'], type: 'Sports Team/Club', style: 'energetic, bold, vibrant' },
+  { keywords: ['museum', 'gallery', 'art', 'exhibition'], type: 'Museum/Gallery', style: 'elegant, minimal, refined' },
+  // English — Education
+  { keywords: ['course', 'e-learning', 'online course', 'mooc', 'udemy'], type: 'Online Course/E-learning', style: 'clean, approachable, engaging' },
+  { keywords: ['language learning', 'language', 'duolingo', 'learn language'], type: 'Language Learning', style: 'playful, engaging, green' },
+  { keywords: ['coding bootcamp', 'bootcamp', 'coding', 'learn code'], type: 'Coding Bootcamp', style: 'modern, tech, engaging' },
+  // English — Transport & Logistics
+  { keywords: ['logistics', 'shipping', 'freight', 'courier'], type: 'Logistics/Delivery', style: 'professional, efficient, trustworthy' },
+  { keywords: ['automotive', 'car', 'dealership', 'vehicle', 'auto'], type: 'Automotive/Car Dealership', style: 'bold, professional, sleek' },
+  { keywords: ['airline', 'aviation', 'flight', 'booking'], type: 'Airline', style: 'professional, trustworthy, sky blue' },
+  { keywords: ['ride hailing', 'uber', 'taxi', 'transportation'], type: 'Ride Hailing / Transportation', style: 'clean, fast, trustworthy' },
+  // English — Other
   { keywords: ['crypto', 'blockchain', 'web3', 'nft', 'defi'], type: 'crypto/web3', style: 'futuristic, bold, dark-mode-friendly' },
+  { keywords: ['gaming', 'game', 'esports', 'game studio'], type: 'Gaming', style: 'neon, dark, energetic' },
+  { keywords: ['government', 'public service', 'civic', 'municipal'], type: 'Government/Public', style: 'professional, high contrast, navy' },
+  { keywords: ['home service', 'plumber', 'electrician', 'repair', 'cleaning'], type: 'Home Services (Plumber/Electrician)', style: 'trustworthy, professional, clean' },
+  { keywords: ['childcare', 'daycare', 'kids', 'children', 'preschool'], type: 'Childcare/Daycare', style: 'warm, playful, friendly' },
+  { keywords: ['senior care', 'elderly', 'nursing home', 'assisted living'], type: 'Senior Care/Elderly', style: 'warm, calm, trustworthy' },
+  { keywords: ['agriculture', 'farm', 'agritech', 'farming'], type: 'Agriculture/Farm Tech', style: 'earthy, green, organic' },
+  { keywords: ['recipe', 'cooking', 'cook', 'food recipe'], type: 'Recipe & Cooking', style: 'warm, appetizing, friendly' },
+  { keywords: ['real estate', 'property', 'housing', 'apartment'], type: 'real estate', style: 'professional, trustworthy, premium' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -215,12 +281,9 @@ export function optimizePrompt(rawPrompt: string): OptimizedContext {
       ? `[Prompt Context: ${contextParts.join('. ')}]\n\n`
       : '';
 
-  // Append design context if available
-  const designBlock = designContext
-    ? `\n[Design Guidance: ${designContext}]\n`
-    : '';
-
-  const enrichedPrompt = `${contextBlock}${rawPrompt}${designBlock}`;
+  // Design context is injected separately via designContext/designGuidance in section-prompt.ts
+  // No need to append it to enrichedPrompt to avoid duplication
+  const enrichedPrompt = `${contextBlock}${rawPrompt}`;
 
   return {
     enrichedPrompt,

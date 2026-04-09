@@ -30,14 +30,15 @@ export function FAQSection(props: FAQSectionProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full py-24 px-6 bg-background text-foreground relative overflow-hidden ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl pointer-events-none" />
       <div className={columns === 2 ? "max-w-5xl mx-auto" : "max-w-3xl mx-auto"}>
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{heading}</h2>
           {subtext && (
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
               {subtext}
             </p>
           )}
@@ -50,7 +51,7 @@ export function FAQSection(props: FAQSectionProps & ComponentMeta) {
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+              className="w-full px-4 py-3 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
             />
           </div>
         )}
@@ -61,7 +62,7 @@ export function FAQSection(props: FAQSectionProps & ComponentMeta) {
               return (
                 <details
                   key={i}
-                  className="group border border-border rounded-lg overflow-hidden"
+                  className="group border border-border rounded-2xl overflow-hidden"
                 >
                   <summary className="w-full flex justify-between items-center px-5 py-4 font-semibold cursor-pointer hover:bg-muted/50 transition list-none [&::-webkit-details-marker]:hidden">
                     <span className="flex items-center gap-3">
@@ -86,7 +87,7 @@ export function FAQSection(props: FAQSectionProps & ComponentMeta) {
               return (
                 <div
                   key={i}
-                  className="p-5 rounded-lg border border-border bg-card"
+                  className="p-5 rounded-2xl border border-border bg-card"
                 >
                   <h3 className="font-semibold mb-2 flex items-center gap-3">
                     {item.icon && (

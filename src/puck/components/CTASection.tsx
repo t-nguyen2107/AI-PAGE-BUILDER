@@ -3,6 +3,8 @@
 import type { CTASectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { getDesignTokens } from "../lib/design-styles";
+import { ArrowRight } from "lucide-react";
 
 export function CTASection(props: CTASectionProps & ComponentMeta) {
   const {
@@ -19,9 +21,11 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
     variant = "default",
     trustText,
     animation = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+  const ds = getDesignTokens(designStyle);
   const hasBg = !!backgroundUrl;
   const isSplit = layout === "split";
   const hasImage = isSplit && !!imageUrl;
@@ -41,59 +45,64 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
     if (hasBg) return "text-white";
     switch (variant) {
       case "gradient":
-        return "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground relative overflow-hidden";
+        return "bg-primary text-primary-foreground relative overflow-hidden";
       case "dark":
         return "bg-foreground text-background";
       default:
-        return "bg-background text-foreground";
+        return ds.section.base;
     }
   };
 
   // Button styling based on variant
   const getPrimaryButtonClasses = () => {
     if (hasBg) {
-      return "bg-surface-lowest text-on-surface hover:bg-surface-container";
+      return `${ds.button.primary} bg-surface-lowest text-on-surface hover:bg-surface-container`;
     }
     switch (variant) {
       case "gradient":
-        return "bg-surface-lowest text-primary hover:bg-surface-container";
+        return `${ds.button.primary} bg-surface-lowest text-primary hover:bg-surface-container shadow-lg shadow-primary/25`;
       case "dark":
-        return "bg-background text-foreground hover:opacity-90";
+        return `${ds.button.primary} bg-background text-foreground hover:opacity-90`;
       default:
-        return "bg-primary text-primary-foreground hover:opacity-90";
+        return `${ds.button.primary} bg-primary text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/25`;
     }
   };
 
   const getSecondaryButtonClasses = () => {
     if (hasBg) {
-      return "border-2 border-surface-lowest text-inverse-on-surface hover:bg-surface-lowest hover:text-on-surface";
+      return `${ds.button.secondary} border-surface-lowest text-inverse-on-surface hover:bg-surface-lowest hover:text-on-surface`;
     }
     switch (variant) {
       case "gradient":
-        return "border-2 border-surface-lowest text-inverse-on-surface hover:bg-surface-lowest hover:text-primary";
+        return `${ds.button.secondary} border-surface-lowest text-inverse-on-surface hover:bg-surface-lowest hover:text-primary`;
       case "dark":
-        return "border-2 border-background text-background hover:bg-background hover:text-foreground";
+        return `${ds.button.secondary} border-background text-background hover:bg-background hover:text-foreground`;
       default:
-        return "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground";
+        return `${ds.button.secondary} border-primary text-primary hover:bg-primary hover:text-primary-foreground`;
     }
   };
 
   return (
     <section
-      className={`w-full py-20 px-6 ${getVariantClasses()} ${className ?? ""}`}
+      className={`w-full ${getVariantClasses()} ${className ?? ""}`}
       style={sectionStyle}
     >
+      {/* Decorative element for default variant */}
+      {variant === "default" && !hasBg && ds.section.decorative && (
+        <div className={ds.section.decorative} aria-hidden="true" />
+      )}
       {/* Decorative background blobs for gradient variant */}
       {variant === "gradient" && !hasBg && (
         <>
-          <div className="absolute top-0 left-0 w-64 h-64 rounded-full bg-primary-foreground/5 -translate-x-1/2 -translate-y-1/2 blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-primary-foreground/5 translate-x-1/3 translate-y-1/3 blur-3xl" />
+          <div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-primary-foreground/10 -translate-x-1/2 -translate-y-1/2 blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-primary-foreground/10 translate-x-1/3 translate-y-1/3 blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-white/5 blur-3xl" />
         </>
       )}
 
       <div
         ref={anim.ref}
-        className={`relative z-10 ${isSplit ? "max-w-6xl" : "max-w-3xl"} mx-auto transition-all duration-700 ease-out ${anim.className} ${isSplit ? "grid md:grid-cols-2 gap-8 items-center" : "text-center"}`}
+        className={`relative z-10 ${isSplit ? ds.containerWidth : "max-w-3xl"} mx-auto transition-all duration-700 ease-out ${anim.className} ${isSplit ? "grid md:grid-cols-2 gap-8 items-center" : "text-center"}`}
       >
         {/* Image side (for split layout) */}
         {hasImage && imagePosition === "left" && (
@@ -101,28 +110,29 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
             <img
               src={imageUrl}
               alt=""
-              className="w-full h-auto rounded-lg shadow-lg"
+              className={`w-full h-auto ${ds.card.base}`}
             />
           </div>
         )}
 
         {/* Content side */}
         <div className={isSplit ? "order-2" : ""}>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+          <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
           {subtext && (
-            <p className="text-lg opacity-80 mb-8 max-w-xl mx-auto md:mx-0">{subtext}</p>
+            <p className={`text-lg opacity-80 mb-8 max-w-xl mx-auto md:mx-0 ${ds.typography.body}`}>{subtext}</p>
           )}
           <div className={`flex ${isSplit ? "justify-start" : "justify-center"} gap-4 flex-wrap mb-4`}>
             <a
               href={ctaHref}
-              className={`inline-block rounded-lg px-8 py-3 font-semibold transition ${getPrimaryButtonClasses()}`}
+              className={`inline-flex items-center gap-2 transition ${getPrimaryButtonClasses()}`}
             >
               {ctaText}
+              <ArrowRight className="w-4 h-4" />
             </a>
             {ctaSecondaryText && ctaSecondaryHref && (
               <a
                 href={ctaSecondaryHref}
-                className={`inline-block rounded-lg px-8 py-3 font-semibold transition ${getSecondaryButtonClasses()}`}
+                className={`inline-block transition ${getSecondaryButtonClasses()}`}
               >
                 {ctaSecondaryText}
               </a>
@@ -141,7 +151,7 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
             <img
               src={imageUrl}
               alt=""
-              className="w-full h-auto rounded-lg shadow-lg"
+              className={`w-full h-auto ${ds.card.base}`}
             />
           </div>
         )}

@@ -209,6 +209,1001 @@ export const PRODUCT_COLOR_PALETTES: Record<string, ColorPalette> = {
     mutedForeground: '#94A3B8', border: '#4338CA',
     note: 'Dark audio + warm accent',
   },
+  'Micro SaaS': {
+    primary: '#6366F1', onPrimary: '#FFFFFF', secondary: '#818CF8',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F5F3FF',
+    foreground: '#1E1B4B', card: '#FFFFFF', muted: '#EBEFF9',
+    mutedForeground: '#64748B', border: '#E0E7FF',
+    note: 'Indigo primary + emerald CTA',
+  },
+  'B2B': {
+    primary: '#0F172A', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#0369A1', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#020617', card: '#FFFFFF', muted: '#E8ECF1',
+    mutedForeground: '#64748B', border: '#E2E8F0',
+    note: 'Professional navy + blue CTA',
+  },
+  'Financial': {
+    primary: '#0F172A', onPrimary: '#FFFFFF', secondary: '#1E293B',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#020617',
+    foreground: '#F8FAFC', card: '#0E1223', muted: '#1A1E2F',
+    mutedForeground: '#94A3B8', border: '#334155',
+    note: 'Dark bg + green positive indicators',
+  },
+  'Analytics': {
+    primary: '#1E40AF', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#1E3A8A', card: '#FFFFFF', muted: '#E9EEF6',
+    mutedForeground: '#64748B', border: '#DBEAFE',
+    note: 'Blue data + amber highlights',
+  },
+  'Healthcare': {
+    primary: '#0891B2', onPrimary: '#FFFFFF', secondary: '#22D3EE',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#ECFEFF',
+    foreground: '#164E63', card: '#FFFFFF', muted: '#E8F1F6',
+    mutedForeground: '#64748B', border: '#A5F3FC',
+    note: 'Calm cyan + health green',
+  },
+  'Educational': {
+    primary: '#4F46E5', onPrimary: '#FFFFFF', secondary: '#818CF8',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#EEF2FF',
+    foreground: '#1E1B4B', card: '#FFFFFF', muted: '#EBEEF8',
+    mutedForeground: '#64748B', border: '#C7D2FE',
+    note: 'Playful indigo + energetic orange',
+  },
+  'Gaming': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#A78BFA',
+    accent: '#F43F5E', onAccent: '#FFFFFF', background: '#0F0F23',
+    foreground: '#E2E8F0', card: '#1E1C35', muted: '#27273B',
+    mutedForeground: '#94A3B8', border: '#4C1D95',
+    note: 'Neon purple + rose action',
+  },
+  'Government/Public': {
+    primary: '#0F172A', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#0369A1', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#020617', card: '#FFFFFF', muted: '#E8ECF1',
+    mutedForeground: '#64748B', border: '#E2E8F0',
+    note: 'High contrast navy + blue',
+  },
+  'Social Media': {
+    primary: '#E11D48', onPrimary: '#FFFFFF', secondary: '#FB7185',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFF1F2',
+    foreground: '#881337', card: '#FFFFFF', muted: '#F0ECF2',
+    mutedForeground: '#64748B', border: '#FECDD3',
+    note: 'Vibrant rose + engagement blue',
+  },
+  'Productivity': {
+    primary: '#0D9488', onPrimary: '#FFFFFF', secondary: '#14B8A6',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#F0FDFA',
+    foreground: '#134E4A', card: '#FFFFFF', muted: '#E8F1F4',
+    mutedForeground: '#64748B', border: '#99F6E4',
+    note: 'Teal focus + action orange',
+  },
+  'Design System/Component Library': {
+    primary: '#4F46E5', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#EEF2FF',
+    foreground: '#312E81', card: '#FFFFFF', muted: '#EBEEF8',
+    mutedForeground: '#64748B', border: '#C7D2FE',
+    note: 'Indigo brand + doc hierarchy',
+  },
+  'NFT/Web3': {
+    primary: '#8B5CF6', onPrimary: '#FFFFFF', secondary: '#A78BFA',
+    accent: '#FBBF24', onAccent: '#0F172A', background: '#0F0F23',
+    foreground: '#F8FAFC', card: '#1E1D35', muted: '#27273B',
+    mutedForeground: '#94A3B8', border: '#4C1D95',
+    note: 'Purple tech + gold value',
+  },
+  'Creator Economy': {
+    primary: '#EC4899', onPrimary: '#FFFFFF', secondary: '#F472B6',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#831843', card: '#FFFFFF', muted: '#F1EEF5',
+    mutedForeground: '#64748B', border: '#FBCFE8',
+    note: 'Creator pink + engagement orange',
+  },
+  'Remote Work/Collaboration': {
+    primary: '#6366F1', onPrimary: '#FFFFFF', secondary: '#818CF8',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F5F3FF',
+    foreground: '#312E81', card: '#FFFFFF', muted: '#EBEFF9',
+    mutedForeground: '#64748B', border: '#E0E7FF',
+    note: 'Calm indigo + success green',
+  },
+  'Mental Health': {
+    primary: '#8B5CF6', onPrimary: '#FFFFFF', secondary: '#C4B5FD',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#4C1D95', card: '#FFFFFF', muted: '#EDEFF9',
+    mutedForeground: '#64748B', border: '#EDE9FE',
+    note: 'Calming lavender + wellness green',
+  },
+  'Pet Tech': {
+    primary: '#F97316', onPrimary: '#0F172A', secondary: '#FB923C',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFF7ED',
+    foreground: '#9A3412', card: '#FFFFFF', muted: '#F1F0F0',
+    mutedForeground: '#64748B', border: '#FED7AA',
+    note: 'Playful orange + trust blue',
+  },
+  'Smart Home/IoT': {
+    primary: '#1E293B', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#0F172A',
+    foreground: '#F8FAFC', card: '#1B2336', muted: '#272F42',
+    mutedForeground: '#94A3B8', border: '#475569',
+    note: 'Dark tech + status green',
+  },
+  'EV/Charging Ecosystem': {
+    primary: '#0891B2', onPrimary: '#FFFFFF', secondary: '#22D3EE',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#ECFEFF',
+    foreground: '#164E63', card: '#FFFFFF', muted: '#E8F1F6',
+    mutedForeground: '#64748B', border: '#A5F3FC',
+    note: 'Electric cyan + eco green',
+  },
+  'Subscription Box': {
+    primary: '#D946EF', onPrimary: '#FFFFFF', secondary: '#E879F9',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#FDF4FF',
+    foreground: '#86198F', card: '#FFFFFF', muted: '#F0EEF9',
+    mutedForeground: '#64748B', border: '#F5D0FE',
+    note: 'Excitement purple + urgency orange',
+  },
+  'Podcast': {
+    primary: '#1E1B4B', onPrimary: '#FFFFFF', secondary: '#312E81',
+    accent: '#F97316', onAccent: '#0F172A', background: '#0F0F23',
+    foreground: '#F8FAFC', card: '#1B1B30', muted: '#27273B',
+    mutedForeground: '#94A3B8', border: '#4338CA',
+    note: 'Dark audio + warm accent',
+  },
+  'Dating': {
+    primary: '#E11D48', onPrimary: '#FFFFFF', secondary: '#FB7185',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#FFF1F2',
+    foreground: '#881337', card: '#FFFFFF', muted: '#F0ECF2',
+    mutedForeground: '#64748B', border: '#FECDD3',
+    note: 'Romantic rose + warm orange',
+  },
+  'Micro-Credentials/Badges': {
+    primary: '#0369A1', onPrimary: '#FFFFFF', secondary: '#0EA5E9',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E7EFF5',
+    mutedForeground: '#64748B', border: '#BAE6FD',
+    note: 'Trust blue + achievement gold',
+  },
+  'Knowledge Base/Documentation': {
+    primary: '#475569', onPrimary: '#FFFFFF', secondary: '#64748B',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#1E293B', card: '#FFFFFF', muted: '#EAEFF3',
+    mutedForeground: '#64748B', border: '#E2E8F0',
+    note: 'Neutral grey + link blue',
+  },
+  'Hyperlocal Services': {
+    primary: '#059669', onPrimary: '#FFFFFF', secondary: '#10B981',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#ECFDF5',
+    foreground: '#064E3B', card: '#FFFFFF', muted: '#E8F1F3',
+    mutedForeground: '#64748B', border: '#A7F3D0',
+    note: 'Location green + action orange',
+  },
+  'Luxury/Premium Brand': {
+    primary: '#1C1917', onPrimary: '#FFFFFF', secondary: '#44403C',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#FAFAF9',
+    foreground: '#0C0A09', card: '#FFFFFF', muted: '#E8ECF0',
+    mutedForeground: '#64748B', border: '#D6D3D1',
+    note: 'Premium black + gold accent',
+  },
+  'Hotel/Hospitality': {
+    primary: '#1E3A8A', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#1E40AF', card: '#FFFFFF', muted: '#E9EEF5',
+    mutedForeground: '#64748B', border: '#BFDBFE',
+    note: 'Luxury navy + gold service',
+  },
+  'Wedding/Event Planning': {
+    primary: '#DB2777', onPrimary: '#FFFFFF', secondary: '#F472B6',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#831843', card: '#FFFFFF', muted: '#F0EDF4',
+    mutedForeground: '#64748B', border: '#FBCFE8',
+    note: 'Romantic pink + elegant gold',
+  },
+  'Insurance': {
+    primary: '#0369A1', onPrimary: '#FFFFFF', secondary: '#0EA5E9',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E7EFF5',
+    mutedForeground: '#64748B', border: '#BAE6FD',
+    note: 'Security blue + protected green',
+  },
+  'Banking/Traditional Finance': {
+    primary: '#0F172A', onPrimary: '#FFFFFF', secondary: '#1E3A8A',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#020617', card: '#FFFFFF', muted: '#E8ECF1',
+    mutedForeground: '#64748B', border: '#E2E8F0',
+    note: 'Trust navy + premium gold',
+  },
+  'Online Course/E-learning': {
+    primary: '#0D9488', onPrimary: '#FFFFFF', secondary: '#2DD4BF',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#F0FDFA',
+    foreground: '#134E4A', card: '#FFFFFF', muted: '#E8F1F4',
+    mutedForeground: '#64748B', border: '#5EEAD4',
+    note: 'Progress teal + achievement orange',
+  },
+  'Video Streaming/OTT': {
+    primary: '#0F0F23', onPrimary: '#FFFFFF', secondary: '#1E1B4B',
+    accent: '#E11D48', onAccent: '#FFFFFF', background: '#000000',
+    foreground: '#F8FAFC', card: '#0C0C0D', muted: '#181818',
+    mutedForeground: '#94A3B8', border: '#312E81',
+    note: 'Cinema dark + play red',
+  },
+  'Job Board/Recruitment': {
+    primary: '#0369A1', onPrimary: '#FFFFFF', secondary: '#0EA5E9',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E7EFF5',
+    mutedForeground: '#64748B', border: '#BAE6FD',
+    note: 'Professional blue + success green',
+  },
+  'Marketplace (P2P)': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#A78BFA',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#4C1D95', card: '#FFFFFF', muted: '#ECEEF9',
+    mutedForeground: '#64748B', border: '#DDD6FE',
+    note: 'Trust purple + transaction green',
+  },
+  'Logistics/Delivery': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#EFF6FF',
+    foreground: '#1E40AF', card: '#FFFFFF', muted: '#E9EFF8',
+    mutedForeground: '#64748B', border: '#BFDBFE',
+    note: 'Tracking blue + delivery orange',
+  },
+  'Agriculture/Farm Tech': {
+    primary: '#15803D', onPrimary: '#FFFFFF', secondary: '#22C55E',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#F0FDF4',
+    foreground: '#14532D', card: '#FFFFFF', muted: '#E8F0F1',
+    mutedForeground: '#64748B', border: '#BBF7D0',
+    note: 'Earth green + harvest gold',
+  },
+  'Automotive/Car Dealership': {
+    primary: '#1E293B', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#E9EDF1',
+    mutedForeground: '#64748B', border: '#E2E8F0',
+    note: 'Premium dark + action red',
+  },
+  'Photography Studio': {
+    primary: '#18181B', onPrimary: '#FFFFFF', secondary: '#27272A',
+    accent: '#F8FAFC', onAccent: '#0F172A', background: '#000000',
+    foreground: '#FAFAFA', card: '#0C0C0C', muted: '#181818',
+    mutedForeground: '#94A3B8', border: '#3F3F46',
+    note: 'Pure black + white contrast',
+  },
+  'Coworking Space': {
+    primary: '#F59E0B', onPrimary: '#0F172A', secondary: '#FBBF24',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#78350F', card: '#FFFFFF', muted: '#F1F2EF',
+    mutedForeground: '#64748B', border: '#FDE68A',
+    note: 'Energetic amber + booking blue',
+  },
+  'Home Services (Plumber/Electrician)': {
+    primary: '#1E40AF', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#EFF6FF',
+    foreground: '#1E3A8A', card: '#FFFFFF', muted: '#E9EEF6',
+    mutedForeground: '#64748B', border: '#BFDBFE',
+    note: 'Professional blue + urgent orange',
+  },
+  'Childcare/Daycare': {
+    primary: '#F472B6', onPrimary: '#0F172A', secondary: '#FBCFE8',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#9D174D', card: '#FFFFFF', muted: '#F1F0F6',
+    mutedForeground: '#64748B', border: '#FCE7F3',
+    note: 'Soft pink + safe green',
+  },
+  'Senior Care/Elderly': {
+    primary: '#0369A1', onPrimary: '#FFFFFF', secondary: '#38BDF8',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E7EFF5',
+    mutedForeground: '#64748B', border: '#E0F2FE',
+    note: 'Calm blue + reassuring green',
+  },
+  'Medical Clinic': {
+    primary: '#0891B2', onPrimary: '#FFFFFF', secondary: '#22D3EE',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#F0FDFA',
+    foreground: '#134E4A', card: '#FFFFFF', muted: '#E8F1F6',
+    mutedForeground: '#64748B', border: '#CCFBF1',
+    note: 'Medical teal + health green',
+  },
+  'Pharmacy/Drug Store': {
+    primary: '#15803D', onPrimary: '#FFFFFF', secondary: '#22C55E',
+    accent: '#0369A1', onAccent: '#FFFFFF', background: '#F0FDF4',
+    foreground: '#14532D', card: '#FFFFFF', muted: '#E8F0F1',
+    mutedForeground: '#64748B', border: '#BBF7D0',
+    note: 'Pharmacy green + trust blue',
+  },
+  'Dental Practice': {
+    primary: '#0EA5E9', onPrimary: '#0F172A', secondary: '#38BDF8',
+    accent: '#0EA5E9', onAccent: '#0F172A', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E8F2F8',
+    mutedForeground: '#64748B', border: '#BAE6FD',
+    note: 'Fresh blue + smile yellow',
+  },
+  'Veterinary Clinic': {
+    primary: '#0D9488', onPrimary: '#FFFFFF', secondary: '#14B8A6',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#F0FDFA',
+    foreground: '#134E4A', card: '#FFFFFF', muted: '#E8F1F4',
+    mutedForeground: '#64748B', border: '#99F6E4',
+    note: 'Caring teal + warm orange',
+  },
+  'Florist/Plant Shop': {
+    primary: '#15803D', onPrimary: '#FFFFFF', secondary: '#22C55E',
+    accent: '#EC4899', onAccent: '#FFFFFF', background: '#F0FDF4',
+    foreground: '#14532D', card: '#FFFFFF', muted: '#E8F0F1',
+    mutedForeground: '#64748B', border: '#BBF7D0',
+    note: 'Natural green + floral pink',
+  },
+  'Brewery/Winery': {
+    primary: '#7C2D12', onPrimary: '#FFFFFF', secondary: '#B91C1C',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#FEF2F2',
+    foreground: '#450A0A', card: '#FFFFFF', muted: '#ECEDF0',
+    mutedForeground: '#64748B', border: '#FECACA',
+    note: 'Deep burgundy + craft gold',
+  },
+  'Airline': {
+    primary: '#1E3A8A', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#EFF6FF',
+    foreground: '#1E40AF', card: '#FFFFFF', muted: '#E9EEF5',
+    mutedForeground: '#64748B', border: '#BFDBFE',
+    note: 'Sky blue + booking orange',
+  },
+  'News/Media': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#EF4444',
+    accent: '#1E40AF', onAccent: '#FFFFFF', background: '#FEF2F2',
+    foreground: '#450A0A', card: '#FFFFFF', muted: '#F0EDF1',
+    mutedForeground: '#64748B', border: '#FECACA',
+    note: 'Breaking red + link blue',
+  },
+  'Freelancer': {
+    primary: '#6366F1', onPrimary: '#FFFFFF', secondary: '#818CF8',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#EEF2FF',
+    foreground: '#312E81', card: '#FFFFFF', muted: '#EBEFF9',
+    mutedForeground: '#64748B', border: '#C7D2FE',
+    note: 'Creative indigo + hire green',
+  },
+  'Marketing Agency': {
+    primary: '#EC4899', onPrimary: '#FFFFFF', secondary: '#F472B6',
+    accent: '#0891B2', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#831843', card: '#FFFFFF', muted: '#F1EEF5',
+    mutedForeground: '#64748B', border: '#FBCFE8',
+    note: 'Bold pink + creative cyan',
+  },
+  'Membership/Community': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#A78BFA',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#4C1D95', card: '#FFFFFF', muted: '#ECEEF9',
+    mutedForeground: '#64748B', border: '#DDD6FE',
+    note: 'Community purple + join green',
+  },
+  'Newsletter': {
+    primary: '#0369A1', onPrimary: '#FFFFFF', secondary: '#0EA5E9',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E7EFF5',
+    mutedForeground: '#64748B', border: '#BAE6FD',
+    note: 'Trust blue + subscribe orange',
+  },
+  'Digital Products/Downloads': {
+    primary: '#6366F1', onPrimary: '#FFFFFF', secondary: '#818CF8',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#EEF2FF',
+    foreground: '#312E81', card: '#FFFFFF', muted: '#EBEFF9',
+    mutedForeground: '#64748B', border: '#C7D2FE',
+    note: 'Digital indigo + buy green',
+  },
+  'Church/Religious Organization': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#A78BFA',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#4C1D95', card: '#FFFFFF', muted: '#ECEEF9',
+    mutedForeground: '#64748B', border: '#DDD6FE',
+    note: 'Spiritual purple + warm gold',
+  },
+  'Sports Team/Club': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#EF4444',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#FEF2F2',
+    foreground: '#7F1D1D', card: '#FFFFFF', muted: '#F0EDF1',
+    mutedForeground: '#64748B', border: '#FECACA',
+    note: 'Team red + championship gold',
+  },
+  'Museum/Gallery': {
+    primary: '#18181B', onPrimary: '#FFFFFF', secondary: '#27272A',
+    accent: '#18181B', onAccent: '#FFFFFF', background: '#FAFAFA',
+    foreground: '#09090B', card: '#FFFFFF', muted: '#E8ECF0',
+    mutedForeground: '#64748B', border: '#E4E4E7',
+    note: 'Gallery black + white space',
+  },
+  'Theater/Cinema': {
+    primary: '#1E1B4B', onPrimary: '#FFFFFF', secondary: '#312E81',
+    accent: '#CA8A04', onAccent: '#0F172A', background: '#0F0F23',
+    foreground: '#F8FAFC', card: '#1B1B30', muted: '#27273B',
+    mutedForeground: '#94A3B8', border: '#4338CA',
+    note: 'Dramatic dark + spotlight gold',
+  },
+  'Language Learning': {
+    primary: '#4F46E5', onPrimary: '#FFFFFF', secondary: '#818CF8',
+    accent: '#16A34A', onAccent: '#FFFFFF', background: '#EEF2FF',
+    foreground: '#312E81', card: '#FFFFFF', muted: '#EBEEF8',
+    mutedForeground: '#64748B', border: '#C7D2FE',
+    note: 'Learning indigo + progress green',
+  },
+  'Coding Bootcamp': {
+    primary: '#0F172A', onPrimary: '#FFFFFF', secondary: '#1E293B',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#020617',
+    foreground: '#F8FAFC', card: '#0E1223', muted: '#1A1E2F',
+    mutedForeground: '#94A3B8', border: '#334155',
+    note: 'Terminal dark + success green',
+  },
+  'Cybersecurity': {
+    primary: '#00FF41', onPrimary: '#0F172A', secondary: '#0D0D0D',
+    accent: '#FF3333', onAccent: '#FFFFFF', background: '#000000',
+    foreground: '#E0E0E0', card: '#0C130E', muted: '#181818',
+    mutedForeground: '#94A3B8', border: '#1F1F1F',
+    note: 'Matrix green + alert red',
+  },
+  'Developer Tool/IDE': {
+    primary: '#1E293B', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#0F172A',
+    foreground: '#F8FAFC', card: '#1B2336', muted: '#272F42',
+    mutedForeground: '#94A3B8', border: '#475569',
+    note: 'Code dark + run green',
+  },
+  'Biotech/Life Sciences': {
+    primary: '#0EA5E9', onPrimary: '#0F172A', secondary: '#0284C7',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0C4A6E', card: '#FFFFFF', muted: '#E8F2F8',
+    mutedForeground: '#64748B', border: '#BAE6FD',
+    note: 'DNA blue + life green',
+  },
+  'Space Tech/Aerospace': {
+    primary: '#F8FAFC', onPrimary: '#0F172A', secondary: '#94A3B8',
+    accent: '#3B82F6', onAccent: '#FFFFFF', background: '#0B0B10',
+    foreground: '#F8FAFC', card: '#1E1E23', muted: '#232328',
+    mutedForeground: '#94A3B8', border: '#1E293B',
+    note: 'Star white + launch blue',
+  },
+  'Architecture/Interior': {
+    primary: '#171717', onPrimary: '#FFFFFF', secondary: '#404040',
+    accent: '#A16207', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#171717', card: '#FFFFFF', muted: '#E8ECF0',
+    mutedForeground: '#64748B', border: '#E5E5E5',
+    note: 'Minimal black + accent gold',
+  },
+  'Quantum Computing Interface': {
+    primary: '#00FFFF', onPrimary: '#0F172A', secondary: '#7B61FF',
+    accent: '#FF00FF', onAccent: '#FFFFFF', background: '#050510',
+    foreground: '#E0E0FF', card: '#101823', muted: '#1D1D28',
+    mutedForeground: '#94A3B8', border: '#333344',
+    note: 'Quantum cyan + interference purple',
+  },
+  'Biohacking/Longevity': {
+    primary: '#FF4D4D', onPrimary: '#FFFFFF', secondary: '#4D94FF',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F5F5F7',
+    foreground: '#1C1C1E', card: '#FFFFFF', muted: '#F2EEF2',
+    mutedForeground: '#64748B', border: '#E5E5EA',
+    note: 'Bio red/blue + vitality green',
+  },
+  'Autonomous Drone Fleet': {
+    primary: '#00FF41', onPrimary: '#0F172A', secondary: '#008F11',
+    accent: '#FF3333', onAccent: '#FFFFFF', background: '#0D1117',
+    foreground: '#E6EDF3', card: '#182424', muted: '#25292F',
+    mutedForeground: '#94A3B8', border: '#30363D',
+    note: 'Terminal green + alert red',
+  },
+  'Generative Art': {
+    primary: '#18181B', onPrimary: '#FFFFFF', secondary: '#3F3F46',
+    accent: '#EC4899', onAccent: '#FFFFFF', background: '#FAFAFA',
+    foreground: '#09090B', card: '#FFFFFF', muted: '#E8ECF0',
+    mutedForeground: '#64748B', border: '#E4E4E7',
+    note: 'Canvas neutral + creative pink',
+  },
+  'Spatial Computing OS/App': {
+    primary: '#FFFFFF', onPrimary: '#0F172A', secondary: '#E5E5E5',
+    accent: '#FFFFFF', onAccent: '#0F172A', background: '#888888',
+    foreground: '#000000', card: '#999999', muted: '#777777',
+    mutedForeground: '#D4D4D4', border: '#CCCCCC',
+    note: 'Glass white + system blue',
+  },
+  'Sustainable Energy/Climate Tech': {
+    primary: '#059669', onPrimary: '#FFFFFF', secondary: '#10B981',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#ECFDF5',
+    foreground: '#064E3B', card: '#FFFFFF', muted: '#E8F1F3',
+    mutedForeground: '#64748B', border: '#A7F3D0',
+    note: 'Nature green + solar gold',
+  },
+  'Personal Finance': {
+    primary: '#1E40AF', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#101A34',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Chat & Messaging': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Messenger blue + online green',
+  },
+  'Notes & Writing': {
+    primary: '#78716C', onPrimary: '#FFFFFF', secondary: '#A8A29E',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F6F6F6',
+    mutedForeground: '#64748B', border: '#EEEDED',
+    note: 'Warm ink + amber accent on cream',
+  },
+  'Habit': {
+    primary: '#D97706', onPrimary: '#FFFFFF', secondary: '#F59E0B',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF6F0',
+    mutedForeground: '#64748B', border: '#FAEEE1',
+    note: 'Streak amber + habit green',
+  },
+  'Food Delivery/On-Demand': {
+    primary: '#EA580C', onPrimary: '#FFFFFF', secondary: '#F97316',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFF7ED',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FDF4F0',
+    mutedForeground: '#64748B', border: '#FCEAE1',
+    note: 'Appetizing orange + trust blue',
+  },
+  'Ride Hailing/Transportation': {
+    primary: '#1E293B', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#10182B',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Recipe & Cooking': {
+    primary: '#9A3412', onPrimary: '#FFFFFF', secondary: '#C2410C',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F8F2F0',
+    mutedForeground: '#64748B', border: '#F2E6E2',
+    note: 'Warm terracotta + fresh green',
+  },
+  'Meditation & Mindfulness': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#8B5CF6',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F7F3FD',
+    mutedForeground: '#64748B', border: '#EFE7FC',
+    note: 'Calm lavender + mindful green',
+  },
+  'Weather': {
+    primary: '#0284C7', onPrimary: '#FFFFFF', secondary: '#0EA5E9',
+    accent: '#F59E0B', onAccent: '#0F172A', background: '#F0F9FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#EFF7FB',
+    mutedForeground: '#64748B', border: '#E0F0F8',
+    note: 'Sky blue + sun amber',
+  },
+  'Diary & Journal': {
+    primary: '#92400E', onPrimary: '#FFFFFF', secondary: '#A16207',
+    accent: '#6366F1', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F8F3F0',
+    mutedForeground: '#64748B', border: '#F1E8E2',
+    note: 'Warm journal brown + ink violet',
+  },
+  'CRM & Client Management': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Professional blue + deal green',
+  },
+  'Inventory & Stock Management': {
+    primary: '#334155', onPrimary: '#FFFFFF', secondary: '#475569',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F2F3F4',
+    mutedForeground: '#64748B', border: '#E6E8EA',
+    note: 'Industrial slate + stock green',
+  },
+  'Flashcard & Study': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#8B5CF6',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F7F3FD',
+    mutedForeground: '#64748B', border: '#EFE7FC',
+    note: 'Study purple + correct green',
+  },
+  'Booking & Appointment': {
+    primary: '#0284C7', onPrimary: '#FFFFFF', secondary: '#0EA5E9',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#EFF7FB',
+    mutedForeground: '#64748B', border: '#E0F0F8',
+    note: 'Calendar blue + available green',
+  },
+  'Invoice & Billing': {
+    primary: '#1E3A5F', onPrimary: '#FFFFFF', secondary: '#2563EB',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F3F5',
+    mutedForeground: '#64748B', border: '#E4E7EB',
+    note: 'Navy professional + paid green',
+  },
+  'Grocery & Shopping List': {
+    primary: '#059669', onPrimary: '#FFFFFF', secondary: '#10B981',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#ECFDF5',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F0F8F6',
+    mutedForeground: '#64748B', border: '#E1F2ED',
+    note: 'Fresh green + food amber',
+  },
+  'Timer & Pomodoro': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#EF4444',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#1F1829',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Parenting & Baby': {
+    primary: '#EC4899', onPrimary: '#FFFFFF', secondary: '#F472B6',
+    accent: '#0284C7', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FDF4F8',
+    mutedForeground: '#64748B', border: '#FCE9F2',
+    note: 'Soft pink + trust blue',
+  },
+  'Scanner & Document': {
+    primary: '#1E293B', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F2F3',
+    mutedForeground: '#64748B', border: '#E4E5E7',
+    note: 'Document grey + scan blue',
+  },
+  'Calendar & Scheduling': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Calendar blue + event green',
+  },
+  'Password': {
+    primary: '#1E3A5F', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#10192E',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Expense Splitter/Bill Split': {
+    primary: '#059669', onPrimary: '#FFFFFF', secondary: '#10B981',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F0F8F6',
+    mutedForeground: '#64748B', border: '#E1F2ED',
+    note: 'Balance green + owe red',
+  },
+  'Voice Recorder & Memo': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#EF4444',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF1F1',
+    mutedForeground: '#64748B', border: '#FAE4E4',
+    note: 'Recording red + waveform blue',
+  },
+  'Bookmark & Read-Later': {
+    primary: '#D97706', onPrimary: '#FFFFFF', secondary: '#F59E0B',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF6F0',
+    mutedForeground: '#64748B', border: '#FAEEE1',
+    note: 'Warm amber + link blue',
+  },
+  'Translator': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#0891B2',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Global blue + teal + accent orange',
+  },
+  'Calculator & Unit Converter': {
+    primary: '#EA580C', onPrimary: '#FFFFFF', secondary: '#F97316',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#1C1917',
+    foreground: '#FFFFFF', card: '#262321', muted: '#2C1E16',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Alarm & World Clock': {
+    primary: '#D97706', onPrimary: '#FFFFFF', secondary: '#F59E0B',
+    accent: '#6366F1', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#1F1E27',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'File Manager & Transfer': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Folder blue + file amber',
+  },
+  'Email Client': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Inbox blue + priority red',
+  },
+  'Casual Puzzle Game': {
+    primary: '#EC4899', onPrimary: '#FFFFFF', secondary: '#8B5CF6',
+    accent: '#F59E0B', onAccent: '#0F172A', background: '#FDF2F8',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FDF4F8',
+    mutedForeground: '#64748B', border: '#FCE9F2',
+    note: 'Cheerful pink + reward gold',
+  },
+  'Trivia & Quiz Game': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#7C3AED',
+    accent: '#F59E0B', onAccent: '#0F172A', background: '#EFF6FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Quiz blue + gold leaderboard',
+  },
+  'Card & Board Game': {
+    primary: '#15803D', onPrimary: '#FFFFFF', secondary: '#166534',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#0F1F2B',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Idle & Clicker Game': {
+    primary: '#D97706', onPrimary: '#FFFFFF', secondary: '#F59E0B',
+    accent: '#7C3AED', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF6F0',
+    mutedForeground: '#64748B', border: '#FAEEE1',
+    note: 'Coin gold + prestige purple',
+  },
+  'Word & Crossword Game': {
+    primary: '#15803D', onPrimary: '#FFFFFF', secondary: '#059669',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F0F7F3',
+    mutedForeground: '#64748B', border: '#E2EFE7',
+    note: 'Word green + letter amber',
+  },
+  'Arcade & Retro Game': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#2563EB',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#1F1829',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Photo Editor & Filters': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#0891B2', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#171939',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Short Video': {
+    primary: '#EC4899', onPrimary: '#FFFFFF', secondary: '#DB2777',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#201A32',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Drawing & Sketching Canvas': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#8B5CF6',
+    accent: '#0891B2', onAccent: '#FFFFFF', background: '#1C1917',
+    foreground: '#FFFFFF', card: '#262321', muted: '#231B28',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Music Creation & Beat': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#171939',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Meme & Sticker': {
+    primary: '#EC4899', onPrimary: '#FFFFFF', secondary: '#F59E0B',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FDF4F8',
+    mutedForeground: '#64748B', border: '#FCE9F2',
+    note: 'Viral pink + comedy yellow + share blue',
+  },
+  'AI Photo & Avatar': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#EC4899', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F7F3FD',
+    mutedForeground: '#64748B', border: '#EFE7FC',
+    note: 'AI purple + generation pink',
+  },
+  'Link-in-Bio Page': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#7C3AED',
+    accent: '#EC4899', onAccent: '#FFFFFF', background: '#FFFFFF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Brand blue + creator purple',
+  },
+  'Wardrobe & Outfit Planner': {
+    primary: '#BE185D', onPrimary: '#FFFFFF', secondary: '#EC4899',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FBF1F5',
+    mutedForeground: '#64748B', border: '#F7E3EB',
+    note: 'Fashion rose + gold accent',
+  },
+  'Plant Care': {
+    primary: '#15803D', onPrimary: '#FFFFFF', secondary: '#059669',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#F0FDF4',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F0F7F3',
+    mutedForeground: '#64748B', border: '#E2EFE7',
+    note: 'Nature green + sun yellow',
+  },
+  'Book & Reading': {
+    primary: '#78716C', onPrimary: '#FFFFFF', secondary: '#92400E',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F6F6F6',
+    mutedForeground: '#64748B', border: '#EEEDED',
+    note: 'Book brown + page amber',
+  },
+  'Couple & Relationship': {
+    primary: '#BE185D', onPrimary: '#FFFFFF', secondary: '#EC4899',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FBF1F5',
+    mutedForeground: '#64748B', border: '#F7E3EB',
+    note: 'Romance rose + love red',
+  },
+  'Family Calendar & Chores': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#059669',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Family blue + chore green',
+  },
+  'Mood': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F7F3FD',
+    mutedForeground: '#64748B', border: '#EFE7FC',
+    note: 'Mood purple + insight amber',
+  },
+  'Gift & Wishlist': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#D97706',
+    accent: '#EC4899', onAccent: '#FFFFFF', background: '#FFF1F2',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF1F1',
+    mutedForeground: '#64748B', border: '#FAE4E4',
+    note: 'Gift red + gold + surprise pink',
+  },
+  'Running & Cycling GPS': {
+    primary: '#EA580C', onPrimary: '#FFFFFF', secondary: '#F97316',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#201C27',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Yoga & Stretching': {
+    primary: '#6B7280', onPrimary: '#FFFFFF', secondary: '#78716C',
+    accent: '#0891B2', onAccent: '#FFFFFF', background: '#F5F5F0',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F6F6F7',
+    mutedForeground: '#64748B', border: '#EDEEEF',
+    note: 'Sage neutral + calm teal',
+  },
+  'Sleep': {
+    primary: '#4338CA', onPrimary: '#FFFFFF', secondary: '#6366F1',
+    accent: '#7C3AED', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#131936',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Calorie & Nutrition': {
+    primary: '#059669', onPrimary: '#FFFFFF', secondary: '#10B981',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#ECFDF5',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F0F8F6',
+    mutedForeground: '#64748B', border: '#E1F2ED',
+    note: 'Healthy green + macro orange',
+  },
+  'Period & Cycle': {
+    primary: '#BE185D', onPrimary: '#FFFFFF', secondary: '#EC4899',
+    accent: '#7C3AED', onAccent: '#FFFFFF', background: '#FDF2F8',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FBF1F5',
+    mutedForeground: '#64748B', border: '#F7E3EB',
+    note: 'Blush rose + fertility lavender',
+  },
+  'Medication & Pill': {
+    primary: '#0284C7', onPrimary: '#FFFFFF', secondary: '#0891B2',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#EFF7FB',
+    mutedForeground: '#64748B', border: '#E0F0F8',
+    note: 'Medical blue + alert red',
+  },
+  'Water & Hydration': {
+    primary: '#0284C7', onPrimary: '#FFFFFF', secondary: '#06B6D4',
+    accent: '#0891B2', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#EFF7FB',
+    mutedForeground: '#64748B', border: '#E0F0F8',
+    note: 'Refreshing blue + water cyan',
+  },
+  'Fasting & Intermittent': {
+    primary: '#6366F1', onPrimary: '#FFFFFF', secondary: '#4338CA',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#151D39',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Anonymous Community/Confession': {
+    primary: '#475569', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#0891B2', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#131B2F',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Local Events & Discovery': {
+    primary: '#EA580C', onPrimary: '#FFFFFF', secondary: '#F97316',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFF7ED',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FDF4F0',
+    mutedForeground: '#64748B', border: '#FCEAE1',
+    note: 'Event orange + map blue',
+  },
+  'Study Together/Virtual Coworking': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#3B82F6',
+    accent: '#059669', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Focus blue + session green',
+  },
+  'Coding Challenge & Practice': {
+    primary: '#22C55E', onPrimary: '#0F172A', secondary: '#059669',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#10242E',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Kids Learning (ABC & Math)': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#F59E0B',
+    accent: '#EC4899', onAccent: '#FFFFFF', background: '#EFF6FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Learning blue + play yellow + fun pink',
+  },
+  'Music Instrument Learning': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#9A3412',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FFFBEB',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF1F1',
+    mutedForeground: '#64748B', border: '#FAE4E4',
+    note: 'Musical red + warm amber',
+  },
+  'Parking Finder': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#059669',
+    accent: '#DC2626', onAccent: '#FFFFFF', background: '#F0F9FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Available blue/green + occupied red',
+  },
+  'Public Transit': {
+    primary: '#2563EB', onPrimary: '#FFFFFF', secondary: '#0891B2',
+    accent: '#EA580C', onAccent: '#FFFFFF', background: '#F8FAFC',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F1F5FD',
+    mutedForeground: '#64748B', border: '#E4ECFC',
+    note: 'Transit blue + line colors',
+  },
+  'Road Trip Planner': {
+    primary: '#EA580C', onPrimary: '#FFFFFF', secondary: '#0891B2',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FFF7ED',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FDF4F0',
+    mutedForeground: '#64748B', border: '#FCEAE1',
+    note: 'Adventure orange + map teal',
+  },
+  'VPN & Privacy': {
+    primary: '#1E3A5F', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#22C55E', onAccent: '#0F172A', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#10192E',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Emergency SOS & Safety': {
+    primary: '#DC2626', onPrimary: '#FFFFFF', secondary: '#EF4444',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FFF1F2',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#FCF1F1',
+    mutedForeground: '#64748B', border: '#FAE4E4',
+    note: 'Alert red + safety blue',
+  },
+  'Wallpaper & Theme': {
+    primary: '#7C3AED', onPrimary: '#FFFFFF', secondary: '#EC4899',
+    accent: '#2563EB', onAccent: '#FFFFFF', background: '#FAF5FF',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F7F3FD',
+    mutedForeground: '#64748B', border: '#EFE7FC',
+    note: 'Aesthetic purple + trending pink',
+  },
+  'White Noise & Ambient Sound': {
+    primary: '#475569', onPrimary: '#FFFFFF', secondary: '#334155',
+    accent: '#4338CA', onAccent: '#FFFFFF', background: '#0F172A',
+    foreground: '#FFFFFF', card: '#192134', muted: '#131B2F',
+    mutedForeground: '#94A3B8', border: '"rgba(255',
+    note: '#DC2626',
+  },
+  'Home Decoration & Interior Design': {
+    primary: '#78716C', onPrimary: '#FFFFFF', secondary: '#A8A29E',
+    accent: '#D97706', onAccent: '#FFFFFF', background: '#FAF5F2',
+    foreground: '#0F172A', card: '#FFFFFF', muted: '#F6F6F6',
+    mutedForeground: '#64748B', border: '#EEEDED',
+    note: 'Interior warm grey + gold accent',
+  },
+
 };
 
 // ─── Design Styles (from styles.csv) ────────────────────────────────────────
@@ -303,6 +1298,102 @@ export const DESIGN_STYLES: Record<string, DesignStyle> = {
     bestFor: ['spa', 'wellness', 'organic food', 'eco', 'sustainability'],
     avoidFor: ['gaming', 'crypto', 'industrial'],
     promptHint: 'Use warm earth tones, organic rounded shapes, wave section dividers, nature imagery. Calm, soothing color palette. Growth/fade animations.',
+  },
+  'liquid-glass': {
+    keywords: ['liquid glass', 'glass', 'apple', 'visionos', 'frosted', 'translucent', 'depth'],
+    colors: 'Semi-transparent whites with tinted backgrounds. Dynamic light refraction.',
+    effects: 'backdrop-blur-xl, bg-white/40, border border-white/50, inner glow, subtle refraction highlights',
+    bestFor: ['SaaS', 'tech', 'AI platform', 'dashboard', 'premium', 'Apple-style'],
+    avoidFor: ['government', 'healthcare', 'accessibility-critical'],
+    promptHint: 'Use thick glass panels (bg-white/40 backdrop-blur-xl), visible border highlights, light refraction effects, layered depth with z-index. Apple VisionOS-inspired translucent surfaces.',
+  },
+  'aurora-ui': {
+    keywords: ['aurora', 'northern lights', 'gradient', 'ethereal', 'dreamy', 'colorful'],
+    colors: 'Flowing gradients: Purple→Blue→Green→Cyan. Dark backgrounds.',
+    effects: 'Animated gradient backgrounds (gradient-position animation), smooth color shifts, glow effects',
+    bestFor: ['SaaS', 'AI tools', 'creative', 'music', 'crypto'],
+    avoidFor: ['legal', 'government', 'corporate'],
+    promptHint: 'Use animated gradient backgrounds (bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500), dark base, glow text effects, ethereal floating elements. Northern lights inspired.',
+  },
+  'motion-driven': {
+    keywords: ['motion', 'kinetic', 'dynamic', 'animated', 'scroll-triggered', 'parallax'],
+    colors: 'Clean base with vibrant accent colors that draw attention to moving elements.',
+    effects: 'Scroll-triggered reveals (IntersectionObserver), staggered animations, parallax layers, spring physics easing',
+    bestFor: ['SaaS', 'product showcase', 'creative', 'startup', 'portfolio'],
+    avoidFor: ['documentation', 'government', 'accessibility-critical'],
+    promptHint: 'Use scroll-triggered fade-in animations, staggered card reveals, parallax background layers, spring-physics hover effects. Motion conveys meaning — every animation has purpose.',
+  },
+  'neobrutalism': {
+    keywords: ['neobrutalism', 'neo-brutal', 'bold borders', 'playful', 'colorful', 'thick shadows'],
+    colors: 'Bright saturated colors with black thick borders. Multi-color sections.',
+    effects: 'Hard offset shadows (shadow-[4px_4px_0_0_#000]), thick borders (border-2 border-black), slight rotation on hover',
+    bestFor: ['startup', 'creative agency', 'portfolio', 'education', 'e-commerce'],
+    avoidFor: ['luxury', 'legal', 'healthcare'],
+    promptHint: 'Use thick black borders (border-2 border-black), hard offset shadows (shadow-[4px_4px_0_0_#000000]), bright background colors, bold sans-serif fonts, slight hover rotation. Playful but structured.',
+  },
+  'gradient-mesh': {
+    keywords: ['gradient mesh', 'mesh gradient', 'colorful', 'smooth', 'organic gradient'],
+    colors: 'Multiple radial gradients layered with blur. Soft multi-color transitions.',
+    effects: 'Multiple radial-gradient layers with blur-3xl, opacity layering, smooth color transitions',
+    bestFor: ['SaaS', 'AI tools', 'creative', 'startup', 'fintech'],
+    avoidFor: ['legal', 'government', 'documentation'],
+    promptHint: 'Use multiple blurred radial-gradient circles layered for mesh effect. bg-[radial-gradient] with blur-3xl. Soft organic color transitions. Colorful but not overwhelming.',
+  },
+  'claymorphism': {
+    keywords: ['clay', '3d', 'soft', 'puffy', 'rounded', 'playful'],
+    colors: 'Soft pastel colors with slight warmth. Creamy backgrounds.',
+    effects: 'Multi-layer soft shadows (inner + outer), large border-radius (2xl/3xl), slight gradient on cards',
+    bestFor: ['kids', 'education', 'food', 'bakery', 'pet', 'community'],
+    avoidFor: ['luxury', 'legal', 'corporate'],
+    promptHint: 'Use extra-rounded corners (rounded-3xl), multi-layer soft shadows creating puffy/3D clay look, pastel colors, gradient cards. Playful and tactile feel.',
+  },
+  'spatial-ui': {
+    keywords: ['spatial', 'visionos', '3d', 'depth', 'layers', 'glass panels'],
+    colors: 'Dark backgrounds with illuminated glass panels. Subtle tinted whites.',
+    effects: 'Depth via z-index layers, backdrop-blur, ambient lighting effects, hover depth shift',
+    bestFor: ['tech', 'AI', 'developer tools', 'premium SaaS'],
+    avoidFor: ['e-commerce', 'food', 'education'],
+    promptHint: 'Use layered glass panels at different depths, ambient glow effects, subtle parallax on hover, dark background with illuminated surfaces. Apple VisionOS-inspired spatial depth.',
+  },
+  'editorial-magazine': {
+    keywords: ['editorial', 'magazine', 'serif', 'columns', 'elegant', 'content-focused'],
+    colors: 'Cream/off-white backgrounds (#FFFBF5), deep charcoal text, single accent color.',
+    effects: 'Column layouts, drop caps, pull quotes, elegant typography hierarchy, minimal animation',
+    bestFor: ['blog', 'magazine', 'media', 'editorial', 'content-heavy'],
+    avoidFor: ['gaming', 'kids', 'fitness'],
+    promptHint: 'Use multi-column layouts, serif heading fonts, generous line-height (1.7+), pull quotes, cream backgrounds, single accent color. Magazine-style content presentation.',
+  },
+  'ai-native': {
+    keywords: ['AI', 'chatbot', 'assistant', 'intelligent', 'adaptive', 'conversational'],
+    colors: 'Deep purple (#7C3AED) base with cyan (#06B6D4) accents. Dark mode preferred.',
+    effects: 'Typing indicators, skeleton loading, shimmer effects, adaptive content, subtle pulse animations',
+    bestFor: ['AI tools', 'chatbot', 'SaaS', 'developer tools', 'productivity'],
+    avoidFor: ['restaurant', 'bakery', 'wedding'],
+    promptHint: 'Use purple/cyan palette, skeleton loading states, shimmer effects, chat-like interfaces, typing indicators, adaptive layouts. Convey intelligence through design.',
+  },
+  'memphis-design': {
+    keywords: ['memphis', 'geometric', 'playful', '80s', 'pattern', 'colorful shapes'],
+    colors: 'Bright primary colors + unexpected combos: Pink + Yellow + Teal. Black geometric outlines.',
+    effects: 'Geometric SVG patterns, squiggle dividers, dot patterns, bold shape overlays',
+    bestFor: ['creative agency', 'kids', 'education', 'event', 'fashion'],
+    avoidFor: ['legal', 'finance', 'healthcare'],
+    promptHint: 'Use bold geometric shapes (circles, triangles, squiggles) as decorative elements, bright color combos, black outlines, dot/stripe patterns. 80s Memphis Group inspired.',
+  },
+  'bento-showcase': {
+    keywords: ['bento', 'grid', 'modular', 'showcase', 'apple-style', 'feature grid'],
+    colors: 'Light grey (#F5F5F7) or glass backgrounds. Vibrant brand color for icons.',
+    effects: 'Varying card sizes in grid, hover scale (1.02), staggered reveal, icon animations',
+    bestFor: ['SaaS', 'product showcase', 'tech', 'app landing', 'features'],
+    avoidFor: ['long-form content', 'blog', 'documentation'],
+    promptHint: 'Use CSS grid with varying card sizes (some spanning 2 cols/rows), glass or muted card backgrounds, icon + title + short description per card. Stagger animation on scroll. Apple-style feature showcase.',
+  },
+  'vaporwave': {
+    keywords: ['vaporwave', 'retro', 'neon', '80s', 'aesthetic', 'glitch', 'sunset'],
+    colors: 'Hot pink, cyan, purple, sunset orange on dark backgrounds. Neon glow effects.',
+    effects: 'Grid patterns, scan lines, sunset gradients, glitch text effects, neon glow shadows',
+    bestFor: ['gaming', 'creative', 'music', 'events', 'crypto'],
+    avoidFor: ['healthcare', 'government', 'corporate'],
+    promptHint: 'Use sunset gradients (pink→purple→cyan), grid line backgrounds, neon glow shadows, glitch text effects, retro computer aesthetics. 80s vaporwave nostalgia.',
   },
 };
 
@@ -643,6 +1734,54 @@ export const PRODUCT_REASONING: Record<string, ProductReasoning> = {
   },
 };
 
+// ─── UX Design Rules (from quick-reference.md) ──────────────────────────────
+// High-priority rules for prompt injection. Compact format for token efficiency.
+
+export const UX_DESIGN_RULES = `
+## UX Design Rules (MANDATORY)
+
+### Accessibility (CRITICAL)
+- Contrast: Minimum 4.5:1 for text, 3:1 for large text/UI elements
+- Alt text: Descriptive alt on all meaningful images
+- Keyboard nav: Tab order matches visual order, visible focus rings (2-4px)
+- Heading hierarchy: Sequential h1→h2→h3, never skip levels
+- Reduced motion: Respect prefers-reduced-motion; provide static fallbacks
+
+### Layout & Spacing
+- Base font: 16px minimum for body text
+- Line-height: 1.5-1.7 for body, 1.1-1.3 for headings
+- Section padding: 96-128px vertical, 24px horizontal
+- Card padding: 24-32px, border-radius: 12-16px
+- Grid gap: 24-32px between cards
+
+### Animation & Interaction
+- Duration: 150-300ms for transitions, 500-700ms for reveals
+- Easing: ease-out for entrances, ease-in for exits, spring for bouncy feel
+- Stagger delay: 80-120ms between sequential elements
+- Hover: Use transform (translateY, scale) + shadow, NEVER animate width/height
+- Touch targets: Minimum 44×44px with 8px gap
+
+### Color Usage
+- NEVER use color alone to convey information — add icons/text
+- Use semantic tokens (primary, muted, destructive) not raw hex
+- Dark mode: Test all color combinations for readability
+- CTA contrast: At least 7:1 for primary action buttons
+
+### Content Quality
+- Headings: Specific and compelling, never generic ("Welcome", "About Us")
+- Descriptions: 2-3 sentences max, concrete details, no clichés
+- CTAs: Action verbs ("Get Started", "Book a Demo"), never vague ("Click Here")
+- Trust signals: Specific numbers, real testimonials with names/roles
+
+### Anti-Patterns (NEVER DO)
+- ❌ Placeholder text ("Lorem ipsum", "Coming soon", TBD)
+- ❌ Emoji as icons in professional contexts
+- ❌ Autoplay media without user control
+- ❌ Infinite scroll without footer access
+- ❌ Horizontal scroll on non-gallery sections
+- ❌ Generic stock phrases ("craftsmanship", "world-class", "innovative solutions")
+`;
+
 // ─── Helper: Resolve design guidance for a business type ─────────────────────
 
 export interface DesignGuidance {
@@ -671,12 +1810,53 @@ const DEFAULT_REASONING: ProductReasoning = {
 export function resolveDesignGuidance(businessType: string | null): DesignGuidance | null {
   if (!businessType) return null;
 
-  // Direct match — palette is required
-  const palette = PRODUCT_COLOR_PALETTES[businessType];
+  // Direct match first
+  let palette = PRODUCT_COLOR_PALETTES[businessType];
+
+  // Fuzzy fallback: normalize and try substring matching
+  if (!palette) {
+    const normalized = businessType.toLowerCase().replace(/[/\\]/g, ' ').trim();
+    for (const [key, val] of Object.entries(PRODUCT_COLOR_PALETTES)) {
+      const normKey = key.toLowerCase().replace(/[/\\]/g, ' ').trim();
+      // Check if either contains the other
+      if (normalized.includes(normKey) || normKey.includes(normalized)) {
+        palette = val;
+        // Also try to match reasoning with the matched key
+        break;
+      }
+    }
+    // Still no match? Try word-level matching (any word overlap)
+    if (!palette) {
+      const words = normalized.split(/\s+/).filter(w => w.length > 3);
+      let bestMatch: { key: string; score: number } | null = null;
+      for (const [key] of Object.entries(PRODUCT_COLOR_PALETTES)) {
+        const normKey = key.toLowerCase().replace(/[/\\]/g, ' ');
+        const score = words.reduce((acc, w) => acc + (normKey.includes(w) ? 1 : 0), 0);
+        if (score > 0 && (!bestMatch || score > bestMatch.score)) {
+          bestMatch = { key, score };
+        }
+      }
+      if (bestMatch) {
+        palette = PRODUCT_COLOR_PALETTES[bestMatch.key];
+      }
+    }
+  }
+
   if (!palette) return null;
 
-  // Reasoning is optional — fall back to generic defaults
-  const reasoning = PRODUCT_REASONING[businessType] ?? DEFAULT_REASONING;
+  // Reasoning — try exact match then fuzzy match on businessType
+  let reasoning = PRODUCT_REASONING[businessType];
+  if (!reasoning) {
+    const normBt = businessType.toLowerCase().replace(/[/\\]/g, ' ').trim();
+    for (const [key, val] of Object.entries(PRODUCT_REASONING)) {
+      const normKey = key.toLowerCase().replace(/[/\\]/g, ' ').trim();
+      if (normBt.includes(normKey) || normKey.includes(normBt)) {
+        reasoning = val;
+        break;
+      }
+    }
+  }
+  reasoning = reasoning ?? DEFAULT_REASONING;
 
   // Resolve style from reasoning's stylePriority
   const styleKey = Object.keys(DESIGN_STYLES).find(key =>
@@ -718,6 +1898,7 @@ export function formatDesignGuidance(guidance: DesignGuidance, businessType?: st
   lines.push(`[Style] ${s.promptHint}`);
   lines.push(`[Conversion Tips] ${pat.conversionTip}`);
   lines.push(`[Anti-Patterns] ${r.antiPatterns}`);
+  lines.push(UX_DESIGN_RULES);
 
   return lines.join('\n');
 }

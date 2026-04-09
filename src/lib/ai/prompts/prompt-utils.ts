@@ -5,6 +5,24 @@
  */
 
 import type { DesignGuidance } from '../knowledge/design-knowledge';
+import type { DesignStyle } from '../../../puck/lib/design-styles';
+
+// ─── Style Priority → DesignStyle mapping ──────────────────────────────
+
+/** Maps the text-based stylePriority from ProductReasoning to a DesignStyle value */
+export function mapStylePriorityToDesignStyle(stylePriority: string): DesignStyle {
+  const lower = stylePriority.toLowerCase();
+  if (lower.includes('brutalism') && !lower.includes('neo')) return 'brutalism';
+  if (lower.includes('brutalism') && lower.includes('neo')) return 'neobrutalism';
+  if (lower.includes('glassmorphism') || lower.includes('glass')) return 'glassmorphism';
+  if (lower.includes('bento')) return 'bento';
+  if (lower.includes('aurora') || lower.includes('gradient flow') || lower.includes('retro futurism')) return 'aurora';
+  if (lower.includes('soft') || lower.includes('organic') || lower.includes('biophilic') || lower.includes('warm')) return 'soft-ui';
+  if (lower.includes('minimal') && !lower.includes('bold')) return 'minimal';
+  if (lower.includes('luxury') || lower.includes('elegant')) return 'minimal';
+  if (lower.includes('dark mode') || lower.includes('oled')) return 'aurora';
+  return 'elevated'; // default
+}
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -86,14 +104,17 @@ export function deriveGradientPair(colors: ColorPalette): { from: string; to: st
 export function buildUnifiedDesignTokensBlock(
   designGuidance?: DesignGuidance,
   styleguideData?: MinimalStyleguideTokens,
+  options?: { skipUxRules?: boolean },
 ): string {
   const blocks: string[] = [];
 
   // ── Design Guidance (from local DB/Vector) ──
   if (designGuidance) {
     const { colorPalette: p, reasoning: r, typography: t } = designGuidance;
+    const recommendedDesignStyle = mapStylePriorityToDesignStyle(r.stylePriority);
     blocks.push(`### Design Direction
 - Style: ${r.stylePriority}
+- **designStyle prop: set to "${recommendedDesignStyle}" on EVERY section component.** This controls card styles, typography treatment, borders, shadows, and hover effects. Available values: elevated, minimal, glassmorphism, brutalism, neobrutalism, soft-ui, aurora, bento.
 - Colors: primary=${p.primary}, secondary=${p.secondary}, accent=${p.accent}, background=${p.background}, foreground=${p.foreground}, card=${p.card}, muted=${p.muted}, border=${p.border}
 - Typography: ${t.heading} (headings) + ${t.body} (body)
 - Effects: ${r.keyEffects}
@@ -162,6 +183,17 @@ export function buildUnifiedDesignTokensBlock(
 - Use accent color for badges, tags, and secondary highlights.
 - Typography: headingFont for all section headings and hero text; bodyFont for descriptions and labels.
 - Alternate section backgrounds: background → surface → dark → gradient.`);
+  }
+
+  // ── UX Design Rules — skip for makeup mode (defaults engine handles this)
+  if (!options?.skipUxRules) {
+    blocks.push(`### UX Design Rules (MANDATORY)
+- Contrast: Minimum 4.5:1 for text, 3:1 for large text. Descriptive alt text on images.
+- Layout: Base font 16px minimum. Line-height 1.5-1.7 for body. Section padding 96-128px.
+- Animation: Duration 150-300ms transitions, 500-700ms reveals. Use transform (translateY, scale) for hover, NEVER animate width/height. Stagger delay 80-120ms between elements.
+- Touch targets: Minimum 44×44px. Card padding 24-32px, border-radius 12-16px.
+- Content: Specific compelling headings (NO "Welcome", "About Us"). Concrete descriptions 2-3 sentences max. Action verb CTAs ("Get Started", "Book a Demo").
+- Anti-Patterns: NO placeholder text, NO generic clichés ("world-class", "innovative solutions"), NO emoji as icons in professional contexts.`);
   }
 
   return blocks.length > 0 ? blocks.join('\n\n') : '';

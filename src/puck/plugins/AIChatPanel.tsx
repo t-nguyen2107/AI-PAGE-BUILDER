@@ -10,6 +10,7 @@ import { generateId } from "@/lib/id";
 import { AIProfileSummary } from "./components/AIProfileSummary";
 import { AIProfileEditor } from "./components/AIProfileEditor";
 import { useAutoPolish } from "../hooks/useAutoPolish";
+import { useAIContext } from "./AIContext";
 import type { ComponentData } from "@puckeditor/core";
 const usePuckSelector = createUsePuck();
 
@@ -22,13 +23,6 @@ interface ChatMessage {
   status: "success" | "error" | "pending";
   action?: string;
   createdAt: number;
-}
-
-interface AIChatPanelProps {
-  projectId: string;
-  pageId: string;
-  styleguideId?: string;
-  generationStatus?: string | null;
 }
 
 // ─── Slash commands ─────────────────────────────────────────────────────
@@ -201,7 +195,8 @@ function liveRenderToPuck(
 
 // ─── AIChatPanel Component ─────────────────────────────────────────────
 
-export function AIChatPanel({ projectId, pageId, styleguideId, generationStatus }: AIChatPanelProps) {
+export function AIChatPanel() {
+  const { projectId, pageId, styleguideId, generationStatus } = useAIContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -215,45 +210,98 @@ export function AIChatPanel({ projectId, pageId, styleguideId, generationStatus 
   const liveRenderTimersRef = useRef<number[]>([]);
   const lastPromptRef = useRef<string>("");
   const progressiveComponentsRef = useRef<import("@puckeditor/core").ComponentData[]>([]);
+  const autoSaveTimerRef = useRef<number | undefined>(undefined);
+  const latestPuckDataRef = useRef<Data | null>(null);
 
   const dispatch = usePuckSelector((s) => s.dispatch);
   const componentCount = usePuckSelector(
     (s) => (s.appState?.data as Data | undefined)?.content?.length ?? 0,
   );
 
+  // Track latest Puck data in ref for auto-save (avoids dispatch trick)
+  const puckData = usePuckSelector((s) => s.appState?.data as Data | undefined);
+  if (puckData) latestPuckDataRef.current = puckData;
+
+  // Cleanup auto-save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, []);
+
   // Auto-polish phase
   const { isPolishing, progressLabel: polishProgressLabel } = useAutoPolish({
     projectId,
     pageId,
+    styleguideId,
     generationStatus,
-    onComponentStream: (component, index, total, replacesSkelId) => {
-      // In polish mode, we replace components one by one or insert.
-      // Usually, AI returns targetComponentId so we can construct a REPLACE_NODE action
-      // Currently, streaming doesn't support targetComponentId on the fly nicely without wrapping it
-      // Let's just pass it to liveRenderToPuck as REPLACE_NODE if replacesSkelId is set, else append
+    onComponentStream: (component, _index, _total, replacesSkelId) => {
+      // Direct dispatch — avoids liveRenderToPuck which doesn't handle REPLACE_NODE
       if (replacesSkelId) {
-        liveRenderTimersRef.current.push(...liveRenderToPuck({
-          action: AIAction.REPLACE_NODE,
-          targetComponentId: replacesSkelId,
-          components: [component],
-        }, dispatch, () => {}));
-      } else {
-        lastPromptRef.current = "Auto polish"; // Hack to keep UI clean
-        progressiveComponentsRef.current.push(component);
-        
-        // Build mock response for applyResponseToPuck
         dispatch({
           type: "setData",
-          data: (prev: Data) => {
-            const content = [...(prev.content || [])];
-            content.push(component);
-            return { ...prev, content };
-          }
+          data: (prev: Data) => ({
+            ...prev,
+            content: (prev.content || []).map((c) => {
+              const cId = (c.props as Record<string, unknown>)?.id;
+              return cId === replacesSkelId ? component : c;
+            }),
+          }),
+        });
+      } else {
+        progressiveComponentsRef.current.push(component);
+        dispatch({
+          type: "setData",
+          data: (prev: Data) => ({
+            ...prev,
+            content: [...(prev.content || []), component],
+          }),
         });
       }
     },
+    // onPlan — render skeletons immediately for progressive replacement
+    onPlan: (plan) => {
+      const skeletons = plan.map((p) => ({
+        type: "SectionSkeleton" as const,
+        props: { id: p.skeletonId, sectionType: p.type },
+      }));
+      dispatch({
+        type: "setData",
+        data: (prev: Data) => ({
+          ...prev,
+          content: skeletons,
+        }),
+      });
+      setPipelineSteps((prev) => [
+        ...prev.map((s) => (s.status === "active" ? { ...s, status: "done" as const } : s)),
+        { step: "skeleton", label: "Layout planned — polishing sections...", status: "active" as const },
+      ]);
+    },
     onComplete: () => {
-      // Done polishing
+      // Auto-save polished data to DB after all sections are replaced
+      // Strip skel_ prefixes from component IDs so page doesn't re-trigger polish on reload
+      autoSaveTimerRef.current = window.setTimeout(() => {
+        autoSaveTimerRef.current = undefined;
+        const data = latestPuckDataRef.current;
+        if (data) {
+          const cleanedData: Data = {
+            ...data,
+            content: (data.content || []).map((c) => {
+              const props = c.props as Record<string, unknown>;
+              const id = typeof props?.id === 'string' ? (props.id as string) : undefined;
+              if (id?.startsWith('skel_')) {
+                return { ...c, props: { ...props, id: id.replace(/^skel_/, '') } };
+              }
+              return c;
+            }),
+          };
+          apiClient.savePage(projectId, pageId, cleanedData).then((res) => {
+            console.log(res.success ? '[auto-polish] Saved polished page to DB' : `[auto-polish] Save failed: ${res.error}`);
+          }).catch((err) => {
+            console.error('[auto-polish] Save error:', err);
+          });
+        }
+      }, 500);
     },
     onError: (err) => {
       // Handle error
@@ -454,7 +502,7 @@ export function AIChatPanel({ projectId, pageId, styleguideId, generationStatus 
           });
         },
         // onComponent — progressive component rendering
-        (component, index, total, replacesSkelId) => {
+        (component: { type: string; props: Record<string, unknown> }, index: number, total: number, replacesSkelId?: string) => {
           const puckComponent = component as import("@puckeditor/core").ComponentData;
           progressiveComponentsRef.current.push(puckComponent);
 

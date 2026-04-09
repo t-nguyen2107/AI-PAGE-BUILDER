@@ -502,6 +502,8 @@ export type BannerProps = {
 export interface ComponentMeta {
   /** Human-readable name for AI targeting & outline display (e.g. "hero_main") */
   name?: string;
+  /** Design style — coordinates all visual dimensions (cards, typography, buttons, etc.) */
+  designStyle?: import("./lib/design-styles").DesignStyle;
   /** Style overrides — applied to the component's outermost element */
   bgColor?: string;
   textColor?: string;

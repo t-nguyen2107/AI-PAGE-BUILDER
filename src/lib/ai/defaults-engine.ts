@@ -14,7 +14,10 @@ import type { DesignGuidance, ColorPalette } from './knowledge/design-knowledge'
 
 export interface DefaultsContext {
   businessType?: string;
+  businessName?: string;
   designGuidance?: DesignGuidance;
+  /** Raw styleguide colors (JSON string or object) as fallback for gradient injection */
+  styleguideColors?: { primary?: string; secondary?: string; accent?: string } | string;
 }
 
 type Props = Record<string, unknown>;
@@ -26,8 +29,9 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
   HeroSection: {
     animation: 'fade-up',
     backgroundOverlay: true,
-    padding: '96px',
+    padding: '128px',
     align: 'center',
+    layout: 'centered',
   },
   FeaturesGrid: {
     animation: 'stagger',
@@ -37,7 +41,7 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
   },
   TestimonialSection: {
     animation: 'stagger-fade',
-    variant: 'carousel',
+    variant: 'grid',
   },
   CTASection: {
     animation: 'fade-up',
@@ -45,6 +49,7 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
   },
   PricingTable: {
     animation: 'stagger',
+    highlightedBadge: 'Most Popular',
   },
   FAQSection: {
     animation: 'fade-up',
@@ -53,9 +58,12 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
     animation: 'fade-up',
     animated: true,
     columns: 4,
+    cardStyle: 'gradient',
   },
   ContactForm: {
     animation: 'fade-up',
+    showPhone: true,
+    showCompany: true,
   },
   Gallery: {
     animation: 'stagger',
@@ -172,6 +180,31 @@ const BG_CYCLE = [
 // ─── Core Engine ──────────────────────────────────────────────────────────────
 
 /**
+ * Extract a ColorPalette from raw styleguide colors (fallback when no designGuidance).
+ */
+function extractPaletteFromStyleguide(
+  raw: { primary?: string; secondary?: string; accent?: string } | string | undefined,
+): ColorPalette | undefined {
+  if (!raw) return undefined;
+  const c = (typeof raw === 'string' ? JSON.parse(raw) : raw) as Record<string, string>;
+  if (!c.primary) return undefined;
+  return {
+    primary: c.primary,
+    onPrimary: c.onPrimary ?? '#FFFFFF',
+    secondary: c.secondary ?? c.primary,
+    accent: c.accent ?? c.primary,
+    onAccent: c.onAccent ?? '#FFFFFF',
+    background: c.background ?? '#ffffff',
+    foreground: c.text ?? c.foreground ?? '#000000',
+    card: c.surface ?? '#ffffff',
+    muted: c.muted ?? '#f1f5f9',
+    mutedForeground: c.textMuted ?? '#64748b',
+    border: c.border ?? '#e2e8f0',
+    note: '',
+  };
+}
+
+/**
  * Apply intelligent defaults to AI-generated components.
  *
  * This is the main entry point — call it after AI output validation,
@@ -188,7 +221,7 @@ export function applyComponentDefaults(
   components: ComponentData[],
   ctx: DefaultsContext = {},
 ): ComponentData[] {
-  const palette = ctx.designGuidance?.colorPalette;
+  const palette = ctx.designGuidance?.colorPalette ?? extractPaletteFromStyleguide(ctx.styleguideColors);
 
   // Phase 1: Per-component defaults + gradient injection + image fill
   let result = components.map((comp) => {
@@ -206,12 +239,13 @@ export function applyComponentDefaults(
 
     // 1b. Inject gradients from palette
     if (palette) {
-      injectGradients(comp.type, props, palette);
+      injectGradients(comp.type, props, palette, ctx.businessType);
     }
 
     // 1c. Fill missing hero background
     if (comp.type === 'HeroSection' && !props.backgroundUrl && ctx.businessType) {
-      const bg = HERO_BACKGROUNDS[ctx.businessType];
+      const bg = HERO_BACKGROUNDS[ctx.businessType]
+        ?? Object.entries(HERO_BACKGROUNDS).find(([key]) => ctx.businessType!.toLowerCase().includes(key.split('/')[0]))?.[1];
       if (bg) {
         props.backgroundUrl = bg;
         props.backgroundOverlay = true;
@@ -228,6 +262,69 @@ export function applyComponentDefaults(
       fillTeamAvatars(props.members as Array<Record<string, unknown>>);
     }
 
+    // 1f. Fill missing gallery images
+    if (comp.type === 'Gallery' && (!Array.isArray(props.images) || (props.images as unknown[]).length === 0)) {
+      fillGalleryImages(props, ctx.businessType);
+    }
+
+    // 1g. Fill missing product card images
+    if (comp.type === 'ProductCards' && Array.isArray(props.products)) {
+      fillProductImages(props.products as Array<Record<string, unknown>>, ctx.businessType);
+    }
+
+    // 1h. Fill missing blog post images
+    if (comp.type === 'BlogSection' && Array.isArray(props.posts)) {
+      fillBlogImages(props.posts as Array<Record<string, unknown>>, ctx.businessType);
+    }
+
+    // 1i. Fill missing FeatureShowcase image
+    if (comp.type === 'FeatureShowcase' && !props.imageUrl) {
+      props.imageUrl = getStockImage(ctx.businessType, 'showcase');
+    }
+
+    // 1j. HeroSection: map buttonText → ctaText, ensure ctaHref
+    if (comp.type === 'HeroSection') {
+      if (props.buttonText && !props.ctaText) {
+        props.ctaText = props.buttonText;
+        delete props.buttonText;
+      }
+      if (props.ctaText && !props.ctaHref) {
+        props.ctaHref = '#';
+      }
+    }
+
+    // 1k. Clean up non-rendering props left by AI plan phase
+    if (props.purpose) delete props.purpose;
+
+    // 1l. Fill missing HeaderNav content (logo, links, CTA)
+    if (comp.type === 'HeaderNav' && (!Array.isArray(props.links) || props.links.length === 0)) {
+      fillHeaderNavContent(props, ctx.businessType, ctx.businessName);
+    }
+
+    // 1m. Fill missing FooterSection content (logo, linkGroups, copyright)
+    if (comp.type === 'FooterSection' && (!Array.isArray(props.linkGroups) || props.linkGroups.length === 0)) {
+      fillFooterContent(props, ctx.businessType, ctx.businessName);
+    }
+
+    // 1n. Fix TestimonialSection field names (AI often outputs text/name/avatar instead of quote/author/avatarUrl)
+    if (comp.type === 'TestimonialSection' && Array.isArray(props.testimonials)) {
+      for (const t of props.testimonials as Array<Record<string, unknown>>) {
+        if (t.text && !t.quote) { t.quote = t.text; delete t.text; }
+        if (t.name && !t.author) { t.author = t.name; delete t.name; }
+        if (t.avatar && !t.avatarUrl) { t.avatarUrl = t.avatar; delete t.avatar; }
+      }
+    }
+
+    // 1o. Fill missing TestimonialSection testimonials
+    if (comp.type === 'TestimonialSection' && (!Array.isArray(props.testimonials) || props.testimonials.length === 0)) {
+      fillTestimonialContent(props);
+    }
+
+    // 1p. Fill missing ContactForm fields
+    if (comp.type === 'ContactForm' && !props.description) {
+      props.description = 'We\'d love to hear from you. Reach out with any questions.';
+    }
+
     return { type: comp.type, props } as unknown as ComponentData;
   });
 
@@ -239,13 +336,43 @@ export function applyComponentDefaults(
 
 // ─── Gradient Injection ───────────────────────────────────────────────────────
 
-function injectGradients(type: string, props: Props, palette: ColorPalette): void {
+// ─── Business-Type Specific Badges ──────────────────────────────────────────
+
+const BUSINESS_BADGES: Record<string, string> = {
+  'SaaS': 'Trusted by 10,000+ teams',
+  'e-commerce': 'Free Shipping Over $50',
+  'restaurant': 'Reserve Your Table',
+  'fitness': 'Start Your Free Trial',
+  'real estate': 'Featured Listings',
+  'education': 'Enroll Now — Limited Spots',
+  'healthcare': 'Book Online — 24/7',
+  'travel': 'Best Price Guarantee',
+  'law firm': 'Free Consultation',
+  'creative': 'Award-Winning Studio',
+  'crypto': 'Trusted by 1M+ Users',
+  'bakery': 'Fresh Daily',
+  'coffee': 'Locally Roasted',
+};
+
+function getBusinessBadge(businessType?: string): string {
+  if (!businessType) return 'New';
+  const match = Object.entries(BUSINESS_BADGES).find(([key]) =>
+    businessType.toLowerCase().includes(key.toLowerCase())
+  );
+  return match?.[1] ?? 'New';
+}
+
+function injectGradients(type: string, props: Props, palette: ColorPalette, businessType?: string): void {
   if (type === 'HeroSection') {
     if (!props.gradientFrom) props.gradientFrom = palette.primary;
     if (!props.gradientTo) props.gradientTo = palette.accent;
+    // Ensure hero has a compelling badge
+    if (!props.badge) {
+      props.badge = getBusinessBadge(businessType);
+    }
   } else if (type === 'CTASection') {
     if (!props.gradientFrom) props.gradientFrom = palette.primary;
-    if (!props.gradientTo) props.gradientTo = palette.secondary;
+    if (!props.gradientTo) props.gradientTo = palette.accent;
   }
 }
 
@@ -301,4 +428,123 @@ function fillTeamAvatars(members: Array<Record<string, unknown>>): void {
       m.avatarUrl = `/stock/team/person-${(i % 6) + 1}.webp`;
     }
   });
+}
+
+// ─── Business Type → Stock Image Category Mapping ────────────────────────────
+
+const GALLERY_STOCK: Record<string, string[]> = {
+  'restaurant/dining': ['/stock/food/meal-table.webp', '/stock/food/salad.webp', '/stock/food/steak.webp', '/stock/food/sushi.webp', '/stock/food/burger.webp', '/stock/food/pancakes.webp'],
+  'bakery/pastry shop': ['/stock/food/pancakes.webp', '/stock/food/toast-breakfast.webp', '/stock/food/healthy-bowl.webp', '/stock/food/vegetables.webp', '/stock/food/pizza.webp', '/stock/food/salad.webp'],
+  'coffee shop/cafe': ['/stock/drink/coffee-shop.webp', '/stock/food/pancakes.webp', '/stock/food/toast-breakfast.webp', '/stock/food/healthy-bowl.webp', '/stock/food/vegetables.webp', '/stock/food/salad.webp'],
+  'fitness/gym': ['/stock/fitness/gym-workout.webp', '/stock/lifestyle/spa-relax.webp', '/stock/food/healthy-bowl.webp', '/stock/food/vegetables.webp', '/stock/people/friends-laughing.webp', '/stock/hero/office-modern.webp'],
+  'real estate': ['/stock/realestate/luxury-home.webp', '/stock/hero/office-modern.webp', '/stock/travel/tropical-beach.webp', '/stock/food/meal-table.webp', '/stock/lifestyle/spa-relax.webp', '/stock/education/campus.webp'],
+  'travel/hospitality': ['/stock/travel/tropical-beach.webp', '/stock/food/meal-table.webp', '/stock/people/friends-laughing.webp', '/stock/lifestyle/spa-relax.webp', '/stock/hero/office-modern.webp', '/stock/education/campus.webp'],
+  'fashion/clothing': ['/stock/fashion/runway.webp', '/stock/fashion/fashion-show.webp', '/stock/fashion/shopping-bags.webp', '/stock/people/friends-laughing.webp', '/stock/lifestyle/spa-relax.webp', '/stock/food/meal-table.webp'],
+  default: ['/stock/food/meal-table.webp', '/stock/people/friends-laughing.webp', '/stock/lifestyle/spa-relax.webp', '/stock/hero/office-modern.webp', '/stock/education/campus.webp', '/stock/travel/tropical-beach.webp'],
+};
+
+function getGalleryStock(businessType?: string): string[] {
+  if (!businessType) return GALLERY_STOCK.default;
+  const match = Object.entries(GALLERY_STOCK).find(([key]) =>
+    businessType.toLowerCase().includes(key.split('/')[0])
+  );
+  return match?.[1] ?? GALLERY_STOCK.default;
+}
+
+function getStockImage(businessType?: string, purpose?: string): string {
+  const images = getGalleryStock(businessType);
+  if (purpose === 'showcase') return images[0];
+  return images[Math.floor(Math.random() * images.length)];
+}
+
+function fillGalleryImages(props: Props, businessType?: string): void {
+  const stock = getGalleryStock(businessType);
+  const heading = (props.heading as string) || 'Gallery';
+  props.images = stock.map((src, i) => ({
+    src,
+    alt: `${heading} image ${i + 1}`,
+    caption: undefined,
+  }));
+}
+
+function fillProductImages(products: Array<Record<string, unknown>>, businessType?: string): void {
+  const stock = getGalleryStock(businessType);
+  products.forEach((p, i) => {
+    if (!p.imageUrl || typeof p.imageUrl !== 'string' || p.imageUrl.trim() === '') {
+      p.imageUrl = stock[i % stock.length];
+    }
+  });
+}
+
+function fillBlogImages(posts: Array<Record<string, unknown>>, businessType?: string): void {
+  const stock = getGalleryStock(businessType);
+  posts.forEach((p, i) => {
+    if (!p.imageUrl || typeof p.imageUrl !== 'string' || p.imageUrl.trim() === '') {
+      p.imageUrl = stock[i % stock.length];
+    }
+  });
+}
+
+// ─── Rich Content Defaults (when AI polish fails) ──────────────────────────
+
+function fillHeaderNavContent(props: Props, businessType?: string, businessName?: string): void {
+  const name = businessName || inferBusinessName(businessType);
+  if (!props.logo) props.logo = name;
+  if (!Array.isArray(props.links) || props.links.length === 0) {
+    props.links = [
+      { label: 'Home', href: '#' },
+      { label: 'About', href: '#about' },
+      { label: 'Services', href: '#services' },
+      { label: 'Contact', href: '#contact' },
+    ];
+  }
+  if (!props.ctaText) props.ctaText = 'Get Started';
+  if (!props.ctaHref) props.ctaHref = '#contact';
+}
+
+function fillFooterContent(props: Props, businessType?: string, businessName?: string): void {
+  const name = businessName || inferBusinessName(businessType);
+  if (!props.logo) props.logo = name;
+  if (!props.description) {
+    props.description = `Welcome to ${name}. We're dedicated to providing exceptional service and quality.`;
+  }
+  if (!Array.isArray(props.linkGroups) || props.linkGroups.length === 0) {
+    props.linkGroups = [
+      {
+        title: 'Quick Links',
+        links: [
+          { label: 'Home', href: '#' },
+          { label: 'About Us', href: '#about' },
+          { label: 'Services', href: '#services' },
+          { label: 'Contact', href: '#contact' },
+        ],
+      },
+      {
+        title: 'Support',
+        links: [
+          { label: 'FAQ', href: '#faq' },
+          { label: 'Privacy Policy', href: '/privacy' },
+          { label: 'Terms of Service', href: '/terms' },
+        ],
+      },
+    ];
+  }
+  if (!props.copyright) {
+    props.copyright = `© ${new Date().getFullYear()} ${name}. All rights reserved.`;
+  }
+}
+
+function fillTestimonialContent(props: Props): void {
+  if (!Array.isArray(props.testimonials) || props.testimonials.length === 0) {
+    props.testimonials = [
+      { quote: 'Absolutely love this place! The quality and service are outstanding.', author: 'Sarah M.', role: 'Verified Customer', avatarUrl: '/stock/testimonials/avatar-1.webp', rating: 5 },
+      { quote: "Best experience I've had. Highly recommend to everyone.", author: 'James K.', role: 'Regular Visitor', avatarUrl: '/stock/testimonials/avatar-2.webp', rating: 5 },
+      { quote: 'Fantastic from start to finish. Will definitely be coming back!', author: 'Emily R.', role: 'Happy Customer', avatarUrl: '/stock/testimonials/avatar-3.webp', rating: 4 },
+    ];
+  }
+}
+
+function inferBusinessName(businessType?: string): string {
+  if (!businessType) return 'Our Business';
+  return businessType.split(/[\s/]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }

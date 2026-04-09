@@ -2,12 +2,11 @@ import type { BaseMessage } from '@langchain/core/messages';
 import { createModelBundle, createFastModelBundle } from './provider';
 import { buildChainPrompt } from './prompts/system-prompt';
 import { buildTemplatePrompt } from './prompts/template-prompt';
-import { buildSectionPrompt } from './prompts/section-prompt';
 import { validateOutput } from './output';
 import { applyComponentDefaults } from './defaults-engine';
-import { validateTemplateResponse, validateSingleComponent } from './prompts/template-schema';
+import { validateTemplateResponse } from './prompts/template-schema';
 import { sanitizeAIResponse } from './output-sanitizer';
-import { polishSections } from './section-polisher';
+import { polishSectionsStream } from './section-polisher';
 import { convertAIResponseNodes, orderPuckComponents } from './puck-adapter';
 import { generateId } from '@/lib/id';
 import type { AIGenerationResponse } from '@/types/ai';
@@ -15,7 +14,6 @@ import { AIAction } from '@/types/enums';
 import type { ComponentData } from '@puckeditor/core';
 import type { ComponentTierPlan } from './prompts/prompt-optimizer';
 import type { DesignGuidance } from './knowledge/design-knowledge';
-import { COMPONENT_CATALOG } from './prompts/component-catalog';
 
 interface StreamOptions {
   styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
@@ -338,6 +336,8 @@ interface TwoPassStreamOptions {
   styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
   /** Business type for template assembler */
   businessType?: string;
+  /** Business name for defaults engine content fallback */
+  businessName?: string;
   /** Design context / RAG knowledge text */
   designContext?: string;
   /** Resolved design guidance for per-section prompts */
@@ -419,18 +419,19 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
 
         send({ type: 'status', step: 'generating', label: `Generating ${plan.components.length} sections...` });
 
-        // ── PASS 2: Parallel per-section generation ──
-        const sectionResults = await polishSections(
+        // ── PASS 2: Streaming batch polish (single request) ──
+        const sectionResults = await polishSectionsStream(
           plan.components,
           {
             userPrompt: input,
             businessType: options.businessType ?? 'general',
+            businessName: options.businessName,
             designGuidance: options.designGuidance,
             styleguideData: options.styleguideData,
             designContext: options.designContext,
             isMakeup: false,
             signal: options.signal,
-            timeoutMs: 60_000,
+            timeoutMs: 90_000,
           }
         );
 
@@ -443,7 +444,9 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
         // Apply defaults engine — guarantees animations, gradients, images
         const polished = applyComponentDefaults(components, {
           businessType: options.businessType,
+          businessName: options.businessName,
           designGuidance: options.designGuidance,
+          styleguideColors: options.styleguideData?.colors,
         });
 
         const ordered = orderPuckComponents(polished);
@@ -477,6 +480,7 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
 export interface MakeupStreamOptions {
   styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
   businessType?: string;
+  businessName?: string;
   designContext?: string;
   designGuidance?: DesignGuidance;
   signal?: AbortSignal;
@@ -593,32 +597,53 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
           type: c.type,
           skeletonId: skeletonIds[i],
         }));
-        console.log('[makeup] SKELETON PLAN:', JSON.stringify(skeletonPlan, null, 2));
-        console.log('[makeup] SKELETON RAW PROPS:', JSON.stringify(plan.components.map(c => ({ type: c.type, propKeys: Object.keys(c.props) })), null, 2));
+        console.log('[makeup] Plan:', skeletonPlan.map(s => s.type).join(' → '));
         send({
           type: 'plan',
           plan: skeletonPlan,
         });
 
-        // ── PHASE 2: Parallel Per-Section Makeup ──
+        // ── PHASE 2: Streaming Batch Polish (single request) ──
         send({ type: 'status', step: 'generating', label: `Polishing ${plan.components.length} sections...` });
 
-        const sectionResults = await polishSections(
+        // Track which sections have been emitted for progressive rendering
+        const emittedSections = new Set<number>();
+
+        const sectionResults = await polishSectionsStream(
           plan.components,
           {
             userPrompt: input,
             businessType: options.businessType ?? 'general',
+            businessName: options.businessName,
             designGuidance: options.designGuidance,
             styleguideData: options.styleguideData,
             designContext: options.designContext,
-            isMakeup: true, // triggers makeup rules
+            isMakeup: true,
             signal: options.signal,
-            timeoutMs: 60_000,
+            timeoutMs: 180_000,
+            useFastModel: true,
+          },
+          // Progressive callback: emit each section as it completes
+          (index: number, total: number, result) => {
+            if (emittedSections.has(index)) return;
+            emittedSections.add(index);
+            const skelId = skeletonIds[index];
+            const component: ComponentData = {
+              type: result.type,
+              props: { id: skelId, ...result.props },
+            };
+            send({
+              type: 'component_stream',
+              component,
+              componentIndex: index,
+              componentTotal: total,
+              replacesSkelId: skelId,
+            });
           }
         );
 
         // ── Assemble final components ──
-        const components: ComponentData[] = sectionResults.map((result, i) => {
+        const components: ComponentData[] = sectionResults.map((result: { type: string; props: Record<string, unknown> }, i: number) => {
           const skelId = skeletonIds[i];
           return {
             type: result.type,
@@ -629,25 +654,22 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
         // Apply defaults engine — guarantees animations, gradients, images
         const polished = applyComponentDefaults(components, {
           businessType: options.businessType,
+          businessName: options.businessName,
           designGuidance: options.designGuidance,
+          styleguideColors: options.styleguideData?.colors,
         });
 
         const ordered = orderPuckComponents(polished);
 
-        console.log('[makeup] POLISHED RESULT:', JSON.stringify(ordered.map(c => ({
-          type: c.type,
-          id: (c.props as Record<string, unknown>)?.id,
-          animation: (c.props as Record<string, unknown>)?.animation,
-          gradientFrom: (c.props as Record<string, unknown>)?.gradientFrom,
-          hoverEffect: (c.props as Record<string, unknown>)?.hoverEffect,
-        })), null, 2));
         const orderedSkeletonIds = ordered.map((c) => {
           const id = (c.props as Record<string, unknown>)?.id;
           return typeof id === 'string' ? id : '';
         });
 
-        // Progressive: emit each component with skeleton replacement
-        emitComponentStream(send, ordered, orderedSkeletonIds);
+        // Progressive: only emit components not already sent via streaming callback
+        if (emittedSections.size < ordered.length) {
+          emitComponentStream(send, ordered, orderedSkeletonIds);
+        }
 
         const finalResult: AIGenerationResponse = {
           action: AIAction.FULL_PAGE,

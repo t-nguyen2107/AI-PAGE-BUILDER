@@ -10,6 +10,7 @@ export {
   LANDING_PATTERNS,
   TYPOGRAPHY_PAIRINGS,
   PRODUCT_REASONING,
+  UX_DESIGN_RULES,
   resolveDesignGuidance,
   formatDesignGuidance,
   type ColorPalette,

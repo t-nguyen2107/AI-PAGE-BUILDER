@@ -75,24 +75,38 @@ export async function POST(request: NextRequest) {
         let history: BaseMessage[] = [];
         let projectProfile = '';
 
-        const [, , , profileResult] = await Promise.allSettled([
+        // Auto-polish skips session creation — it's a continuation of the wizard flow,
+        // not an interactive AI chat session. Saves ~500ms.
+        if (isAutoPolish) {
+          console.log('[ai-stream] AUTO-POLISH MODE: skipping session, RAG, profile analysis');
+        }
+        const contextPromises: Promise<void>[] = [
+          // 1. Load page treeData
           (async () => {
             const page = await prisma.page.findUnique({ where: { id: pageId } });
             if (page?.treeData) {
               treeSummary = buildTreeSummary(page.treeData);
               treeDataRaw = page.treeData;
-              
-              // TODO: Update generationStatus once DB column exists
-              // if (isAutoPolish && page.generationStatus === 'pending') {
-              //   await prisma.page.update({ where: { id: pageId }, data: { generationStatus: 'polishing' } });
-              // }
             }
           })(),
+          // 2. Load styleguide
           (async () => {
+            if (styleguideId) {
+              const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
+              if (sg) styleguideData = { colors: sg.colors, typography: sg.typography, spacing: sg.spacing, cssVariables: sg.cssVariables };
+            } else {
+              const sg = await prisma.styleguide.findFirst({ where: { projectId } });
+              if (sg) styleguideData = { colors: sg.colors, typography: sg.typography, spacing: sg.spacing, cssVariables: sg.cssVariables };
+            }
+          })(),
+        ];
+
+        // Session only needed for interactive AI chat (not auto-polish)
+        if (!isAutoPolish) {
+          contextPromises.push((async () => {
             const session = await aiMemory.getOrCreateSession(projectId, pageId);
             capturedSessionId = session.id;
 
-            // Seed session from wizard/project context (idempotent — checks internally for existing messages)
             try {
               const profile = await prisma.projectAIProfile.findUnique({
                 where: { projectId },
@@ -114,7 +128,6 @@ export async function POST(request: NextRequest) {
                   tone: profile.tone || undefined,
                 });
               } else {
-                // Fallback: seed from basic project info when no AI profile exists
                 const project = await prisma.project.findUnique({
                   where: { id: projectId },
                   select: { name: true, description: true },
@@ -132,18 +145,17 @@ export async function POST(request: NextRequest) {
 
             miniContext = await aiMemory.getMiniContext(session.id);
             history = await aiMemory.getSessionHistory(session.id);
-          })(),
-          (async () => {
-            if (styleguideId) {
-              const sg = await prisma.styleguide.findUnique({ where: { id: styleguideId } });
-              if (sg) styleguideData = { colors: sg.colors, typography: sg.typography, spacing: sg.spacing, cssVariables: sg.cssVariables };
-            }
-          })(),
-          getProjectProfileText(projectId, prompt).then((t) => { projectProfile = t ?? ''; }),
-        ]);
+          })());
+        }
 
-        if (profileResult.status === 'rejected') {
-          console.error('[ai-profile] Failed to load project profile:', profileResult.reason);
+        await Promise.allSettled(contextPromises);
+
+        // Load project profile (non-blocking, non-critical)
+        try {
+          const profileText = await getProjectProfileText(projectId, prompt);
+          projectProfile = profileText ?? '';
+        } catch (profileErr) {
+          console.error('[ai-profile] Failed to load project profile:', profileErr);
         }
 
         // STEP 2: Optimize prompt
@@ -153,6 +165,7 @@ export async function POST(request: NextRequest) {
         // The Intent type was previously used from @/features/ai/prompt-parser, let's use string to avoid issues
         let intent = 'unknown';
         let businessType: string | null = null;
+        let businessName: string | null = null;
         let designContext: string | null = null;
         let designGuidance: any = null;
         
@@ -163,8 +176,16 @@ export async function POST(request: NextRequest) {
             const profile = await prisma.projectAIProfile.findUnique({ where: { projectId } });
             if (profile) {
               businessType = profile.businessType || null;
+              businessName = profile.businessName || null;
               // Build a contextual prompt from profile for section content generation
               enrichedPrompt = `Polish a ${profile.businessType || 'general'} website for "${profile.businessName || 'Business'}". Target audience: ${profile.targetAudience || 'general'}. Tone: ${profile.tone || 'professional'}. Style: ${profile.preferredStyle || 'modern'}.`;
+
+              // Resolve design guidance from business type (color palettes, styles, typography)
+              if (businessType) {
+                const { resolveDesignGuidance, formatDesignGuidance } = await import('@/lib/ai/knowledge/design-knowledge');
+                designGuidance = resolveDesignGuidance(businessType);
+                designContext = designGuidance ? formatDesignGuidance(designGuidance, businessType) : null;
+              }
             }
           } catch { /* non-fatal */ }
         } else {
@@ -182,13 +203,15 @@ export async function POST(request: NextRequest) {
         // Route: create_page OR isAutoPolish → makeup mode (structure + parallel polish), everything else → full AI mode
         const useMakeupMode = intent === 'create_page' || isAutoPolish;
 
-          // RAG: vector knowledge lookup (non-fatal)
+          // RAG: vector knowledge lookup — skip for auto-polish (uses static design-knowledge.ts instead)
           let ragContext = '';
-          try {
-            const ragResult = await searchDesignKnowledge({ query: prompt, businessType: businessType ?? undefined });
-            ragContext = ragResult.contextText;
-          } catch (e) {
-            console.warn('[ai-stream] RAG lookup failed (non-fatal):', e);
+          if (!isAutoPolish) {
+            try {
+              const ragResult = await searchDesignKnowledge({ query: prompt, businessType: businessType ?? undefined });
+              ragContext = ragResult.contextText;
+            } catch (e) {
+              console.warn('[ai-stream] RAG lookup failed (non-fatal):', e);
+            }
           }
 
           // Merge static design context with RAG knowledge
@@ -198,6 +221,7 @@ export async function POST(request: NextRequest) {
           let aiStream: ReadableStream<Uint8Array>;
           try {
             if (useMakeupMode) {
+              console.log('[ai-stream] MAKEUP MODE — isAutoPolish:', isAutoPolish, 'intent:', intent, 'businessType:', businessType, 'styleguideId:', styleguideId ?? 'none', 'hasTreeData:', !!treeDataRaw);
               // Makeup mode: structure resolver + parallel per-section polish
               // treeData is stored as JSON string in DB — parse before validating
               const parsed = treeDataRaw
@@ -210,6 +234,7 @@ export async function POST(request: NextRequest) {
               aiStream = createMakeupStream(enrichedPrompt, {
                 styleguideData,
                 businessType: businessType ?? undefined,
+                businessName: businessName ?? undefined,
                 designContext: mergedDesignContext,
                 designGuidance: designGuidance ?? undefined,
                 signal: request.signal,
@@ -287,8 +312,8 @@ export async function POST(request: NextRequest) {
         const msg = err instanceof Error ? err.message : 'Unknown pipeline error';
         send({ type: 'error', message: msg });
       } finally {
-        // Persist messages after stream completes
-        if (capturedSessionId && finalResult) {
+        // Persist messages + profile analysis only for interactive sessions (not auto-polish)
+        if (!isAutoPolish && capturedSessionId && finalResult) {
           try {
             await aiMemory.appendUserMessage(capturedSessionId, prompt);
 

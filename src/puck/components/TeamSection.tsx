@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { TeamSectionProps, TeamMember, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 // ─── Social SVG icons ────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ function GithubIcon() {
 
 // ─── Social links row ────────────────────────────────────────────────────────
 
-function SocialLinks({ member }: { member: TeamMember }) {
+function SocialLinks({ member, transitionDuration }: { member: TeamMember; transitionDuration: string }) {
   const hasLinks = member.socialTwitter || member.socialLinkedin || member.socialGithub;
   if (!hasLinks) return null;
 
@@ -43,7 +44,7 @@ function SocialLinks({ member }: { member: TeamMember }) {
           href={member.socialTwitter}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-primary transition-colors"
+          className={`rounded-full p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all ${transitionDuration}`}
         >
           <TwitterIcon />
         </a>
@@ -53,7 +54,7 @@ function SocialLinks({ member }: { member: TeamMember }) {
           href={member.socialLinkedin}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-primary transition-colors"
+          className={`rounded-full p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all ${transitionDuration}`}
         >
           <LinkedInIcon />
         </a>
@@ -63,7 +64,7 @@ function SocialLinks({ member }: { member: TeamMember }) {
           href={member.socialGithub}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-primary transition-colors"
+          className={`rounded-full p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all ${transitionDuration}`}
         >
           <GithubIcon />
         </a>
@@ -74,18 +75,18 @@ function SocialLinks({ member }: { member: TeamMember }) {
 
 // ─── Avatar helper ───────────────────────────────────────────────────────────
 
-function Avatar({ member }: { member: TeamMember }) {
+function Avatar({ member, avatarClass }: { member: TeamMember; avatarClass: string }) {
   if (member.avatarUrl) {
     return (
       <img
         src={member.avatarUrl}
         alt={member.name}
-        className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+        className={`w-24 h-24 object-cover mx-auto mb-4 ${avatarClass}`}
       />
     );
   }
   return (
-    <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 text-xl font-semibold">
+    <div className={`w-24 h-24 bg-muted flex items-center justify-center mx-auto mb-4 text-xl font-semibold ${avatarClass}`}>
       {member.name
         .split(" ")
         .map((n) => n[0])
@@ -101,13 +102,16 @@ export function TeamSection(props: TeamSectionProps & ComponentMeta) {
   const {
     heading,
     subtext,
-    members,
+    members = [],
     hoverEffect,
     socialLinks: showSocial,
     animation,
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -152,14 +156,19 @@ export function TeamSection(props: TeamSectionProps & ComponentMeta) {
       `}</style>
       <section
         ref={sectionRef}
-        className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+        className={`w-full ${ds.section.base} text-foreground ${className ?? ""}`}
         style={extractStyleProps(metaRest)}
       >
-        <div className="max-w-6xl mx-auto">
+        {ds.section.decorative && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+            <div className={ds.section.decorative} />
+          </div>
+        )}
+        <div className={`${ds.containerWidth} mx-auto relative`}>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+            <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
             {subtext && (
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className={`text-lg ${ds.typography.body} max-w-2xl mx-auto`}>
                 {subtext}
               </p>
             )}
@@ -172,7 +181,7 @@ export function TeamSection(props: TeamSectionProps & ComponentMeta) {
                     <div className="relative w-full transition-transform duration-500 transform-3d group-hover:transform-[rotateY(180deg)]">
                       {/* Front */}
                       <div className="backface-hidden text-center">
-                        <Avatar member={member} />
+                        <Avatar member={member} avatarClass={ds.accent.avatar} />
                         <p className="font-semibold">{member.name}</p>
                         <p className="text-muted-foreground text-sm">{member.role}</p>
                       </div>
@@ -210,16 +219,16 @@ export function TeamSection(props: TeamSectionProps & ComponentMeta) {
                 <div
                   key={i}
                   data-team-card={i}
-                  className={`text-center transition-all duration-300 ${
+                  className={`text-center ${ds.card.base} transition-all ${ds.transitionDuration} p-6 ${
                     isLift
-                      ? "hover:-translate-y-2 hover:shadow-lg rounded-xl hover:bg-card p-4"
-                      : ""
+                      ? "hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/5"
+                      : "hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5"
                   }`}
                 >
-                  <Avatar member={member} />
+                  <Avatar member={member} avatarClass={ds.accent.avatar} />
                   <p className="font-semibold">{member.name}</p>
-                  <p className="text-muted-foreground text-sm">{member.role}</p>
-                  {showSocial && <SocialLinks member={member} />}
+                  <p className="text-primary text-sm">{member.role}</p>
+                  {showSocial && <SocialLinks member={member} transitionDuration={ds.transitionDuration} />}
                 </div>
               );
             })}

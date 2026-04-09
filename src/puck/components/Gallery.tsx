@@ -8,7 +8,7 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
   const {
     heading,
     columns,
-    images,
+    images = [],
     variant = "grid",
     lightbox = false,
     hoverEffect = "none",
@@ -20,24 +20,24 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
 
   // ─── Hover wrapper classes ──────────────────────────────────────
   function getImageWrapperClass(): string {
-    const base = "group relative overflow-hidden rounded-lg cursor-pointer";
+    const base = "group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer";
     if (hoverEffect === "zoom") return `${base}`;
     if (hoverEffect === "overlay") return `${base}`;
-    return "relative overflow-hidden rounded-lg";
+    return "relative overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300";
   }
 
   function getImageClass(): string {
-    const base = "w-full transition-transform duration-300";
-    if (hoverEffect === "zoom") return `${base} group-hover:scale-110`;
+    const base = "w-full transition-transform duration-500";
+    if (hoverEffect === "zoom") return `${base} group-hover:scale-105`;
     return base;
   }
 
   function getOverlayClass(img: { caption?: string }): string {
     if (hoverEffect !== "overlay") return "";
     if (img.caption) {
-      return "absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4";
+      return "absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 rounded-2xl";
     }
-    return "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300";
+    return "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl";
   }
 
   // ─── Single image card ──────────────────────────────────────────
@@ -137,10 +137,10 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
       </div>
     ) : variant === "carousel" ? (
       <div
-        className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-6 px-6 scroll-smooth"
+        className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-6 px-6 scroll-smooth"
         style={{ scrollbarWidth: "none" }}
       >
-        <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+        <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
         {images.map((img, i) => (
           <div
             key={i}
@@ -167,14 +167,19 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-16 px-6 bg-background text-foreground ${
+      className={`w-full py-24 px-6 bg-background text-foreground relative ${
         className ?? ""
       }`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
+      {/* Subtle decorative background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl" />
+      </div>
+
+      <div className="max-w-6xl mx-auto relative">
         {heading && (
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-center mb-12">
             {heading}
           </h2>
         )}

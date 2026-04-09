@@ -3,12 +3,13 @@
 import { useRef, useState, useEffect } from "react";
 import type { ComparisonTableProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
-function formatCellValue(value: string): string {
+function formatCellValue(value: string): { text: string; className: string } {
   const lower = value.toLowerCase().trim();
-  if (lower === "yes" || lower === "true" || lower === "1" || lower === "✓" || lower === "check") return "\u2713";
-  if (lower === "" || lower === "no" || lower === "false" || lower === "0" || lower === "—" || lower === "-") return "\u2014";
-  return value;
+  if (lower === "yes" || lower === "true" || lower === "1" || lower === "✓" || lower === "check") return { text: "\u2713", className: "text-primary font-semibold" };
+  if (lower === "" || lower === "no" || lower === "false" || lower === "0" || lower === "—" || lower === "-") return { text: "\u2014", className: "text-muted-foreground/40" };
+  return { text: value, className: "" };
 }
 
 function useScrollAnimation(animation: string) {
@@ -34,14 +35,17 @@ export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
   const {
     heading,
     plans,
-    features,
+    features = [],
     highlightedPlan,
     highlightedColor,
     tooltipDetails = false,
     animation = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
   const { ref: animRef, className: animClass } = useScrollAnimation(animation);
 
   const highlightIdx = highlightedPlan != null && highlightedPlan >= 0 && highlightedPlan < plans.length
@@ -52,28 +56,33 @@ export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
     ? { backgroundColor: highlightedColor }
     : undefined;
 
-  const highlightBgClass = !highlightedColor ? "bg-primary/10" : "";
+  const highlightBgClass = !highlightedColor ? "ring-2 ring-primary bg-primary/5" : "";
   const highlightTextClass = !highlightedColor ? "text-primary" : "";
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
       <div
         ref={animRef}
-        className={`max-w-6xl mx-auto transition-all duration-700 ease-out ${animClass}`}
+        className={`${ds.containerWidth} mx-auto transition-all duration-700 ease-out relative ${animClass}`}
       >
         {heading && (
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          <h2 className={`${ds.typography.h2} text-center mb-12`}>
             {heading}
           </h2>
         )}
 
-        <div className="overflow-x-auto rounded-2xl border border-border">
+        <div className={`overflow-x-auto ${ds.card.base}`}>
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-6 py-4 font-semibold text-muted-foreground">
                   Features
                 </th>
@@ -88,7 +97,7 @@ export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
                     <div className="flex flex-col items-center gap-1">
                       <span>{plan.name}</span>
                       {i === highlightIdx && (
-                        <span className="text-xs font-normal opacity-80">Recommended</span>
+                        <span className={`text-xs ${ds.accent.badge}`}>Recommended</span>
                       )}
                     </div>
                   </th>
@@ -113,16 +122,18 @@ export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
                     >
                       {tooltipDetails ? (
                         <span
-                          className="relative group cursor-help"
+                          className={`relative group cursor-help ${formatCellValue(feature.values[colIdx] ?? "").className}`}
                           title={`${feature.name}: ${feature.values[colIdx] ?? ""}`}
                         >
-                          {formatCellValue(feature.values[colIdx] ?? "")}
+                          {formatCellValue(feature.values[colIdx] ?? "").text}
                           <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs rounded-lg bg-foreground text-background opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
                             {feature.name}: {feature.values[colIdx] ?? ""}
                           </span>
                         </span>
                       ) : (
-                        formatCellValue(feature.values[colIdx] ?? "")
+                        <span className={formatCellValue(feature.values[colIdx] ?? "").className}>
+                          {formatCellValue(feature.values[colIdx] ?? "").text}
+                        </span>
                       )}
                     </td>
                   ))}

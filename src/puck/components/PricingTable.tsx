@@ -2,6 +2,7 @@
 
 import type { PricingTableProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 import { useState, useEffect, useRef } from "react";
 
 export function PricingTable(props: PricingTableProps & ComponentMeta) {
@@ -14,9 +15,12 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
     highlightedBadge = "Popular",
     currency = "$",
     animation = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const [yearly, setYearly] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -69,14 +73,21 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
   return (
     <section
       ref={sectionRef}
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+      {/* Subtle decorative background */}
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+
+      <div className={`${ds.containerWidth} mx-auto relative`}>
+        <div className="text-center mb-16">
+          <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
           {subtext && (
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className={`text-lg ${ds.typography.body} max-w-2xl mx-auto`}>
               {subtext}
             </p>
           )}
@@ -123,14 +134,18 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
           {activePlans.map((plan, i) => (
             <div
               key={i}
-              className={`relative p-8 rounded-2xl border bg-card transition ${
+              className={`relative overflow-hidden p-8 ${ds.card.base} ${
                 plan.highlighted
-                  ? "ring-2 ring-primary scale-105 border-primary shadow-lg"
-                  : "border-border"
-              } ${getInitialClass()} ${getAnimationClass(i)}`}
+                  ? "ring-2 ring-primary md:scale-105 border-primary shadow-xl shadow-primary/10"
+                  : ""
+              } ${ds.card.hover} ${getInitialClass()} ${getAnimationClass(i)}`}
             >
+              {/* Accent bar */}
+              {ds.accent.cardAccent && (
+                <div className={ds.accent.cardAccent} />
+              )}
               {plan.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 ${ds.accent.badge} text-primary-foreground`}>
                   {highlightedBadge}
                 </span>
               )}
@@ -139,22 +154,22 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
                   {plan.savePercentage}
                 </span>
               )}
-              <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
-              <div className="mb-2">
-                <span className="text-4xl font-bold">
+              <h3 className={ds.typography.h3}>{plan.name}</h3>
+              <div className="mb-2 mt-2">
+                <span className="text-4xl font-bold tracking-tight text-primary">
                   {currency}
                   {plan.price.replace(/^[\$\€\£\¥]/, "")}
                 </span>
-                <span className="text-muted-foreground text-sm">
+                <span className={`${ds.typography.body} text-sm`}>
                   /{plan.period}
                 </span>
               </div>
-              <p className="text-muted-foreground text-sm mb-6">
+              <p className={`${ds.typography.body} text-sm mb-6`}>
                 {plan.description}
               </p>
               <ul className="space-y-3 mb-8">
                 {plan.features.map((feature, j) => (
-                  <li key={j} className="flex items-center gap-2 text-sm">
+                  <li key={j} className={`flex items-center gap-2 text-sm ${ds.typography.body}`}>
                     <span className="text-primary font-bold">&#10003;</span>
                     {typeof feature === "string" ? feature : feature.value}
                   </li>
@@ -162,10 +177,10 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
               </ul>
               <a
                 href={plan.ctaHref}
-                className={`block text-center rounded-lg px-6 py-3 font-semibold transition ${
+                className={`block text-center ${
                   plan.highlighted
-                    ? "bg-primary text-primary-foreground hover:opacity-90"
-                    : "border border-border text-foreground hover:bg-muted"
+                    ? `${ds.button.primary} bg-primary text-primary-foreground shadow-lg shadow-primary/25`
+                    : `${ds.button.secondary} text-foreground`
                 }`}
               >
                 {plan.ctaText}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SocialProofProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 // ─── useCountUp hook ────────────────────────────────────────────────────
 function useCountUp(target: string, visible: boolean, duration = 2000) {
@@ -55,8 +56,8 @@ function StatItem({
 export function SocialProof(props: SocialProofProps & ComponentMeta) {
   const {
     heading,
-    stats,
-    logos,
+    stats = [],
+    logos = [],
     showAvatars,
     avatarCount = 5,
     testimonialText,
@@ -64,9 +65,12 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
     avatarUrls,
     variant = "default",
     animation = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -114,7 +118,7 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
         className={`w-full py-4 px-6 ${sectionAnimClass} ${className ?? ""}`}
         style={extractStyleProps(metaRest)}
       >
-        <div className="max-w-6xl mx-auto flex justify-center">
+        <div className={`${ds.containerWidth} mx-auto flex justify-center`}>
           <div className="bg-background border border-border rounded-lg shadow-lg p-4 max-w-sm animate-[slideIn_0.3s_ease-out]">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0" />
@@ -132,13 +136,18 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
   return (
     <section
       ref={sectionRef}
-      className={`w-full py-16 px-6 bg-background text-foreground ${sectionAnimClass} ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground ${sectionAnimClass} ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+      <div className={`${ds.containerWidth} mx-auto relative`}>
         {heading && (
           <h2
-            className={`text-3xl md:text-4xl font-bold text-center mb-10 transition-all duration-700 ${isVisible || animation === "none" ? "opacity-100" : "opacity-0"}`}
+            className={`${ds.typography.h2} text-center mb-10 transition-all duration-700 ${isVisible || animation === "none" ? "opacity-100" : "opacity-0"}`}
             style={staggerDelay(0)}
           >
             {heading}
@@ -158,11 +167,11 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
                     key={i}
                     src={url}
                     alt=""
-                    className="w-10 h-10 rounded-full border-2 border-background object-cover"
+                    className={`w-10 h-10 object-cover ${ds.accent.avatar}`}
                   />
                 ))}
                 {avatarUrls.length > 5 && (
-                  <span className="w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                  <span className={`w-10 h-10 bg-muted flex items-center justify-center text-xs text-muted-foreground ${ds.accent.avatar}`}>
                     +{avatarUrls.length - 5}
                   </span>
                 )}
@@ -173,7 +182,7 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
                 {Array.from({ length: avatarCount }).map((_, i) => (
                   <div
                     key={i}
-                    className="w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground"
+                    className={`w-10 h-10 bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground ${ds.accent.avatar}`}
                   >
                     {String.fromCharCode(65 + i)}
                   </div>
@@ -220,16 +229,16 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
 
         {testimonialText && (
           <div
-            className={`max-w-3xl mx-auto text-center transition-all duration-700 ${isVisible || animation === "none" ? "opacity-100" : "opacity-0"}`}
+            className={`max-w-3xl mx-auto text-center ${ds.card.base} p-8 ${ds.card.hover} ${isVisible || animation === "none" ? "opacity-100" : "opacity-0"}`}
             style={staggerDelay(4)}
           >
-            <span className="block text-5xl text-primary/30 font-serif leading-none mb-2">
+            <span className="block text-5xl text-amber-400 font-serif leading-none mb-2">
               &ldquo;
             </span>
-            <p className="italic text-lg leading-relaxed text-muted-foreground">
+            <p className={`italic text-lg ${ds.typography.body}`}>
               {testimonialText}
             </p>
-            <span className="block text-5xl text-primary/30 font-serif leading-none mt-2">
+            <span className="block text-5xl text-amber-400 font-serif leading-none mt-2">
               &rdquo;
             </span>
           </div>

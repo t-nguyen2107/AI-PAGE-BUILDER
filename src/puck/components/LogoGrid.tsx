@@ -30,7 +30,7 @@ function useScrollAnimation(animation: string) {
 export function LogoGrid(props: LogoGridProps & ComponentMeta) {
   const {
     heading,
-    logos,
+    logos = [],
     variant = "grid",
     grayscale = true,
     tooltip = false,
@@ -65,10 +65,10 @@ export function LogoGrid(props: LogoGridProps & ComponentMeta) {
           {isCarousel ? (
             /* Carousel: CSS scroll-snap */
             <div
-              className="flex overflow-x-auto snap-x snap-mandatory gap-8 pb-4 -mx-6 px-6 scroll-smooth"
+              className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-8 pb-4 -mx-6 px-6 scroll-smooth"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
-              <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+              <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
               {logos.map((logo, i) => (
                 <div
                   key={i}

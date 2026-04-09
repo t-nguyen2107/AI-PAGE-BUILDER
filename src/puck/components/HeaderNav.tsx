@@ -8,7 +8,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
   const {
     logo,
     logoImageUrl,
-    links,
+    links = [],
     ctaText,
     ctaHref,
     sticky,
@@ -24,13 +24,13 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Scroll listener for transparent variant
+  // Scroll listener for transparent variant and sticky glassmorphism
   useEffect(() => {
-    if (!transparent) return;
-    const handler = () => setScrolled(window.scrollY > 50);
+    if (!transparent && !sticky) return;
+    const handler = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
-  }, [transparent]);
+  }, [transparent, sticky]);
 
   // Close mobile menu on resize to desktop
   useEffect(() => {
@@ -43,9 +43,11 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
 
   const bgClass = transparent
     ? scrolled
-      ? "bg-background/95 backdrop-blur-md shadow-sm"
+      ? "bg-background/95 backdrop-blur-xl shadow-sm border-b border-border/50"
       : "bg-transparent"
-    : "bg-background";
+    : sticky && scrolled
+      ? "bg-background/80 backdrop-blur-xl shadow-sm border-b border-border/50"
+      : "bg-background";
 
   return (
     <nav
@@ -63,7 +65,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
             className="h-8 w-auto object-contain"
           />
         ) : (
-          <span className="text-xl font-bold text-foreground">{logo}</span>
+          <span className="text-xl font-bold tracking-tight text-foreground">{logo}</span>
         )}
       </div>
 
@@ -73,7 +75,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
           <div key={i} className="relative group">
             <a
               href={link.href}
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition"
+              className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-200"
             >
               {link.label}
               {link.children && (
@@ -143,7 +145,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
         {ctaText && ctaHref && (
           <a
             href={ctaHref}
-            className="hidden md:inline-block bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            className="hidden md:inline-block rounded-full px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
           >
             {ctaText}
           </a>
@@ -230,7 +232,7 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
             {ctaText && ctaHref && (
               <a
                 href={ctaHref}
-                className="mt-6 block bg-primary text-primary-foreground px-4 py-2 rounded-lg text-center hover:opacity-90 transition"
+                className="mt-6 block rounded-full px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 text-center"
                 onClick={() => setMenuOpen(false)}
               >
                 {ctaText}

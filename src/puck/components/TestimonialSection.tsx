@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import type { TestimonialSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 // ─── Star rating sub-component ────────────────────────────────────────
@@ -26,31 +27,39 @@ function StarRating({ rating }: { rating: number }) {
 
 // ─── Testimonial card (shared between grid and carousel) ──────────────
 
-function TestimonialCard({ item, cardStyle }: { item: TestimonialSectionProps["testimonials"][number]; cardStyle: string }) {
-  const cardClasses: Record<string, string> = {
-    elevated: "p-6 rounded-xl bg-card border border-border shadow-md hover:shadow-lg transition-shadow h-full flex flex-col",
-    glass: "p-6 rounded-xl bg-surface-lowest/80 dark:bg-surface/80 backdrop-blur-sm border border-border/20 shadow-sm h-full flex flex-col",
-    default: "p-6 rounded-xl bg-card border border-border h-full flex flex-col",
+function TestimonialCard({ item, cardStyle, ds }: { item: TestimonialSectionProps["testimonials"][number]; cardStyle: string; ds: ReturnType<typeof getDesignTokens> }) {
+  // Content-specific extra classes per cardStyle variant (gradient bg, etc.)
+  const cardStyleExtras: Record<string, string> = {
+    elevated: "",
+    glass: "bg-white/60 dark:bg-white/5 backdrop-blur-xl border-white/40 dark:border-white/10",
+    default: "",
   };
 
+  const baseClasses = `p-6 ${ds.card.base} ${ds.card.hover} h-full flex flex-col relative overflow-hidden ${cardStyleExtras[cardStyle] ?? ""}`.trim();
+
   return (
-    <div className={cardClasses[cardStyle] ?? cardClasses.default}>
+    <div className={baseClasses}>
+      {/* Top border accent */}
+      {ds.accent.cardAccent && (
+        <div className={ds.accent.cardAccent} />
+      )}
+
       {item.rating && item.rating >= 1 && item.rating <= 5 && (
         <StarRating rating={item.rating} />
       )}
-      <span className="block text-4xl text-primary/30 font-serif leading-none mb-2">
+      <span className="block text-5xl text-primary/20 font-serif leading-none mb-3 select-none">
         &ldquo;
       </span>
-      <p className="italic text-lg leading-relaxed mb-6 flex-1">{item.quote}</p>
+      <p className={`italic text-lg leading-relaxed text-foreground/80 mb-6 flex-1`}>{item.quote}</p>
       <div className="flex items-center gap-3 mt-auto">
         {item.avatarUrl ? (
           <img
             src={item.avatarUrl}
             alt={item.author}
-            className="w-12 h-12 rounded-full object-cover"
+            className={`w-12 h-12 object-cover ${ds.accent.avatar}`}
           />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">
+          <div className={`w-12 h-12 bg-muted flex items-center justify-center text-sm font-semibold ${ds.accent.avatar}`}>
             {(item.author || "")
               .split(" ")
               .map((n) => n[0])
@@ -60,7 +69,7 @@ function TestimonialCard({ item, cardStyle }: { item: TestimonialSectionProps["t
         )}
         <div>
           <p className="font-semibold text-sm">{item.author}</p>
-          <p className="text-muted-foreground text-sm">{item.role}</p>
+          <p className={`${ds.typography.body} text-sm`}>{item.role}</p>
         </div>
       </div>
     </div>
@@ -72,15 +81,18 @@ function TestimonialCard({ item, cardStyle }: { item: TestimonialSectionProps["t
 export function TestimonialSection(props: TestimonialSectionProps & ComponentMeta) {
   const {
     heading,
-    testimonials,
+    testimonials = [],
     variant = "grid",
     autoplay = false,
     interval = 5000,
     animation = "none",
     cardStyle = "default",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const anim = useScrollAnimation(animation);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -108,12 +120,19 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
+      {/* Decorative background */}
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+
+      <div className={`${ds.containerWidth} mx-auto relative`}>
         {heading && (
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          <h2 className={`${ds.typography.h2} text-center mb-16`}>
             {heading}
           </h2>
         )}
@@ -126,17 +145,17 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
             /* ─── CSS scroll-snap carousel ────────────────────────── */
             <div
               ref={scrollRef}
-              className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
+              className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
-              <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+              <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
               {testimonials.map((t, i) => (
                 <div
                   key={i}
                   className="snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%]"
                   style={isStagger ? { transitionDelay: `${i * 100}ms` } : undefined}
                 >
-                  <TestimonialCard item={t} cardStyle={cardStyle} />
+                  <TestimonialCard item={t} cardStyle={cardStyle} ds={ds} />
                 </div>
               ))}
             </div>
@@ -148,7 +167,7 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
                   key={i}
                   style={isStagger ? { transitionDelay: `${i * 100}ms` } : undefined}
                 >
-                  <TestimonialCard item={t} cardStyle={cardStyle} />
+                  <TestimonialCard item={t} cardStyle={cardStyle} ds={ds} />
                 </div>
               ))}
             </div>

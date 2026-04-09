@@ -40,7 +40,7 @@ function FeatureIcon({ icon }: { icon?: string }) {
   if (!icon) return null;
   const path = ICON_MAP[icon] ?? ICON_MAP.zap;
   return (
-    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0">
+    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary shrink-0">
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d={path} />
       </svg>
@@ -54,7 +54,7 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
     subtext,
     imageUrl,
     videoUrl,
-    features,
+    features = [],
     imagePosition = "right",
     ctaText,
     ctaHref,
@@ -69,12 +69,13 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full py-24 px-6 bg-background text-foreground ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl pointer-events-none" />
       <div
         ref={animRef}
-        className={`max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 transition-all duration-700 ease-out ${animClass}`}
+        className={`max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 transition-all duration-700 ease-out relative ${animClass}`}
       >
         {/* Media side */}
         <div
@@ -106,9 +107,9 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
             imageFirst ? "md:order-2" : "md:order-1"
           }`}
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{heading}</h2>
           {subtext && (
-            <p className="text-lg text-muted-foreground mb-8">{subtext}</p>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-8">{subtext}</p>
           )}
 
           {tabbed && features.length > 0 ? (
@@ -143,11 +144,11 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
           ) : (
             <div className="space-y-6 mb-8">
               {features.map((feature, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <div key={i} className="flex items-start gap-4 rounded-2xl bg-card border border-border/50 shadow-sm p-4 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/5">
                   <FeatureIcon icon={feature.icon} />
                   <div>
                     <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
+                    <p className="text-muted-foreground leading-relaxed text-sm">
                       {feature.description}
                     </p>
                   </div>

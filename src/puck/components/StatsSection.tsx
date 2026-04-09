@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { StatsSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 // ─── Animated counter hook ────────────────────────────────────────────
@@ -47,6 +48,7 @@ function StatCard({
   visible,
   staggerDelay,
   cardStyle,
+  ds,
 }: {
   stat: StatsSectionProps["stats"][number];
   animated?: boolean;
@@ -55,6 +57,7 @@ function StatCard({
   visible: boolean;
   staggerDelay: number;
   cardStyle: string;
+  ds: ReturnType<typeof getDesignTokens>;
 }) {
   const displayValue = useCountUp(stat.value, visible, duration);
 
@@ -66,29 +69,34 @@ function StatCard({
     ? { transitionDelay: visible ? `${staggerDelay}ms` : "0ms" }
     : {};
 
-  const cardClasses: Record<string, string> = {
-    card: "p-6 rounded-xl bg-card border border-border shadow-sm",
-    bordered: "p-6 rounded-xl border-2 border-primary/20",
-    gradient: "p-6 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10",
+  // Content-specific extra classes per cardStyle variant (gradient bg, border emphasis)
+  const cardStyleExtras: Record<string, string> = {
+    card: "",
+    bordered: "border-2 border-primary/30",
+    gradient: "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10",
     none: "",
   };
 
+  const baseCardClasses = cardStyle === "none"
+    ? ""
+    : `p-8 ${ds.card.base} ${ds.card.hover}`;
+
   return (
     <div
-      className={`text-center transition-all duration-500 ease-out ${cardClasses[cardStyle] ?? ""}`}
+      className={`text-center transition-all duration-500 ease-out ${baseCardClasses} ${cardStyleExtras[cardStyle] ?? ""}`}
       style={staggerStyle}
     >
       {stat.icon && (
-        <span className="material-symbols-outlined text-3xl text-primary/70 mb-3 block mx-auto">
+        <span className={`material-symbols-outlined text-3xl text-primary/70 mb-3 block mx-auto ${ds.accent.icon} p-2.5 mx-auto`}>
           {stat.icon}
         </span>
       )}
-      <p className="text-4xl font-bold text-primary mb-2">
+      <p className={`text-4xl font-bold mb-2 ${cardStyle === "gradient" ? "bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60" : "text-primary"}`}>
         {prefix}
         {animated ? displayValue : stat.value}
         {suffix}
       </p>
-      <p className="text-muted-foreground text-sm">{stat.label}</p>
+      <p className={`${ds.typography.body} text-sm font-medium tracking-wide uppercase`}>{stat.label}</p>
     </div>
   );
 }
@@ -98,30 +106,36 @@ function StatCard({
 export function StatsSection(props: StatsSectionProps & ComponentMeta) {
   const {
     heading,
-    stats,
+    stats = [],
     columns,
     animated,
     duration,
     animation = "none",
     cardStyle = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const { ref, className: animClass, visible } =
     useScrollAnimation(animation);
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
+      {ds.section.decorative && (
+        <div className={ds.section.decorative} />
+      )}
       <div
         ref={ref}
-        className={`max-w-6xl mx-auto transition-all duration-700 ease-out ${animClass}`}
+        className={`${ds.containerWidth} mx-auto transition-all duration-700 ease-out relative z-10 ${animClass}`}
       >
         {heading && (
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          <h2 className={`${ds.typography.h2} text-center mb-12`}>
             {heading}
           </h2>
         )}
@@ -138,6 +152,7 @@ export function StatsSection(props: StatsSectionProps & ComponentMeta) {
               visible={visible}
               staggerDelay={i * 120}
               cardStyle={cardStyle}
+              ds={ds}
             />
           ))}
         </div>

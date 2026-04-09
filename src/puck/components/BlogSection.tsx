@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import type { BlogSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 function useScrollAnimation(animation: string) {
   const ref = useRef<HTMLDivElement>(null);
@@ -36,15 +37,18 @@ function useScrollAnimation(animation: string) {
 export function BlogSection(props: BlogSectionProps & ComponentMeta) {
   const {
     heading,
-    posts,
+    posts = [],
     columns,
     variant = "grid",
     masonry = false,
     categoryFilter = false,
     animation = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const { ref: animRef, className: animClass, visible } = useScrollAnimation(animation);
@@ -69,7 +73,7 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
     animation === "stagger-fade" ? { transitionDelay: `${i * 80}ms` } : {};
 
   const cardClasses =
-    "group rounded-xl bg-card border border-border overflow-hidden hover:shadow-md transition";
+    `group ${ds.card.base} overflow-hidden ${ds.card.hover}`;
 
   const renderCard = (post: (typeof posts)[0], i: number) => (
     <a
@@ -79,11 +83,13 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
       style={staggerDelay(i)}
     >
       {post.imageUrl && (
-        <img
-          src={post.imageUrl}
-          alt={post.title}
-          className="w-full aspect-video object-cover"
-        />
+        <div className="overflow-hidden">
+          <img
+            src={post.imageUrl}
+            alt={post.title}
+            className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        </div>
       )}
       <div className="p-5">
         <div className="flex items-center gap-2 mb-2">
@@ -91,12 +97,12 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
             <span className="text-sm text-muted-foreground">{post.date}</span>
           )}
           {post.category && categoryFilter && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+            <span className={`text-xs ${ds.accent.badge}`}>
               {post.category}
             </span>
           )}
         </div>
-        <h3 className="font-semibold mb-2 group-hover:text-primary transition">
+        <h3 className={`${ds.typography.h3} tracking-tight mb-2 group-hover:text-primary transition`}>
           {post.title}
         </h3>
         <p className="text-muted-foreground text-sm line-clamp-2">
@@ -112,11 +118,16 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative overflow-hidden ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-6">
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+      <div className={`${ds.containerWidth} mx-auto`}>
+        <h2 className={`${ds.typography.h2} text-center mb-6`}>
           {heading}
         </h2>
 
@@ -146,10 +157,10 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
           {/* Carousel layout */}
           {isCarousel && (
             <div
-              className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
+              className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
-              <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+              <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
               {filtered.map((post, i) => (
                 <div
                   key={i}

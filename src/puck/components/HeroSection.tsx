@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
 import type { HeroSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { getDesignTokens } from "../lib/design-styles";
 
 // ─── Gradient presets ────────────────────────────────────────────────
 
@@ -42,11 +42,14 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
     gradientFrom,
     gradientTo,
     gradientPreset,
+    designStyle,
     className,
     ...metaRest
   } = props;
 
-  const paddingValue = props.padding || "96px";
+  const ds = getDesignTokens(designStyle);
+
+  const paddingValue = props.padding || "128px";
   const isCenter = align === "center";
   const isSplit = layout === "split-left" || layout === "split-right";
   const anim = useScrollAnimation(animation ?? "none");
@@ -67,7 +70,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
     ...(backgroundUrl && !videoUrl
       ? {
           backgroundImage: backgroundOverlay && !resolvedFrom
-            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`
+            ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${backgroundUrl})`
             : resolvedFrom
               ? `linear-gradient(135deg, ${resolvedFrom}cc, ${(resolvedTo ?? resolvedFrom)}cc), url(${backgroundUrl})`
               : `url(${backgroundUrl})`,
@@ -88,37 +91,58 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   const contentBlock = (
     <>
       {badge && (
-        <span className="inline-block mb-4 px-4 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+        <span className={`inline-block mb-6 ${ds.accent.badge} ${
+          hasBg
+            ? "bg-white/15 text-white border border-white/25 backdrop-blur-sm"
+            : ""
+        }`}>
           {badge}
         </span>
       )}
-      <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-        {heading}
+      <h1 className={`${ds.typography.h1} mb-6`}>
+        {hasBg || hasBgOverride ? heading : (
+          <>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-foreground/60">
+              {heading}
+            </span>
+          </>
+        )}
       </h1>
-      <p className="text-lg md:text-xl opacity-80 mb-8 max-w-2xl mx-auto">
+      <p className={`text-lg md:text-xl opacity-75 mb-10 max-w-2xl mx-auto ${ds.typography.body}`}>
         {subtext}
       </p>
-      <div className={`flex gap-4 ${isCenter ? "justify-center" : "justify-start"}`}>
+      <div className={`flex gap-4 flex-wrap ${isCenter ? "justify-center" : "justify-start"}`}>
         <a
           href={ctaHref}
-          className="inline-block bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold hover:opacity-90 transition"
+          className={`group inline-flex items-center gap-2 text-base ${ds.button.primary} ${
+            hasBg
+              ? "bg-white text-gray-900 hover:bg-white/90 shadow-lg shadow-black/20"
+              : "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+          }`}
         >
           {ctaText}
+          <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
         </a>
         {ctaSecondaryText && ctaSecondaryHref && (
           <a
             href={ctaSecondaryHref}
-            className={`inline-block border rounded-lg px-6 py-3 font-semibold transition ${hasBg ? "border-white/30 text-white hover:bg-white/10" : "border-border text-foreground hover:bg-muted"}`}
+            className={`inline-flex items-center gap-2 text-base ${ds.button.secondary} ${
+              hasBg
+                ? "border-white/30 text-white hover:bg-white/10 hover:border-white/50 backdrop-blur-sm"
+                : "border-border text-foreground hover:bg-muted hover:border-primary/30"
+            }`}
           >
             {ctaSecondaryText}
           </a>
         )}
       </div>
       {trustBadges && trustBadges.length > 0 && (
-        <div className={`flex flex-wrap items-center gap-4 mt-6 text-sm opacity-70 ${isCenter ? "justify-center" : "justify-start"}`}>
+        <div className={`flex flex-wrap items-center gap-5 mt-10 text-sm ${hasBg ? "opacity-70" : "text-muted-foreground"} ${isCenter ? "justify-center" : "justify-start"}`}>
           {trustBadges.map((b, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <span key={i} className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
               </svg>
               {b.text}
@@ -146,14 +170,46 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
         </div>
       )}
 
-      {/* Gradient-only overlay (no video, no backgroundUrl) */}
+      {/* Gradient overlay with mesh effect */}
       {!videoUrl && !backgroundUrl && resolvedFrom && (
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(135deg, ${resolvedFrom}dd, ${(resolvedTo ?? resolvedFrom)}dd)`,
-          }}
-        />
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${resolvedFrom}dd, ${(resolvedTo ?? resolvedFrom)}dd)`,
+            }}
+          />
+          {/* Decorative mesh gradient blobs */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+            <div
+              className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
+              style={{ background: `radial-gradient(circle, ${resolvedTo ?? resolvedFrom}80, transparent 70%)` }}
+            />
+            <div
+              className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
+              style={{ background: `radial-gradient(circle, ${resolvedFrom}80, transparent 70%)` }}
+            />
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
+              style={{ background: `radial-gradient(circle, #ffffff40, transparent 70%)` }}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Background image with decorative elements */}
+      {!videoUrl && backgroundUrl && resolvedFrom && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div
+            className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
+            style={{ background: `radial-gradient(circle, ${resolvedTo ?? resolvedFrom}60, transparent 70%)` }}
+          />
+        </div>
+      )}
+
+      {/* Decorative element for non-background heroes */}
+      {!videoUrl && !backgroundUrl && !resolvedFrom && ds.section.decorative && (
+        <div className={ds.section.decorative} aria-hidden="true" />
       )}
 
       {/* Animated content wrapper */}
@@ -162,15 +218,19 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
         className={`relative z-10 transition-all duration-700 ease-out ${anim.className}`}
       >
         {isSplit ? (
-          <div className={`max-w-6xl mx-auto grid gap-8 md:grid-cols-2 items-center ${layout === "split-right" ? "md:[direction:rtl]" : ""}`}>
+          <div className={`${ds.containerWidth} mx-auto grid gap-12 md:grid-cols-2 items-center ${layout === "split-right" ? "md:[direction:rtl]" : ""}`}>
             {/* Image side */}
             {imageUrl && (
-              <div className={layout === "split-right" ? "md:[direction:ltr]" : ""}>
-                <img
-                  src={imageUrl}
-                  alt=""
-                  className="w-full rounded-xl shadow-lg object-cover max-h-[480px]"
-                />
+              <div className={`md:[direction:ltr] ${layout === "split-right" ? "md:[direction:ltr]" : ""}`}>
+                <div className="relative">
+                  <img
+                    src={imageUrl}
+                    alt=""
+                    className={`w-full object-cover max-h-[520px] ${ds.card.base}`}
+                  />
+                  {/* Floating accent shape behind image */}
+                  <div className="absolute -inset-4 bg-primary/5 rounded-3xl -z-10 blur-xl" />
+                </div>
               </div>
             )}
             {/* Text side */}
@@ -179,7 +239,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
             </div>
           </div>
         ) : (
-          <div className={`max-w-4xl mx-auto ${isCenter ? "text-center" : "text-left"}`}>
+          <div className={`${ds.containerWidth === "max-w-6xl" || ds.containerWidth === "max-w-7xl" ? "max-w-4xl" : ds.containerWidth} mx-auto ${isCenter ? "text-center" : "text-left"}`}>
             {contentBlock}
           </div>
         )}

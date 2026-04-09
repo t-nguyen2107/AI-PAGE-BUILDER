@@ -3,6 +3,8 @@
 import { useRef, useState, useEffect } from "react";
 import type { FeaturesGridProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
+import type { DesignStyleTokens } from "../lib/design-styles";
 
 // ─── Scroll animation hook ─────────────────────────────────────────
 
@@ -42,18 +44,19 @@ function useScrollAnimation(animation: string) {
 
 const HOVER_CLASSES: Record<string, string> = {
   none: "",
-  lift: "hover:-translate-y-1 hover:shadow-lg transition",
-  glow: "hover:shadow-[0_0_15px_rgba(34,116,110,0.3)] transition",
-  border: "hover:border-primary transition",
+  lift: "hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300",
+  glow: "hover:shadow-[0_0_20px_rgba(34,116,110,0.2)] transition-all duration-300",
+  border: "hover:border-primary/60 transition-all duration-300",
 };
 
-// ─── Card style base classes ───────────────────────────────────────
+// ─── Card style base classes (used only for variant-specific padding/overflow) ───
 
-const CARD_BASE: Record<string, string> = {
-  icon: "p-6 rounded-xl bg-card border border-border",
-  image: "rounded-xl overflow-hidden bg-card border border-border",
+const CARD_VARIANT_EXTRA: Record<string, string> = {
+  icon: "p-6",
+  image: "overflow-hidden",
   flat: "p-6",
-  elevated: "p-6 rounded-xl bg-card shadow-md",
+  elevated: "p-6",
+  glass: "p-6",
 };
 
 // ─── Render a single feature card ──────────────────────────────────
@@ -62,27 +65,29 @@ function FeatureCard({
   feature,
   cardStyle,
   hoverEffect,
+  ds,
 }: {
   feature: { title: string; description: string; icon?: string; imageUrl?: string };
-  cardStyle: "icon" | "image" | "flat" | "elevated";
+  cardStyle: "icon" | "image" | "flat" | "elevated" | "glass";
   hoverEffect: "none" | "lift" | "glow" | "border";
+  ds: DesignStyleTokens;
 }) {
-  const base = CARD_BASE[cardStyle] ?? CARD_BASE.icon;
+  const variantExtra = CARD_VARIANT_EXTRA[cardStyle] ?? "p-6";
   const hover = HOVER_CLASSES[hoverEffect] ?? "";
 
   // Image card: full-width image with text below
   if (cardStyle === "image" && feature.imageUrl) {
     return (
-      <div className={`${base} ${hover}`}>
+      <div className={`${ds.card.base} ${variantExtra} ${hover}`}>
         <img
           src={feature.imageUrl}
           alt={feature.title}
-          className="w-full h-40 object-cover"
+          className="w-full h-48 object-cover"
           loading="lazy"
         />
         <div className="p-6">
-          <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <h3 className={`${ds.typography.h3} mb-2`}>{feature.title}</h3>
+          <p className={`text-sm ${ds.typography.body}`}>
             {feature.description}
           </p>
         </div>
@@ -90,24 +95,26 @@ function FeatureCard({
     );
   }
 
-  // Icon / flat / elevated cards
+  // Icon / flat / elevated / glass cards
   return (
-    <div className={`${base} ${hover}`}>
-      {(feature.icon || (cardStyle === "icon" && !feature.imageUrl)) && feature.icon && (
-        <span className="material-symbols-outlined text-2xl text-primary mb-4 block">
-          {feature.icon}
-        </span>
+    <div className={`${ds.card.base} ${variantExtra} ${ds.card.hover} ${hover}`}>
+      {feature.icon && (
+        <div className={`${ds.accent.icon} mb-5`}>
+          <span className="material-symbols-outlined text-2xl text-primary">
+            {feature.icon}
+          </span>
+        </div>
       )}
-      {cardStyle === "image" && feature.imageUrl && !feature.icon && (
+      {!feature.icon && feature.imageUrl && (
         <img
           src={feature.imageUrl}
           alt={feature.title}
-          className="w-full h-40 object-cover rounded-t-xl mb-4"
+          className="w-full h-40 object-cover rounded-xl mb-4"
           loading="lazy"
         />
       )}
-      <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <h3 className={`${ds.typography.h3} mb-2`}>{feature.title}</h3>
+      <p className={`text-sm ${ds.typography.body}`}>
         {feature.description}
       </p>
     </div>
@@ -121,27 +128,36 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
     heading,
     subtext,
     columns,
-    features,
+    features = [],
     variant = "grid",
     cardStyle = "icon",
     animation = "none",
     hoverEffect = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
 
+  const ds = getDesignTokens(designStyle);
   const anim = useScrollAnimation(animation);
+
+  const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${hasBgOverride ? "" : ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+      {/* Decorative element */}
+      {!hasBgOverride && ds.section.decorative && (
+        <div className={ds.section.decorative} aria-hidden="true" />
+      )}
+
+      <div className={`${ds.containerWidth} mx-auto relative`}>
+        <div className="text-center mb-16">
+          <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
           {subtext && (
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className={`text-lg max-w-2xl mx-auto ${ds.typography.body}`}>
               {subtext}
             </p>
           )}
@@ -150,10 +166,10 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
         {variant === "carousel" ? (
           <div
             ref={anim.ref}
-            className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
+            className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+            <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
             {features.map((feature, i) => (
               <div
                 key={i}
@@ -164,9 +180,12 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
                   feature={feature}
                   cardStyle={cardStyle}
                   hoverEffect={hoverEffect}
+                  ds={ds}
                 />
               </div>
-            ))}
+            )
+          )
+        }
           </div>
         ) : (
           <div
@@ -183,6 +202,7 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
                   feature={feature}
                   cardStyle={cardStyle}
                   hoverEffect={hoverEffect}
+                  ds={ds}
                 />
               </div>
             ))}

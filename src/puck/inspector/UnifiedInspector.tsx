@@ -7,6 +7,8 @@ import {
   StylesField,
   type StylesValue,
 } from "../fields/StylesField";
+import { DESIGN_STYLE_LABELS } from "../lib/design-styles";
+import type { DesignStyle } from "../lib/design-styles";
 import { InspectorTabs, type TabId } from "./InspectorTabs";
 import { ContentFieldGrouper } from "./ContentFieldGrouper";
 import { ResponsiveVisibility } from "../fields/ResponsiveVisibility";
@@ -39,30 +41,9 @@ export function UnifiedInspector({
   const selectedItem = usePuckData((s) => s.selectedItem);
   const dispatch = usePuckData((s) => s.dispatch);
 
-  // Nothing selected → show empty state
-  if (!itemSelector || !selectedItem) {
-    return (
-      <div className="unified-inspector">
-        <div className="inspector-empty">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300", color: "var(--inspector-text-dim)", fontSize: 24 }}>
-            touch_app
-          </span>
-          <p style={{ fontSize: 12, color: "var(--inspector-text-dim)", marginTop: 4 }}>
-            Select a component to edit
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const props = selectedItem.props as Record<string, any>;
-
-  // ── Read current values ──
-  const styles = (props.styles as StylesValue | undefined) ?? undefined;
-  const name = (props.name as string) ?? "";
-  const className = (props.className as string) ?? "";
-  const targetId = props.id as string;
+  const props = selectedItem?.props as Record<string, any> | undefined;
+  const targetId = (props?.id as string) ?? "";
 
   // ── Dispatch helper: update a single prop on the selected component ──
   const updateProp = useCallback(
@@ -90,6 +71,27 @@ export function UnifiedInspector({
     },
     [updateProp]
   );
+
+  // Nothing selected → show empty state
+  if (!itemSelector || !selectedItem || !props) {
+    return (
+      <div className="unified-inspector">
+        <div className="inspector-empty">
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300", color: "var(--inspector-text-dim)", fontSize: 24 }}>
+            touch_app
+          </span>
+          <p style={{ fontSize: 12, color: "var(--inspector-text-dim)", marginTop: 4 }}>
+            Select a component to edit
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Read current values ──
+  const styles = (props.styles as StylesValue | undefined) ?? undefined;
+  const name = (props.name as string) ?? "";
+  const className = (props.className as string) ?? "";
 
   // ── Migrate flat style props → StylesValue for Style tab ──
   const effectiveStyles: StylesValue = migrateFlatProps(props, styles);
@@ -143,6 +145,23 @@ export function UnifiedInspector({
             {/* Settings Tab */}
             {activeTab === "settings" && (
               <div className="tab-panel tab-panel--settings">
+                {/* Design Style */}
+                <div className="puck-field">
+                  <label className="puck-field-label">Design Style</label>
+                  <select
+                    className="puck-field-select"
+                    value={(props.designStyle as DesignStyle) ?? "elevated"}
+                    onChange={(e) => updateProp("designStyle", e.target.value || undefined)}
+                  >
+                    {Object.entries(DESIGN_STYLE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  <p className="puck-field-description">
+                    Visual style applied to all elements in this section
+                  </p>
+                </div>
+
                 {/* Name field */}
                 <div className="puck-field">
                   <label className="puck-field-label">Name</label>

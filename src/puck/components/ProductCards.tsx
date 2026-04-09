@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ProductCardsProps, ProductCard, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -85,14 +86,14 @@ function QuickViewModal({
           {product.inStock !== false && (
             <a
               href={product.href}
-              className="inline-block rounded-lg px-6 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition"
+              className="inline-block rounded-full px-6 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition"
             >
               View Product
             </a>
           )}
           <button
             onClick={onClose}
-            className="inline-block rounded-lg px-6 py-2.5 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
+            className="inline-block rounded-full px-6 py-2.5 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
           >
             Close
           </button>
@@ -106,13 +107,16 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
   const {
     heading,
     columns,
-    products,
+    products = [],
     quickView = false,
     saleBadge = false,
     hoverEffect = "none",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
 
   const [quickViewIndex, setQuickViewIndex] = useState<number | null>(null);
 
@@ -125,12 +129,19 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
+      {/* Subtle decorative background */}
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+
+      <div className={`${ds.containerWidth} mx-auto relative`}>
         {heading && (
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+          <h2 className={`${ds.typography.h2} text-center mb-12`}>
             {heading}
           </h2>
         )}
@@ -140,7 +151,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
           {products.map((product, i) => (
             <div
               key={i}
-              className={`group rounded-lg border border-border overflow-hidden transition-all duration-200 ${hoverClass} ${
+              className={`group ${ds.card.base} overflow-hidden ${ds.card.hover} ${hoverClass} ${
                 product.inStock === false ? "opacity-60" : ""
               }`}
             >
@@ -149,10 +160,10 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="w-full aspect-video object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   {product.badge && (
-                    <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
+                    <span className={`absolute top-3 left-3 text-xs font-semibold ${ds.accent.badge}`}>
                       {product.badge}
                     </span>
                   )}
@@ -178,7 +189,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                 <div className="relative">
                   <div className="w-full aspect-video bg-muted" />
                   {product.badge && (
-                    <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full">
+                    <span className={`absolute top-3 left-3 text-xs font-semibold ${ds.accent.badge}`}>
                       {product.badge}
                     </span>
                   )}
@@ -190,7 +201,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                 </div>
               )}
               <div className="p-5">
-                <h3 className="font-semibold mb-1 group-hover:text-primary transition">
+                <h3 className={`${ds.typography.h3} mb-1 group-hover:text-primary transition`}>
                   {product.name}
                 </h3>
                 {product.description && (
@@ -204,7 +215,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-lg font-bold">{product.price}</span>
+                  <span className="text-xl font-bold text-primary">{product.price}</span>
                   {product.originalPrice && (
                     <span className="text-sm text-muted-foreground line-through">
                       {product.originalPrice}
@@ -212,13 +223,13 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
                   )}
                 </div>
                 {product.inStock === false ? (
-                  <span className="inline-block rounded-lg px-5 py-2 text-sm font-semibold border border-border text-muted-foreground cursor-not-allowed">
+                  <span className="inline-block rounded-full px-6 py-2.5 text-sm font-semibold border border-border text-muted-foreground cursor-not-allowed">
                     Out of Stock
                   </span>
                 ) : (
                   <a
                     href={product.href}
-                    className="inline-block rounded-lg px-5 py-2 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
+                    className="inline-block rounded-full px-6 py-2.5 text-sm font-semibold border border-border text-foreground hover:bg-muted transition"
                   >
                     View
                   </a>

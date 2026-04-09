@@ -10,6 +10,7 @@ import { useToastStore } from "@/store/toast-store";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { PreviewPanel } from "./PreviewPanel";
 import { createAIPlugin } from "./plugins/ai-plugin";
+import { AIContext } from "./plugins/AIContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import "./puck-dark.css";
 import { UnifiedInspector } from "./inspector/UnifiedInspector";
@@ -48,8 +49,8 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const addToast = useToastStore((s) => s.addToast);
 
   const aiPlugin = useMemo(
-    () => createAIPlugin({ projectId, pageId, styleguideId, generationStatus }),
-    [projectId, pageId, styleguideId, generationStatus]
+    () => createAIPlugin(),
+    []
   );
 
   const handleDataSync = useCallback((d: Data) => {
@@ -78,8 +79,11 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
 
         // Fetch project styleguideId for AI plugin
         apiClient.getProject(projectId).then((pRes) => {
-          if (pRes.data?.styleguideId) {
-            setStyleguideId(pRes.data.styleguideId);
+          // API returns nested styleguide relation from Prisma include
+          const proj = pRes.data as Record<string, unknown> | undefined;
+          const sgId = (proj?.styleguide as { id?: string } | undefined)?.id || proj?.styleguideId as string | undefined;
+          if (sgId) {
+            setStyleguideId(sgId);
             // Fetch styleguide colors for inspector context
             apiClient.getStyleguide(projectId).then((sgRes) => {
               if (sgRes.data?.colors) {
@@ -197,6 +201,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   return (
     <>
       <div className="h-screen w-screen">
+        <AIContext.Provider value={{ projectId, pageId, styleguideId, generationStatus }}>
         <StyleguideProvider colors={styleguideColors}>
         <Puck
           config={config}
@@ -246,6 +251,7 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
           }}
         />
         </StyleguideProvider>
+        </AIContext.Provider>
       </div>
       <SettingsPanel
         open={settingsOpen}

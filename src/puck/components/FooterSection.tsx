@@ -23,9 +23,9 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
   const {
     logo,
     description,
-    linkGroups,
+    linkGroups = [],
     copyright,
-    socialLinks,
+    socialLinks = [],
     backToTop = false,
     newsletterIntegration = false,
     showCopyright = true,
@@ -52,12 +52,12 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
 
   return (
     <footer
-      className={`w-full bg-muted/50 border-t border-border text-foreground ${className ?? ""}`}
+      className={`w-full bg-muted/50 border-t border-border/50 text-foreground ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 py-16">
         <div
-          className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${
+          className={`grid gap-10 grid-cols-1 sm:grid-cols-2 ${
             colCount >= 3 ? "lg:grid-cols-3" : ""
           } ${colCount >= 4 ? "xl:grid-cols-4" : ""} ${
             colCount >= 5 ? "2xl:grid-cols-5" : ""
@@ -65,9 +65,9 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
         >
           {/* Logo & description column */}
           <div>
-            {logo && <p className="font-bold text-xl mb-3">{logo}</p>}
+            {logo && <p className="font-bold text-xl tracking-tight mb-3">{logo}</p>}
             {description && (
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
                 {description}
               </p>
             )}
@@ -76,13 +76,13 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
           {/* Link groups */}
           {linkGroups.map((group, i) => (
             <div key={i}>
-              <p className="font-semibold mb-3 text-sm">{group.title}</p>
-              <div className="flex flex-col gap-2">
+              <p className="font-semibold mb-4 text-sm tracking-wide uppercase text-foreground/80">{group.title}</p>
+              <div className="flex flex-col gap-2.5">
                 {group.links.map((link, j) => (
                   <a
                     key={j}
                     href={link.href}
-                    className="text-muted-foreground text-sm hover:text-foreground transition"
+                    className="text-muted-foreground text-sm hover:text-primary transition-colors duration-200"
                   >
                     {link.label}
                   </a>
@@ -106,12 +106,12 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Your email"
-                    className="w-full px-3 py-2 rounded-md bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     required
                   />
                   <button
                     type="submit"
-                    className="w-full px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
+                    className="w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
                   >
                     Subscribe
                   </button>
@@ -123,7 +123,7 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
           {/* Social links */}
           {socialLinks && socialLinks.length > 0 && (
             <div>
-              <p className="font-semibold mb-3 text-sm">Follow Us</p>
+              <p className="font-semibold mb-4 text-sm tracking-wide uppercase text-foreground/80">Follow Us</p>
               <div className="flex gap-3">
                 {socialLinks.map((link, i) => (
                   <a
@@ -132,7 +132,7 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={link.platform}
-                    className="text-muted-foreground hover:text-foreground transition"
+                    className="w-9 h-9 rounded-full flex items-center justify-center bg-muted/80 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all duration-200"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -148,9 +148,9 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
 
         {/* Bottom bar: copyright + back to top */}
         {(showCopyright || backToTop) && (
-          <div className="mt-10 pt-6 border-t border-border flex items-center justify-between">
+          <div className="mt-12 pt-6 border-t border-border/50 flex items-center justify-between">
             {showCopyright && copyright && (
-              <p className="text-muted-foreground text-sm">{copyright}</p>
+              <p className="text-muted-foreground/60 text-sm">{copyright}</p>
             )}
             {!copyright && showCopyright && <span />}
             {!showCopyright && <span />}

@@ -23,6 +23,14 @@ function HeroSkeleton() {
   );
 }
 
+const LG_COL: Record<number, string> = {
+  1: 'lg:grid-cols-1',
+  2: 'lg:grid-cols-2',
+  3: 'lg:grid-cols-3',
+  4: 'lg:grid-cols-4',
+  5: 'lg:grid-cols-5',
+};
+
 function GridSkeleton({ columns = 3 }: { columns?: number }) {
   return (
     <div className="w-full py-16 px-6">
@@ -31,7 +39,7 @@ function GridSkeleton({ columns = 3 }: { columns?: number }) {
           <Skeleton className="h-10 w-1/2 mx-auto rounded-lg" />
           <Skeleton className="h-5 w-2/3 mx-auto rounded" />
         </div>
-        <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div className={`grid gap-6 grid-cols-1 sm:grid-cols-2 ${LG_COL[columns] ?? 'lg:grid-cols-3'}`}>
           {Array.from({ length: columns }).map((_, i) => (
             <div key={i} className="space-y-4 rounded-xl border border-border/50 p-6">
               <Skeleton className="h-10 w-10 rounded-full" />
@@ -66,7 +74,7 @@ function FooterSkeleton() {
   return (
     <div className="w-full py-12 px-6">
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="grid grid-cols-4 gap-8">
+        <div className="grid gap-8 grid-cols-2 sm:grid-cols-4">
           <div className="space-y-4">
             <Skeleton className="h-6 w-32 rounded-lg" />
             <Skeleton className="h-4 w-full rounded" />
@@ -105,7 +113,7 @@ function TestimonialSkeleton() {
     <div className="w-full py-16 px-6">
       <div className="max-w-6xl mx-auto space-y-8">
         <Skeleton className="h-10 w-1/2 mx-auto rounded-lg" />
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="space-y-4 rounded-xl border border-border/50 p-6">
               <Skeleton className="h-4 w-full rounded" />

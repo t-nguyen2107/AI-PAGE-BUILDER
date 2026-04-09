@@ -1,6 +1,5 @@
-import { COMPONENT_CATALOG } from './prompts/component-catalog';
-import { buildSectionPrompt } from './prompts/section-prompt';
-import { createModelBundle } from './provider';
+import { buildBatchSectionPrompt } from './prompts/section-prompt';
+import { createModelBundle, createFastModelBundle } from './provider';
 import { extractJSON } from './streaming';
 import { validateSingleComponent } from './prompts/template-schema';
 import type { DesignGuidance } from './knowledge/design-knowledge';
@@ -9,12 +8,15 @@ import type { MinimalStyleguideTokens } from './prompts/prompt-utils';
 export interface PolishContext {
   userPrompt: string;
   businessType?: string;
+  businessName?: string;
   designGuidance?: DesignGuidance;
   styleguideData?: MinimalStyleguideTokens;
   designContext?: string;
   signal?: AbortSignal;
   timeoutMs?: number;
   isMakeup?: boolean;
+  /** Use fast/lightweight model instead of premium — sufficient for visual-only polish */
+  useFastModel?: boolean;
 }
 
 export interface PolishResult {
@@ -22,129 +24,234 @@ export interface PolishResult {
   props: Record<string, unknown>;
 }
 
+// ---------------------------------------------------------------------------
+// JSON Brace+Bracket Depth Streaming Parser
+// ---------------------------------------------------------------------------
+
 /**
- * Polish a single section using the main LLM.
+ * Parse complete JSON objects from a streaming JSON array buffer.
+ *
+ * Tracks BOTH brace `{}` AND bracket `[]` depth to correctly handle
+ * nested arrays (e.g. `links: [{...}]`, `features: [{...}]`).
+ * Handles string escapes by skipping the next character.
  */
-export async function polishSection(
-  component: { type: string; props: Record<string, unknown> },
-  index: number,
-  total: number,
-  ctx: PolishContext,
-): Promise<PolishResult> {
-  const catalogEntry = COMPONENT_CATALOG[component.type];
-  if (!catalogEntry) {
-    console.warn(`[section-polisher] Unknown component type "${component.type}", returning as-is.`);
-    return { type: component.type, props: component.props };
-  }
+export function parseStreamingComponents(
+  buffer: string,
+  alreadyParsed: number,
+  scanFrom: number = 0,
+): { complete: Array<{ index: number; data: unknown }>; scanTo: number } {
+  const complete: Array<{ index: number; data: unknown }> = [];
 
-  try {
-    const sectionPrompt = buildSectionPrompt(component.type, catalogEntry, {
-      userPrompt: ctx.userPrompt,
-      businessType: ctx.businessType ?? 'general',
-      designGuidance: ctx.designGuidance,
-      styleguideData: ctx.styleguideData,
-      designContext: ctx.designContext,
-      position: { index, total },
-      isMakeup: ctx.isMakeup,
-    });
+  const arrayStart = buffer.indexOf('[');
+  if (arrayStart === -1) return { complete, scanTo: scanFrom };
 
-    const { model: sectionModel, jsonCallOptions: sectionOpts } = createModelBundle({ maxTokens: 4096 });
-    const sectionMessages = await sectionPrompt.formatMessages({ input: ctx.userPrompt });
-    const { response_format: _rf2, ...sectionInvokeOpts } = sectionOpts;
+  const inner = buffer.slice(arrayStart + 1);
+  let braceDepth = 0;
+  let bracketDepth = 0;
+  let inString = false;
+  let objStart = -1;
+  let componentIndex = alreadyParsed;
+  let skipNext = false;
+  let lastObjEnd = scanFrom;
 
-    // Propagate parent signal or use default 60s timeout per section
-    const sectionSignal = ctx.signal
-      ? AbortSignal.any([ctx.signal, AbortSignal.timeout(ctx.timeoutMs ?? 60_000)])
-      : AbortSignal.timeout(ctx.timeoutMs ?? 60_000);
+  for (let i = scanFrom; i < inner.length; i++) {
+    const ch = inner[i];
 
-    const sectionResponse = await sectionModel.invoke(sectionMessages, {
-      ...sectionInvokeOpts,
-      signal: sectionSignal,
-    });
-
-    const sectionText = typeof sectionResponse.content === 'string'
-      ? sectionResponse.content
-      : Array.isArray(sectionResponse.content)
-        ? sectionResponse.content
-            .filter((c: unknown): c is { type: string; text: string } =>
-              typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
-            .map((c) => c.text)
-            .join('')
-        : '';
-
-    const sectionParsed = extractJSON(sectionText);
-    const { data: sectionData, error: sectionError } = validateSingleComponent(sectionParsed);
-
-    if (sectionError || !sectionData) {
-      console.warn(`[section-polisher] Validation failed for "${component.type}": ${sectionError}`);
-      return { type: component.type, props: component.props }; // Fallback
+    // Skip character after backslash (handles \", \\, \uXXXX, etc.)
+    if (skipNext) {
+      skipNext = false;
+      continue;
     }
 
-    // Merge plan props with polished props
-    const rawProps = component.props || {};
-    const polishedProps = sectionData.props || {};
-
-    return {
-      type: component.type,
-      props: {
-        ...rawProps, // Keep ID
-        ...polishedProps,
-      },
-    };
-  } catch (err) {
-    if ((err as Error).name === 'AbortError' || (err as Error).name === 'TimeoutError') {
-      console.warn(`[section-polisher] Timeout/Abort generating "${component.type}"`);
-    } else {
-      console.error(`[section-polisher] Error generating "${component.type}":`, err);
+    // Inside a string: only look for escape or closing quote
+    if (inString) {
+      if (ch === '\\') {
+        skipNext = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+      }
+      continue;
     }
-    return { type: component.type, props: component.props }; // Fallback
+
+    // Not inside a string
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === '{') {
+      if (braceDepth === 0 && bracketDepth === 0) objStart = i;
+      braceDepth++;
+    } else if (ch === '}') {
+      braceDepth--;
+      if (braceDepth === 0 && bracketDepth === 0 && objStart !== -1) {
+        const objStr = inner.slice(objStart, i + 1);
+        try {
+          const parsed = JSON.parse(objStr);
+          complete.push({ index: componentIndex, data: parsed });
+          componentIndex++;
+          lastObjEnd = i + 1;
+        } catch {
+          // Incomplete/malformed JSON — expected during streaming
+        }
+        objStart = -1;
+      }
+    } else if (ch === '[') {
+      bracketDepth++;
+    } else if (ch === ']') {
+      bracketDepth--;
+    }
   }
+
+  return { complete, scanTo: lastObjEnd };
 }
 
+// ---------------------------------------------------------------------------
+// Single-Request Streaming Batch Polish
+// ---------------------------------------------------------------------------
+
 /**
- * Polish multiple sections in parallel with a concurrency limit.
+ * Polish ALL sections in a single streaming request.
+ *
+ * As the model streams the JSON array, we detect each complete element
+ * via brace+bracket depth parsing and emit callbacks for progressive rendering.
+ *
+ * Falls back to full JSON parse if streaming parser misses components.
  */
-export async function polishSections(
+export async function polishSectionsStream(
   components: Array<{ type: string; props: Record<string, unknown> }>,
   ctx: PolishContext,
   onSectionDone?: (index: number, total: number, result: PolishResult) => void,
 ): Promise<PolishResult[]> {
   const total = components.length;
-  const maxConcurrent = 3;
-  
-  const results: PromiseSettledResult<PolishResult>[] = new Array(total);
-  
-  // Implementation of a simple worker pool for concurrency
-  let currentIndex = 0;
-  
-  const worker = async () => {
-    while (currentIndex < total) {
-      const index = currentIndex++;
-      const comp = components[index];
-      
-      try {
-        const result = await polishSection(comp, index, total, ctx);
-        onSectionDone?.(index, total, result);
-        results[index] = { status: 'fulfilled', value: result };
-      } catch (error) {
-        results[index] = { status: 'rejected', reason: error };
+  const results: PolishResult[] = components.map((c) => ({ type: c.type, props: c.props }));
+
+  if (total === 0) return results;
+
+  // Build single batch prompt
+  const batchPrompt = buildBatchSectionPrompt(components, {
+    userPrompt: ctx.userPrompt,
+    businessType: ctx.businessType ?? 'general',
+    businessName: ctx.businessName,
+    designGuidance: ctx.designGuidance,
+    styleguideData: ctx.styleguideData,
+    designContext: ctx.designContext,
+    isMakeup: ctx.isMakeup,
+  });
+
+  const { model, jsonCallOptions } = ctx.useFastModel
+    ? createFastModelBundle({ maxTokens: 8192 })
+    : createModelBundle({ maxTokens: 16384 });
+  const messages = await batchPrompt.formatMessages({ input: ctx.userPrompt });
+  const { response_format: _rf, ...streamCallOpts } = jsonCallOptions;
+
+  const timeoutMs = ctx.timeoutMs ?? 180_000;
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const combinedSignal = ctx.signal
+    ? AbortSignal.any([ctx.signal, timeoutSignal])
+    : timeoutSignal;
+
+  let accumulated = '';
+  let alreadyParsed = 0;
+  let scanFrom = 0;
+  let streamFailed = false;
+
+  try {
+    const stream = await model.stream(messages, { ...streamCallOpts, signal: combinedSignal });
+
+    for await (const chunk of stream) {
+      let text = '';
+      if (typeof chunk.content === 'string') {
+        text = chunk.content;
+      } else if (Array.isArray(chunk.content)) {
+        text = chunk.content
+          .filter((c: unknown): c is { type: string; text: string } =>
+            typeof c === 'object' && c !== null && 'type' in (c as Record<string, unknown>) && (c as { type: string }).type === 'text')
+          .map((c) => c.text)
+          .join('');
+      }
+      if (text) accumulated += text;
+
+      // Parse complete components from the stream buffer (only new data)
+      const { complete, scanTo } = parseStreamingComponents(accumulated, alreadyParsed, scanFrom);
+
+      for (const { index, data } of complete) {
+        // Bounds check: skip hallucinated extra components
+        if (index >= components.length) {
+          console.warn(`[section-polisher] Skipping extra component ${index} (expected ${total} total)`);
+          continue;
+        }
+        const parsed = data as Record<string, unknown>;
+        const compType = typeof parsed.type === 'string' ? parsed.type : components[index].type;
+        if (!compType) {
+          console.warn(`[section-polisher] Missing type at index ${index}, skipping`);
+          continue;
+        }
+        const compProps = (parsed.props as Record<string, unknown>) ?? {};
+
+        // Validate the single component
+        const { data: validated, error } = validateSingleComponent(parsed);
+        if (!error && validated) {
+          const rawProps = components[index]?.props || {};
+          results[index] = {
+            type: compType,
+            props: { ...rawProps, ...(validated.props as Record<string, unknown>) },
+          };
+        } else {
+          const rawProps = components[index]?.props || {};
+          results[index] = { type: compType, props: { ...rawProps, ...compProps } };
+        }
+
+        alreadyParsed = index + 1;
+        onSectionDone?.(index, total, results[index]);
+      }
+
+      // Advance scan position past last parsed object
+      scanFrom = scanTo;
+    }
+  } catch (streamError) {
+    const msg = streamError instanceof Error ? streamError.message : 'Unknown stream error';
+    console.error(`[section-polisher] Stream error (${alreadyParsed}/${total} parsed):`, msg);
+    streamFailed = true;
+  }
+
+  // Final fallback: if streaming parser didn't capture everything, try full JSON parse
+  if (alreadyParsed < total && accumulated.trim()) {
+    const fullParsed = extractJSON(accumulated);
+    if (fullParsed) {
+      const arr = (fullParsed as Record<string, unknown>)?.components;
+      if (Array.isArray(arr)) {
+        for (let i = 0; i < Math.min(arr.length, total); i++) {
+          // Only fill gaps — don't overwrite streaming results
+          if (alreadyParsed <= i) {
+            const item = arr[i] as Record<string, unknown>;
+            const compType = typeof item.type === 'string' ? item.type : components[i]?.type;
+            if (!compType) continue;
+
+            const { data: validated, error } = validateSingleComponent(item);
+            const rawProps = components[i]?.props || {};
+            if (!error && validated) {
+              results[i] = {
+                type: validated.type ?? compType,
+                props: { ...rawProps, ...(validated.props as Record<string, unknown>) },
+              };
+            } else {
+              const compProps = (item.props as Record<string, unknown>) ?? {};
+              results[i] = { type: compType, props: { ...rawProps, ...compProps } };
+            }
+            onSectionDone?.(i, total, results[i]);
+            alreadyParsed = i + 1;
+          }
+        }
       }
     }
-  };
 
-  // Start maxConcurrent workers
-  const workers = Array.from(
-    { length: Math.min(total, maxConcurrent) },
-    () => worker()
-  );
-  
-  await Promise.all(workers);
-
-  return results.map((res, i) => {
-    if (res && res.status === 'fulfilled') {
-      return res.value;
+    if (streamFailed) {
+      console.warn(`[section-polisher] Stream failed — ${alreadyParsed}/${total} parsed from stream, attempted full parse fallback`);
     }
-    // Fallback if rejected
-    return { type: components[i].type, props: components[i].props };
-  });
+  }
+
+  return results;
 }
