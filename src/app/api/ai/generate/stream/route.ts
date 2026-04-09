@@ -191,9 +191,12 @@ export async function POST(request: NextRequest) {
           try {
             if (useMakeupMode) {
               // Makeup mode: structure resolver + parallel per-section polish
-              // Validate treeDataRaw has expected structure before passing
-              const validTreeData = treeDataRaw && typeof treeDataRaw === 'object' && 'content' in (treeDataRaw as Record<string, unknown>)
-                ? treeDataRaw
+              // treeData is stored as JSON string in DB — parse before validating
+              const parsed = treeDataRaw
+                ? (typeof treeDataRaw === 'string' ? JSON.parse(treeDataRaw) : treeDataRaw)
+                : null;
+              const validTreeData = parsed && typeof parsed === 'object' && 'content' in (parsed as Record<string, unknown>)
+                ? parsed
                 : undefined;
                 
               aiStream = createMakeupStream(enrichedPrompt, {
