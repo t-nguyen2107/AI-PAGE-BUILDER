@@ -46,17 +46,12 @@ export function useAutoPolish({
         isAutoPolish: true,
       },
       () => {}, // raw chunk, ignore
-      (result) => {
-        // We received the final components
-        // But progressive rendering handles updates on the fly
-        
-        // Update database generationStatus to 'complete'
-        apiClient.updatePage(projectId, pageId, { generationStatus: 'complete' } as any)
-          .catch(err => console.error('[useAutoPolish] failed to update status to complete', err))
-          .finally(() => {
-            setIsPolishing(false);
-            onComplete();
-          });
+      (_result) => {
+        // Polishing complete — no DB column needed.
+        // Skeleton state is detected from treeData (skel_ IDs), so replacing
+        // those components on the Puck canvas is sufficient to mark it "complete".
+        setIsPolishing(false);
+        onComplete();
       },
       (err) => {
         setError(err);

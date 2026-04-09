@@ -11,24 +11,24 @@ datasource db {
 // ===========================================
 
 model Project {
-  id           String   @id @default(cuid())
-  name         String
-  description  String?
-  thumbnailUrl String?
-  siteName     String?   // Display name for the website
-  companyName  String?   // Legal/company name
-  logo         String?   // Logo image URL
-  favicon      String?   // Favicon URL
-  gaCode           String?   // Google Analytics tracking ID
-  headScripts      String?   // Raw HTML for <head>
-  bodyScripts      String?   // Raw HTML for before-</body>
-  language         String?   @default("en")        // Default site language
-  socialLinks      String?   @default("{}")        // JSON { facebook, twitter, instagram, linkedIn, youtube, tikTok }
-  contactInfo      String?   @default("{}")        // JSON { email, phone, address }
-  metaVerification String?   @default("{}")        // JSON { google, bing }
-  defaultOgImage   String?                          // Fallback OG image for all pages
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  thumbnailUrl     String?
+  siteName         String? // Display name for the website
+  companyName      String? // Legal/company name
+  logo             String? // Logo image URL
+  favicon          String? // Favicon URL
+  gaCode           String? // Google Analytics tracking ID
+  headScripts      String? // Raw HTML for <head>
+  bodyScripts      String? // Raw HTML for before-</body>
+  language         String?  @default("en") // Default site language
+  socialLinks      String?  @default("{}") // JSON { facebook, twitter, instagram, linkedIn, youtube, tikTok }
+  contactInfo      String?  @default("{}") // JSON { email, phone, address }
+  metaVerification String?  @default("{}") // JSON { google, bing }
+  defaultOgImage   String? // Fallback OG image for all pages
   createdAt        DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt        DateTime @updatedAt
 
   pages          Page[]
   styleguide     Styleguide?
@@ -40,11 +40,11 @@ model Project {
 }
 
 model Page {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   projectId      String
   title          String
   slug           String
-  order          Int      @default(0)
+  order          Int     @default(0)
   seoTitle       String?
   seoDescription String?
   seoKeywords    String?
@@ -52,18 +52,19 @@ model Page {
   ogDescription  String?
   ogImage        String?
   canonicalUrl   String?
-  robots         String?   @default("index, follow")
-  twitterCard    String?   @default("summary")
+  robots         String? @default("index, follow")
+  twitterCard    String? @default("summary")
   twitterImage   String?
-  structuredData String?   @default("{}")
-  isHomePage       Boolean  @default(false)
-  // generationStatus String?  // TODO: Add column first: ALTER TABLE pages ADD COLUMN "generationStatus" TEXT;
-  treeData         String   // JSON string — serialized PageNode tree
+  structuredData String? @default("{}")
+  isHomePage     Boolean @default(false)
+  // generationStatus String?  // TODO: Add column when DB accessible: ALTER TABLE pages ADD COLUMN "generationStatus" TEXT;
+  // Auto-polish detection: if treeData has components with "skel_" IDs → needs polish (no DB column needed)
+  treeData       String // JSON string — serialized PageNode tree
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   revisions Revision[]
 
   @@unique([projectId, slug])
@@ -75,11 +76,11 @@ model Styleguide {
   projectId String @unique
   name      String @default("Default Styleguide")
 
-  colors             String @default("{}") // JSON — ColorPalette
-  typography         String @default("{}") // JSON — TypographySystem
-  spacing            String @default("{}") // JSON — SpacingScale
-  componentVariants  String @default("[]") // JSON — ComponentVariant[]
-  cssVariables       String @default("{}") // JSON — Record<string, string>
+  colors            String @default("{}") // JSON — ColorPalette
+  typography        String @default("{}") // JSON — TypographySystem
+  spacing           String @default("{}") // JSON — SpacingScale
+  componentVariants String @default("[]") // JSON — ComponentVariant[]
+  cssVariables      String @default("{}") // JSON — Record<string, string>
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -106,9 +107,9 @@ model GlobalSection {
 }
 
 model Revision {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   pageId   String
-  snapshot String  // JSON — PageNode tree snapshot
+  snapshot String // JSON — PageNode tree snapshot
   label    String?
   diff     String? // JSON — optional JsonPatch[]
 
@@ -126,8 +127,8 @@ model UserLibrary {
   description  String?
   category     String
   thumbnailUrl String?
-  nodeData     String  // JSON — DOMNode subtree
-  tags         String  // Comma-separated tags
+  nodeData     String // JSON — DOMNode subtree
+  tags         String // Comma-separated tags
   embedding    Bytes?
   isPublic     Boolean @default(false)
 
@@ -144,12 +145,12 @@ model UserLibrary {
 // ===========================================
 
 model AIPromptLog {
-  id           String  @id @default(cuid())
+  id           String   @id @default(cuid())
   projectId    String?
   pageId       String?
   prompt       String
   action       String
-  response     String  // JSON — generated nodes
+  response     String // JSON — generated nodes
   success      Boolean
   errorMessage String?
   createdAt    DateTime @default(now())
@@ -162,12 +163,12 @@ model AIPromptLog {
 // ===========================================
 
 model AISession {
-  id         String   @id @default(cuid())
-  projectId  String
-  pageId     String
-  miniContext String  @default("") // Running summary of user actions
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  projectId   String
+  pageId      String
+  miniContext String   @default("") // Running summary of user actions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   messages AISessionMessage[]
 
@@ -176,12 +177,12 @@ model AISession {
 }
 
 model AISessionMessage {
-  id         String   @id @default(cuid())
-  sessionId  String
-  role       String   // 'user' | 'assistant'
-  content    String
-  action     String?  // AIAction performed (e.g. "insert_section")
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String // 'user' | 'assistant'
+  content   String
+  action    String? // AIAction performed (e.g. "insert_section")
+  createdAt DateTime @default(now())
 
   session AISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
@@ -193,23 +194,23 @@ model AISessionMessage {
 // ===========================================
 
 model ProjectAIProfile {
-  id              String   @id @default(cuid())
-  projectId       String   @unique
-  businessType    String   @default("")
-  businessName    String   @default("")
-  industry        String   @default("")
-  targetAudience  String   @default("")
-  tone            String   @default("")
-  preferredStyle  String   @default("")
-  preferredColors String   @default("{}") // JSON: hex array
-  language        String   @default("en")
-  contentThemes   String   @default("[]") // JSON: string array
-  componentPrefs  String   @default("{}") // JSON: { type: count }
-  memoryNotes     String   @default("[]") // JSON: { note, source, confidence }[]
-  totalSessions   Int      @default(0)
+  id              String    @id @default(cuid())
+  projectId       String    @unique
+  businessType    String    @default("")
+  businessName    String    @default("")
+  industry        String    @default("")
+  targetAudience  String    @default("")
+  tone            String    @default("")
+  preferredStyle  String    @default("")
+  preferredColors String    @default("{}") // JSON: hex array
+  language        String    @default("en")
+  contentThemes   String    @default("[]") // JSON: string array
+  componentPrefs  String    @default("{}") // JSON: { type: count }
+  memoryNotes     String    @default("[]") // JSON: { note, source, confidence }[]
+  totalSessions   Int       @default(0)
   lastAnalysisAt  DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -221,23 +222,23 @@ model ProjectAIProfile {
 // ===========================================
 
 model VectorEmbedding {
-  id             String    @id @default(cuid())
-  projectId      String?
-  userId         String?
-  scope          String    // "user" | "project" | "global"
-  category       String    // "preference" | "correction" | "pattern" | "fact" | "instruction" | "template" | "document" | "component_pattern"
-  content        String    // The actual text content
-  metadata       String    @default("{}") // JSON: { source, confidence, tags, sessionId, ... }
-  embedding      Bytes?    // Binary embedding (fallback; actual vector via raw SQL)
-  model          String?   // Which embedding model was used
-  dimensions     Int       @default(768) // 768 for nomic-embed-text, 1536 for OpenAI
-  sessionId      String?   // Which session produced this
-  referencedAt   DateTime? @default(now())
-  timesReferenced Int      @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  projectId       String?
+  userId          String?
+  scope           String // "user" | "project" | "global"
+  category        String // "preference" | "correction" | "pattern" | "fact" | "instruction" | "template" | "document" | "component_pattern"
+  content         String // The actual text content
+  metadata        String    @default("{}") // JSON: { source, confidence, tags, sessionId, ... }
+  embedding       Bytes? // Binary embedding (fallback; actual vector via raw SQL)
+  model           String? // Which embedding model was used
+  dimensions      Int       @default(768) // 768 for nomic-embed-text, 1536 for OpenAI
+  sessionId       String? // Which session produced this
+  referencedAt    DateTime? @default(now())
+  timesReferenced Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  project        Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([scope, category])
   @@index([projectId, scope])

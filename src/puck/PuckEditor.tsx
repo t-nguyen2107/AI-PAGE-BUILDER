@@ -48,8 +48,8 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
   const addToast = useToastStore((s) => s.addToast);
 
   const aiPlugin = useMemo(
-    () => createAIPlugin({ projectId, pageId, styleguideId }),
-    [projectId, pageId, styleguideId]
+    () => createAIPlugin({ projectId, pageId, styleguideId, generationStatus }),
+    [projectId, pageId, styleguideId, generationStatus]
   );
 
   const handleDataSync = useCallback((d: Data) => {
@@ -127,6 +127,15 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
         }
 
         setData(puckData);
+
+        // Detect skeleton state: if any component has a "skel_" prefixed ID, page needs auto-polish
+        const hasSkeletons = (puckData.content ?? []).some(
+          (c) => typeof (c.props as Record<string, unknown>)?.id === 'string'
+            && ((c.props as Record<string, unknown>).id as string).startsWith('skel_'),
+        );
+        if (hasSkeletons) {
+          setGenerationStatus('pending');
+        }
       } catch (err) {
         if (!cancelled) setError(String(err));
       } finally {
