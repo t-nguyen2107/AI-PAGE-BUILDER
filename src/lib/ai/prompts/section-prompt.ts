@@ -18,34 +18,11 @@ export interface SectionPromptContext {
   isMakeup?: boolean;
 }
 
-// ─── Stock images — build exact path list from registry ──────────────────────
-
-function buildStockImageHint(businessType: string): string {
-  const businessKey = Object.keys(BUSINESS_STOCK_MAP).find(
-    (k) => businessType.toLowerCase().includes(k.toLowerCase()),
-  );
-  const categories: StockCategory[] = businessKey
-    ? [...(BUSINESS_STOCK_MAP[businessKey] ?? [])]
-    : ['hero', 'people'];
-
-  const essential: StockCategory[] = ['hero', 'team', 'testimonials', 'cta', 'blog'];
-  const allCategories = [...new Set([...categories, ...essential])];
-
-  const lines: string[] = [];
-  for (const cat of allCategories) {
-    const images = STOCK_IMAGES[cat];
-    if (images?.length) {
-      const paths = images.map((img) => stockPath(img));
-      lines.push(`- ${cat}: ${paths.join(', ')}`);
-    }
-  }
-  return lines.join('\n');
-}
+// ─── Stock images — compact path list filtered by section types ─────────────
 
 /**
- * Compact stock image hint for batch polish — only includes categories
- * relevant to the section types being polished. Much smaller than
- * buildStockImageHint() which dumps ALL categories.
+ * Compact stock image hint — only includes categories relevant to the
+ * section types being generated/polished. Limits to 4 images per category.
  */
 const SECTION_IMAGE_CATEGORIES: Record<string, StockCategory[]> = {
   HeroSection: ['hero'],
@@ -111,6 +88,37 @@ function getResponseFormatHint(sectionType: string): string {
   return '"heading": "...", ...fill in all required props';
 }
 
+// ─── Shared constants (used by both single and batch prompts) ─────────────
+
+const CONTENT_PROPS: Record<string, string> = {
+  HeroSection: 'heading, subtext, ctaText, badge text, trustBadges (3-4 items)',
+  FeaturesGrid: 'heading, subtext, 4-6 features with title + description + icon name',
+  TestimonialSection: 'heading, 3-4 testimonials with specific quote + author + role',
+  CTASection: 'heading, subtext, ctaText',
+  PricingTable: 'heading, 3 tiers with name + price + realistic feature list',
+  StatsSection: 'heading, 4 stats with believable values and labels',
+  FAQSection: 'heading, 5-6 items with question + actionable answer',
+  Gallery: 'heading, 6+ images with descriptive alt text',
+  ProductCards: 'heading, 4-6 products with name + price + description',
+  TeamSection: 'heading, 3-4 members with name + specific role title',
+  BlogSection: 'heading, 3 posts with title + excerpt + date',
+  ContactForm: 'heading, subtext, buttonText',
+  NewsletterSignup: 'heading, subtext with SPECIFIC value proposition, buttonText',
+  HeaderNav: 'logo, 4-5 links with labels matching page sections, ctaText',
+  FooterSection: 'logo, description, 3-4 linkGroups',
+  FeatureShowcase: 'heading, description, 2-3 features with specific titles',
+  LogoGrid: 'heading, 5-6 logos with realistic company names',
+  Banner: 'heading, subtext, ctaText',
+  AnnouncementBar: 'message, ctaText',
+  CountdownTimer: 'heading, endDate',
+};
+
+/** Shared cliché warning — avoids repeating in multiple prompt locations. */
+const CLICHE_WARNING = `NO generic clichés — avoid: "craftsmanship", "world-class", "innovative solutions", "best in class", "high-quality", "state-of-the-art", "cutting-edge". Use SPECIFIC details instead.`;
+
+/** Shared concrete writing rules. */
+const CONCRETE_RULES = `BE CONCRETE: "hand-rolled pasta with 24-month aged Parmigiano" not "delicious food". USE NUMBERS: "10,000+ customers" not "many customers". "$2.5M saved" not "significant savings".`;
+
 /**
  * Build a focused prompt for generating a single section's props.
  */
@@ -124,37 +132,14 @@ export function buildSectionPrompt(
   // Utilize the unified prompt utils for robust design/styleguide injection
   const designTokensBlock = buildUnifiedDesignTokensBlock(designGuidance, styleguideData);
 
-  const stockImageHint = buildStockImageHint(businessType);
-
-  const CONTENT_PROPS: Record<string, string> = {
-    HeroSection: 'heading, subtext, ctaText, badge text, trustBadges (3-4 items)',
-    FeaturesGrid: 'heading, subtext, 4-6 features with title + description + icon name',
-    TestimonialSection: 'heading, 3-4 testimonials with specific quote + author + role',
-    CTASection: 'heading, subtext, ctaText',
-    PricingTable: 'heading, 3 tiers with name + price + realistic feature list',
-    StatsSection: 'heading, 4 stats with believable values and labels',
-    FAQSection: 'heading, 5-6 items with question + actionable answer',
-    Gallery: 'heading, 6+ images with descriptive alt text',
-    ProductCards: 'heading, 4-6 products with name + price + description',
-    TeamSection: 'heading, 3-4 members with name + specific role title',
-    BlogSection: 'heading, 3 posts with title + excerpt + date',
-    ContactForm: 'heading, subtext, buttonText',
-    NewsletterSignup: 'heading, subtext with SPECIFIC value proposition, buttonText',
-    HeaderNav: 'logo, 4-5 links with labels matching page sections, ctaText',
-    FooterSection: 'logo, description, 3-4 linkGroups',
-    FeatureShowcase: 'heading, description, 2-3 features with specific titles',
-    LogoGrid: 'heading, 5-6 logos with realistic company names',
-    Banner: 'heading, subtext, ctaText',
-    AnnouncementBar: 'message, ctaText',
-    CountdownTimer: 'heading, endDate',
-  };
+  const stockImageHint = buildBatchStockImageHint(businessType, [sectionType]);
 
   const contentPropsForType = CONTENT_PROPS[sectionType] || '';
 
   const makeupRules = isMakeup ? `
 ## ★ POLISH RULES (MANDATORY)
 
-1. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content tailored to ${businessType}. AVOID generic clichés. Use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits.
+1. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content tailored to ${businessType}. ${CLICHE_WARNING} Use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits.
 2. **Images**: Fill ALL image props using EXACT paths from the stock library below. Each section MUST use a DIFFERENT image.
 3. **Visual styling is auto-applied**: Do NOT set animation, cardStyle, hoverEffect, variant, columns, gradientFrom/gradientTo, or padding props — these are injected automatically based on the design style.
 ` : '';
@@ -187,15 +172,14 @@ Return JSON with this exact structure (do NOT include "type" or "id" — those a
 ## Content Quality Rules
 
 1. Use the USER'S LANGUAGE for all visible content (headings, descriptions, button labels).
-2. **NO GENERIC CLICHES** — Avoid: "craftsmanship", "world-class", "innovative solutions", "best in class", "high-quality", "state-of-the-art", "cutting-edge". Use SPECIFIC details instead.
-3. **BE CONCRETE**: Instead of "delicious food" write "hand-rolled pasta with 24-month aged Parmigiano". Instead of "great service" write "response time under 2 hours".
-4. **USE NUMBERS**: "10,000+ customers" not "many customers". "$2.5M saved" not "significant savings". "4.9 stars" not "highly rated".
-5. **EMOTION + SPECIFICITY**: "Your dream kitchen, designed in 48 hours" not "We design kitchens".
-6. Tailor content specifically to: ${businessType}.
-7. For images, you MUST use EXACT paths from this stock library — do NOT invent filenames:
+2. ${CLICHE_WARNING}
+3. ${CONCRETE_RULES}
+4. **EMOTION + SPECIFICITY**: "Your dream kitchen, designed in 48 hours" not "We design kitchens".
+5. Tailor content specifically to: ${businessType}.
+6. For images, you MUST use EXACT paths from this stock library — do NOT invent filenames:
 ${stockImageHint}
    If a path is not listed above, do NOT use it.
-8. Return ONLY valid JSON. No markdown, no explanation, no code fences.`;
+7. Return ONLY valid JSON. No markdown, no explanation, no code fences.`;
 
   const systemMessage = systemMessageRaw.replace(/{/g, '{{').replace(/}/g, '}}');
 
@@ -249,25 +233,6 @@ export function buildBatchSectionPrompt(
     return lines.join('\n');
   }).join('\n');
 
-  const CONTENT_PROPS: Record<string, string> = {
-    HeroSection: 'heading, subtext, ctaText, badge text, trustBadges (3-4 items)',
-    FeaturesGrid: 'heading, subtext, 4-6 features with title + description + icon name',
-    TestimonialSection: 'heading, 3-4 testimonials with specific quote + author + role',
-    CTASection: 'heading, subtext, ctaText',
-    PricingTable: 'heading, 3 tiers with name + price + realistic feature list',
-    StatsSection: 'heading, 4 stats with believable values and labels',
-    FAQSection: 'heading, 5-6 items with question + actionable answer',
-    Gallery: 'heading, 6+ images with descriptive alt text',
-    ProductCards: 'heading, 4-6 products with name + price + description',
-    TeamSection: 'heading, 3-4 members with name + specific role title',
-    BlogSection: 'heading, 3 posts with title + excerpt + date',
-    ContactForm: 'heading, subtext, buttonText',
-    HeaderNav: 'logo, 4-5 links with labels matching page sections, ctaText',
-    FooterSection: 'logo, description, 3-4 linkGroups',
-    Banner: 'heading, subtext, ctaText',
-    AnnouncementBar: 'message, ctaText',
-  };
-
   const contentPropsList = sections.map((s) => {
     const req = CONTENT_PROPS[s.type];
     return req ? `- **${s.type}**: ${req}` : `- **${s.type}**: fill in all relevant props`;
@@ -278,7 +243,7 @@ export function buildBatchSectionPrompt(
   const makeupRules = isMakeup ? `
 ## ★ POLISH RULES (MANDATORY)
 
-1. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content for "${businessNameStr}" (${businessType}). AVOID generic clichés. Use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits.
+1. **Content Quality** (MOST IMPORTANT): Write SPECIFIC, COMPELLING content for "${businessNameStr}" (${businessType}). ${CLICHE_WARNING} Use CONCRETE details: specific numbers, named dishes/products, real-sounding testimonials with measurable outcomes, specific features with benefits.
 2. **Images**: Fill ALL image props using EXACT paths from the stock library below. Each section MUST use a DIFFERENT image.
 3. **Visual styling is auto-applied**: Do NOT set animation, cardStyle, hoverEffect, variant, columns, gradientFrom/gradientTo, or padding props — these are injected automatically based on the design style.
 ` : '';
@@ -309,7 +274,7 @@ Maintain the SAME ORDER as the input sections. Include ALL ${total} sections.
 Example:
 { "components": [
   { "type": "HeaderNav", "props": { "logo": "${businessNameStr}", "links": [...], ... } },
-  { "type": "HeroSection", "props": { "heading": "...", "animation": "fade-up", ... } }
+  { "type": "HeroSection", "props": { "heading": "...", "ctaText": "...", ... } }
 ] }
 
 IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, no code fences.`;
@@ -318,10 +283,9 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, no code fences.`
 ## Content Quality Rules
 
 1. Use the USER'S LANGUAGE for all visible text.
-2. NO generic clichés — avoid "craftsmanship", "world-class", "innovative solutions", "high-quality".
-3. BE CONCRETE: "hand-rolled pasta with 24-month aged Parmigiano" not "delicious food".
-4. USE NUMBERS: "10,000+ customers" not "many customers". "$2.5M saved" not "significant savings".
-5. Tailor ALL content to: ${businessType} — "${businessNameStr}".
+2. ${CLICHE_WARNING}
+3. ${CONCRETE_RULES}
+4. Tailor ALL content to: ${businessType} — "${businessNameStr}".
 ` : '';
 
   const systemMessage = (systemMessageRaw + contentQualityRules).replace(/{/g, '{{').replace(/}/g, '}}');

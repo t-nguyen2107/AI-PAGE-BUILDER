@@ -33,51 +33,78 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
     padding: '128px',
     align: 'center',
     layout: 'centered',
+    animation: 'fade-up',
   },
   FeaturesGrid: {
     cardStyle: 'elevated',
     hoverEffect: 'lift',
     columns: 3,
+    animation: 'stagger',
   },
   TestimonialSection: {
     variant: 'grid',
+    animation: 'stagger-fade',
   },
   CTASection: {
     variant: 'gradient',
+    animation: 'fade-up',
   },
   PricingTable: {
     highlightedBadge: 'Most Popular',
+    animation: 'fade-up',
   },
-  FAQSection: {},
+  FAQSection: {
+    animation: 'fade-up',
+  },
   StatsSection: {
     animated: true,
     columns: 4,
     cardStyle: 'gradient',
+    animation: 'fade-up',
   },
   ContactForm: {
     showPhone: true,
     showCompany: true,
+    animation: 'fade-up',
   },
   Gallery: {
     columns: 3,
+    animation: 'stagger-fade',
   },
   ProductCards: {
     hoverEffect: 'lift',
     columns: 3,
+    animation: 'stagger',
   },
-  TeamSection: {},
+  TeamSection: {
+    animation: 'stagger',
+  },
   BlogSection: {
     columns: 3,
+    animation: 'stagger',
   },
-  FeatureShowcase: {},
-  LogoGrid: {},
-  NewsletterSignup: {},
-  SocialProof: {},
+  FeatureShowcase: {
+    animation: 'fade-up',
+  },
+  LogoGrid: {
+    animation: 'stagger-fade',
+  },
+  NewsletterSignup: {
+    animation: 'fade-up',
+  },
+  SocialProof: {
+    animation: 'stagger-fade',
+  },
   Banner: {
     variant: 'gradient',
+    animation: 'fade-up',
   },
-  ComparisonTable: {},
-  CountdownTimer: {},
+  ComparisonTable: {
+    animation: 'fade-up',
+  },
+  CountdownTimer: {
+    animation: 'fade-up',
+  },
   AnnouncementBar: {
     variant: 'gradient',
   },

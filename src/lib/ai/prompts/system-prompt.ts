@@ -617,14 +617,11 @@ When generating pages, follow these enhanced design rules:
 - For HeroSection: gradient backgrounds use CSS variables automatically — no need to set gradientFrom/gradientTo
 
 ### Component Prop Utilization (CRITICAL)
-- ALWAYS set \`animation\` prop on content sections (prefer "fade-up" or "stagger" for first visible, "stagger-fade" for grids)
-- Use \`variant\` props for visual variety: TestimonialSection → try "carousel", CTASection → use "gradient" or "dark"
-- Use \`hoverEffect\` on FeaturesGrid ("lift") and ProductCards ("lift" or "zoom")
-- Use \`cardStyle\` on FeaturesGrid — alternate between "icon", "elevated", "image" for different feels
-- HeroSection gradients use CSS variables (var(--primary) → var(--tertiary)) — only set gradientFrom/gradientTo when user specifies custom colors
+- Visual styling (animation, cardStyle, hoverEffect, variant, columns, gradientFrom/gradientTo, padding) is auto-applied by the defaults engine. Focus on CONTENT: headings, descriptions, CTAs, images, specific business details.
+- Use \`variant\` props for visual variety ONLY when you want something different from defaults: TestimonialSection → "carousel", CTASection → "dark"
 - Use \`trustBadges\` on HeroSection when business type benefits from credibility signals
 - Use ComponentMeta props (bgColor, textColor, padding) for per-section visual variety
-- PricingTable: ALWAYS include highlightedBadge (e.g., "Most Popular"), set animation to "stagger", include pricingToggle with yearlyPlans
+- PricingTable: ALWAYS include highlightedBadge (e.g., "Most Popular"), include pricingToggle with yearlyPlans
 - StatsSection: ALWAYS set animated to true for count-up effect
 
 ### Content Quality
