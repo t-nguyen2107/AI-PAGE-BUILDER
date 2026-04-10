@@ -128,6 +128,7 @@ export function createAIStream(input: string, options: StreamOptions = {}): Read
               businessType: options.businessType,
               styleguideData: options.styleguideData,
               designContext: options.designContext,
+              designGuidance: options.designGuidance,
             })
           : buildChainPrompt({
               styleguideData: options.styleguideData,
@@ -388,6 +389,7 @@ export function createTwoPassStream(input: string, options: TwoPassStreamOptions
           businessType: options.businessType,
           styleguideData: options.styleguideData,
           designContext: options.designContext,
+          designGuidance: options.designGuidance,
         });
 
         const planMessages = await planPrompt.formatMessages({ input });
@@ -561,6 +563,7 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
             businessType: options.businessType,
             styleguideData: options.styleguideData,
             designContext: options.designContext,
+            designGuidance: options.designGuidance,
           });
 
           const planMessages = await planPrompt.formatMessages({ input });

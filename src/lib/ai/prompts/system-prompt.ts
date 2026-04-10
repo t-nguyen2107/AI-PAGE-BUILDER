@@ -312,7 +312,7 @@ function buildPatternLayout(
 ): string {
   const lines: string[] = ['## RECOMMENDED PAGE LAYOUT'];
   lines.push('');
-  lines.push('Follow this section order precisely for the detected business type:');
+  lines.push('Follow this section order generally for the detected business type (you may add or swap sections to fit the content):');
   lines.push('');
 
   pattern.sectionOrder.forEach((section, i) => {
