@@ -1,7 +1,7 @@
 # AI Generation Pipeline — Technical Documentation
 
 > Tài liệu kỹ thuật cho team improve/extend AI pipeline.
-> Last updated: 2026-04-09
+> Last updated: 2026-04-10
 
 ---
 
@@ -296,7 +296,7 @@ function applyComponentDefaults(
 |-------|--------|-------|
 | Per-component defaults | Inject animation, variant, hover | HeroSection → `animation: "fade-up"` |
 | Hero background fill | Business type → stock image | restaurant → `/images/stock/restaurant/hero-1.jpg` |
-| Gradient injection | Color palette → gradient values | `gradientFrom: primary, gradientTo: primaryContainer` |
+| **CSS Variable Gradients** | CSS vars instead of AI-injected hex | HeroSection uses `var(--primary) → var(--tertiary)` |
 | Avatar fill | Testimonial/Team → placeholder avatars | `avatarUrl: "/images/stock/avatars/person-1.jpg"` |
 | Background alternation | Visual rhythm across sections | Even: light bg, Odd: muted bg |
 
@@ -497,6 +497,11 @@ POST /api/ai/generate/stream
 **Khi nào dùng:** Plan generation — chọn 5-8 component types + basic props
 **Model:** Flash Lite (fast model)
 
+**Key changes:**
+- **Dynamic Landing Patterns**: Resolves business-type-specific patterns instead of hardcoded "typical order"
+- **10 patterns**: hero_features_cta, hero_testimonials_cta, product_showcase, pricing_focused, minimal_funnel, waitlist_launch, ecommerce_full, trust_authority, event_countdown, creative_portfolio
+- **AI flexibility**: Can now add/swap components to fit business needs
+
 **Response format:**
 ```json
 { "components": [ { "type": "HeaderNav", "props": { ... } }, ... ] }
@@ -507,6 +512,11 @@ POST /api/ai/generate/stream
 **File:** `src/lib/ai/prompts/section-prompt.ts`
 **Khi nào dùng:** Polish từng section (called by `polishSection()`)
 **Model:** Main model (Gemini Flash / qwen3.5)
+
+**Optimizations:**
+- **Shared constants**: Deduplicated CONTENT_PROPS, CLICHE_WARNING, CONCRETE_RULES
+- **Compact stock images**: Using buildBatchStockImageHint() instead of buildStockImageHint()
+- **Token savings**: ~27-30% reduction per request
 
 **Input:**
 ```typescript
@@ -544,7 +554,27 @@ REQUIRED_PROPS = {
 { "props": { "heading": "...", "animation": "fade-up", ... } }
 ```
 
-### 9.4. `optimizePrompt()` — Zero-cost Prompt Enrichment
+### 9.4. Design Style System
+
+**8 coordinated visual styles** applied automatically to all components:
+
+| Style | Characteristics | Use Case |
+|-------|----------------|----------|
+| **Elevated** | Soft shadows, depth | Modern SaaS |
+| **Minimal** | Clean, whitespace-heavy | Portfolio, apps |
+| **Glassmorphism** | Frosted glass effect | Creative, tech |
+| **Brutalism** | Bold, raw, typography-heavy | Bold brands |
+| **Neo-brutalism** | Rounded brutalism | Playful brands |
+| **Soft UI** | Rounded, gentle shadows | User-friendly apps |
+| **Aurora** | Gradient spectrum | Creative, fashion |
+| **Bento** | Grid-based layout | Content-heavy sites |
+
+**Implementation:**
+- `getDesignTokens(style)` returns coordinated typography, colors, spacing, buttons
+- Applied via `designStyle` prop on all section components
+- Injected by defaults-engine from design guidance
+
+### 9.5. `optimizePrompt()` — Zero-cost Prompt Enrichment
 
 **File:** `src/lib/ai/prompts/prompt-optimizer.ts`
 **Chi phí:** Zero — pure rule-based, không gọi LLM
@@ -556,6 +586,24 @@ REQUIRED_PROPS = {
 4. `detectStyle()` → modern/minimal/elegant/bold/...
 5. `resolveDesignGuidance()` → complete color palette + typography
 6. `selectRelevantComponents()` → 3-tier catalog
+
+### 9.6. Token Optimization
+
+**Prompt optimizations achieved ~27-30% token savings:**
+
+**Before:**
+- CONTENT_PROPS declared twice in section-prompt.ts
+- buildStockImageHint() called separately for each image
+- System prompt listed all auto-applied defaults per component
+
+**After:**
+- CONTENT_PROPS: Single module-level constant
+- buildBatchStockImageHint(): Compact hint for all images
+- System prompt: Simplified with specific defaults listed per component
+
+**Token savings per request:**
+- Before: ~3,700-4,000 tokens
+- After: ~2,600-3,000 tokens
 
 ---
 
@@ -673,6 +721,8 @@ Accumulated text → extractJSON()
 
 **File:** `src/lib/ai/prompts/component-catalog.ts`
 
+**Note**: HeroSection and CTASection now use CSS Variable gradients instead of AI-injected hex values. Default: `var(--primary) → var(--tertiary)`, but can override via `gradientFrom`/`gradientTo` props in inspector.
+
 | Component | Category | Structural? |
 |-----------|----------|-------------|
 | HeaderNav | Navigation | ✅ |
@@ -781,6 +831,13 @@ generateFromPromptStream(
 
 ## 17. Areas for Improvement
 
+### ✅ Completed Recent Improvements
+- **CSS Variable Gradients**: Replaced AI-injected hex values with CSS vars
+- **Dynamic Landing Patterns**: 10 business-specific patterns instead of hardcoded order
+- **Animation Defaults**: All content sections now have auto-applied animations
+- **Token Optimization**: Achieved ~27-30% token savings through deduplication
+- **Design Style System**: 8 coordinated visual styles with getDesignTokens()
+
 ### Performance
 - **Caching**: Section prompt results could be cached for similar business types
 - **Streaming per-section**: Phase 2 uses `invoke()` — could stream each section
@@ -797,6 +854,7 @@ generateFromPromptStream(
 - **Cost tracking**: Token counting per provider for cost monitoring
 
 ### New Features
+- **Dynamic Style Recommender**: Color-matcher for bilingual keywords → palette matching
 - **Style transfer**: Apply one site's style to another
 - **Responsive variants**: Generate different layouts for mobile/desktop
 - **SEO optimization pass**: Post-generation SEO audit + auto-fix
