@@ -67,16 +67,17 @@ Pipeline biến **user prompt** (natural language) thành **Puck ComponentData[]
 │                                                         │
 │  Step 1: Render skeletons từ treeData lên canvas       │
 │                                                         │
-│  Step 2: Auto-call polishSections() via streaming API  │
+│  Step 2: Auto-call polishSectionsStream() via streaming API │
 │  ┌────────────────────────────────────────────────┐    │
-│  │  POST /api/ai/generate/stream                  │    │
-│  │  • polishSections() × N parallel               │    │
+│  │  POST /api/ai/generate/stream (isAutoPolish)   │    │
+│  │  • polishSectionsStream() — single LLM call    │    │
+│  │  • parseStreamingComponents() → progressive    │    │
 │  │  • SSE: component_stream per section           │    │
 │  │  • Skeleton → real component trên canvas       │    │
 │  └────────────────────────────────────────────────┘    │
 │                                                         │
 │  Step 3: applyComponentDefaults() — fill gaps          │
-│  Step 4: Auto-save treeData + status = "complete"      │
+│  Step 4: Skeleton IDs replaced on canvas = done       │
 │                                                         │
 │  ⚠ UI locked (editing disabled) trong khi polishing    │
 └─────────────────────────────────────────────────────────┘
@@ -95,14 +96,14 @@ User types in AIChatPanel
 │  Step 2: optimizePrompt() → detect intent              │
 │  Step 3: Route by intent:                              │
 │                                                         │
-│  ┌─ create_page ────────────────────────────────────┐  │
-│  │  1. buildTemplatePrompt() → plan                 │  │
-│  │  2. polishSections(plan, ctx, onDone) → stream   │  │
+│  ┌─ create_page / auto-polish ──────────────────────┐  │
+│  │  1. buildTemplatePrompt() → plan (or from tree) │  │
+│  │  2. createMakeupStream() → polishSectionsStream │  │
 │  │  3. applyComponentDefaults()                     │  │
 │  └──────────────────────────────────────────────────┘  │
 │                                                         │
 │  ┌─ add_section ────────────────────────────────────┐  │
-│  │  polishSection(newComponent, ctx) → single call  │  │
+│  │  polishSectionsStream([newComponent], ctx)        │  │
 │  └──────────────────────────────────────────────────┘  │
 │                                                         │
 │  ┌─ modify/delete/unknown ──────────────────────────┐  │
@@ -125,7 +126,7 @@ src/lib/ai/
 ├── provider.ts              # Model factory (Ollama/OpenAI/Anthropic/Gemini)
 ├── chain.ts                 # LangChain chain configuration
 ├── streaming.ts             # ★ Stream functions (createMakeupStream, createAIStream)
-├── section-polisher.ts      # ★ NEW: Reusable polishSection() + polishSections()
+├── section-polisher.ts      # ★ Streaming batch polish: polishSectionsStream() + parseStreamingComponents()
 ├── defaults-engine.ts       # ★ NEW: Post-processing (animation, gradient, bg cycle)
 ├── output.ts                # Output validation (AI JSON → AIGenerationResponse)
 ├── output-sanitizer.ts      # Clean AI output (strip legacy format)
@@ -150,6 +151,8 @@ src/lib/ai/
 │
 └── knowledge/
     ├── design-knowledge.ts     # Static design data (palettes, patterns, typography)
+    ├── color-matcher.ts        # ★ Dynamic color/style keyword matching (bilingual VI/EN)
+    ├── business-detect.ts      # Business type detection from text
     └── knowledge-search.ts     # RAG vector search for design context
 ```
 
@@ -200,9 +203,10 @@ src/app/new-project/
 
 ---
 
-## 4. Reusable Polish System — `section-polisher.ts`
+## 4. Streaming Batch Polish — `section-polisher.ts`
 
-> **Đây là thay đổi kiến trúc quan trọng nhất:** tách logic polish ra khỏi streaming.ts thành function tái sử dụng.
+> Single-request streaming approach: ALL sections polished in one LLM call.
+> As the model streams the JSON array, a streaming JSON parser detects each complete component and emits callbacks for progressive rendering.
 
 ### 4.1. API
 
@@ -212,12 +216,14 @@ src/app/new-project/
 interface PolishContext {
   userPrompt: string;
   businessType?: string;
+  businessName?: string;
   designGuidance?: DesignGuidance;
-  styleguideData?: { colors?: string; typography?: string; spacing?: string; cssVariables?: string };
+  styleguideData?: MinimalStyleguideTokens;
   designContext?: string;
   signal?: AbortSignal;
-  timeoutMs?: number;       // Per-section timeout (default: 60_000)
+  timeoutMs?: number;       // Total batch timeout (default: 180_000)
   isMakeup?: boolean;       // true = polish existing props, false = generate fresh
+  useFastModel?: boolean;   // true = fast model, false = main model (default)
 }
 
 interface PolishResult {
@@ -227,51 +233,51 @@ interface PolishResult {
 
 // ── Functions ──────────────────────────────────────────
 
-/** Polish a single section (1 LLM call) */
-async function polishSection(
-  component: { type: string; props: Record<string, unknown> },
-  index: number,
-  total: number,
-  ctx: PolishContext,
-): Promise<PolishResult>
-
-/** Polish multiple sections in parallel (N LLM calls) */
-async function polishSections(
+/** Polish ALL sections in a single streaming request (1 LLM call) */
+async function polishSectionsStream(
   components: Array<{ type: string; props: Record<string, unknown> }>,
   ctx: PolishContext,
   onSectionDone?: (index: number, total: number, result: PolishResult) => void,
 ): Promise<PolishResult[]>
+
+/** Streaming JSON array parser — detects complete objects during stream */
+function parseStreamingComponents(
+  buffer: string,
+  alreadyParsed: number,
+  scanFrom?: number,
+): { complete: Array<{ index: number; data: unknown }>; scanTo: number }
 ```
 
 ### 4.2. Nơi sử dụng
 
 | Context | Function | Số LLM calls |
 |---------|----------|-------------|
-| Wizard → Builder auto-polish | `polishSections(plan, ctx, onDone)` | N parallel |
-| Builder chat: "tạo trang mới" | `polishSections(plan, ctx, onDone)` | N parallel |
-| Builder chat: "thêm pricing table" | `polishSection(component, 0, 1, ctx)` | 1 |
-| Builder chat: "redesign hero" | `polishSection(existing, 0, 1, ctx)` | 1 |
+| Wizard → Builder auto-polish | `polishSectionsStream(plan, ctx, onDone)` | 1 (streaming) |
+| Builder chat: "tạo trang mới" | `polishSectionsStream(plan, ctx, onDone)` | 1 (streaming) |
+| Makeup mode (restyle) | `polishSectionsStream(existingPlan, ctx, onDone)` | 1 (streaming) |
 
-### 4.3. Logic bên trong `polishSection()`
+### 4.3. Logic bên trong `polishSectionsStream()`
 
 ```
-Input: { type: "HeroSection", props: { heading: "..." } }
+Input: [{ type: "HeroSection", props: {...} }, { type: "FeaturesGrid", props: {...} }, ...]
   │
-  ├── Lookup COMPONENT_CATALOG[type]
-  │   └── Not found? → return input as-is (no AI call)
+  ├── buildBatchSectionPrompt(components, ctx)
+  │   └── Single system prompt with ALL sections catalog + design tokens
   │
-  ├── buildSectionPrompt(type, catalog, context)
-  │   └── System prompt: component schema + design tokens + makeup rules
+  ├── createModelBundle({ maxTokens: 16384 }) or createFastModelBundle({ maxTokens: 10240 })
+  │   └── Main model (quality) or Fast model (speed)
   │
-  ├── createModelBundle({ maxTokens: 4096 })
-  │   └── Main model (Gemini Flash / qwen3.5)
+  ├── model.stream(messages, { signal })
+  │   └── Streams JSON array: [{ type, props }, { type, props }, ...]
   │
-  ├── model.invoke(messages, { signal, timeout: 60s })
+  ├── parseStreamingComponents() on each chunk
+  │   └── Tracks brace+bracket depth to detect complete JSON objects
+  │   └── Emits onSectionDone callback per completed component
+  │   └── Progressive rendering on canvas
   │
-  ├── extractJSON(response) → validateSingleComponent()
-  │   └── Merge: plan.props + polished.props
+  ├── Fallback: extractJSON() on full buffer if streaming parser misses some
   │
-  └── Fallback: return input props if AI fails
+  └── Returns: PolishResult[] (same order as input)
 ```
 
 ---
@@ -303,9 +309,9 @@ function applyComponentDefaults(
 ### 5.3. Vị trí trong pipeline
 
 ```
-AI Output → polishSections() → applyComponentDefaults() → emitComponentStream()
-                                       ↑
-                                  Zero cost, deterministic
+AI Output → polishSectionsStream() → applyComponentDefaults() → emitComponentStream()
+                                           ↑
+                                      Zero cost, deterministic
 ```
 
 ---
@@ -331,15 +337,15 @@ model Page {
 ```
 null ──[wizard creates page]──→ "pending"
                                     │
-                      [builder loads, auto-detect]
+                      [builder loads, useAutoPolish detects "pending"]
                                     │
                                     ▼
-                               "polishing"
-                                    │
-                      [all sections polished + saved]
+                              Auto-polish streams
+                      (skeleton IDs replaced on canvas)
                                     │
                                     ▼
-                                  null
+                             Canvas is "complete"
+                    (no DB write — skeleton IDs gone = done)
 ```
 
 ---
@@ -405,65 +411,81 @@ No more "generating" spinner phase in wizard.
 ### 8.1. Builder Auto-Polish: `useAutoPolish()` hook
 
 ```typescript
-function useAutoPolish(projectId: string, pageId: string) {
-  // Returns:
-  return {
-    isPolishing: boolean;    // True while Phase 2 is running
-    progress: string;        // "3/7 sections ready"
-    cancel: () => void;      // Abort Phase 2
-  };
+// File: src/puck/hooks/useAutoPolish.ts
 
-  // Behavior:
-  // 1. On mount: GET /api/pages/{pageId} → check generationStatus
-  // 2. If "pending":
-  //    a. Disable editing UI
-  //    b. Show progress banner
-  //    c. Call POST /api/ai/generate/stream with existingTreeData
-  //    d. Process SSE events → replace skeletons on canvas
-  //    e. On complete: save treeData + set status = null
-  //    f. Re-enable editing UI
+interface UseAutoPolishProps {
+  projectId: string;
+  pageId: string;
+  styleguideId?: string;
+  generationStatus?: string | null;  // "pending" triggers auto-polish
+  onComponentStream: (component, index, total, replacesSkelId?) => void;
+  onPlan?: (plan: { type: string; skeletonId: string }[]) => void;
+  onComplete: () => void;
+  onError: (error: string) => void;
 }
+
+// Returns:
+{ isPolishing: boolean; progressLabel: string; error: string | null }
 ```
 
-### 8.2. Streaming Polish Flow
+**Behavior:**
+1. Triggers when `generationStatus === "pending"` AND `styleguideId` available
+2. Calls `apiClient.generateFromPromptStream()` with `isAutoPolish: true`
+3. Callbacks via refs (avoids abort on re-render): `onPlan` → `onComponentStream` → `onComplete`
+4. No DB status writes — completion is detected by skeleton IDs being replaced on canvas
+5. `polishedRef` prevents double-trigger across re-renders
+
+### 8.2. Backend Auto-Polish Flow (stream route)
+
+When `isAutoPolish=true`, the route handler:
+1. **Skips session creation** — no AISession, no history, saves ~500ms
+2. **Skips RAG lookup** — uses static design-knowledge.ts instead
+3. **Loads business context from ProjectAIProfile** (businessType, businessName, tone, style)
+4. **Resolves designGuidance** from business type (zero LLM cost)
+5. **Routes to `createMakeupStream()`** with `intent: 'modify'` and `existingTreeData`
+
+### 8.3. Streaming Polish Flow
 
 ```
 Builder loads page (generationStatus = "pending")
     │
     ▼
-useAutoPolish() triggers
-    │
-    ├── Show progress banner: "AI is building your page..."
-    ├── Disable editing controls
+useAutoPolish() detects status
     │
     ▼
-POST /api/ai/generate/stream
+POST /api/ai/generate/stream  { isAutoPolish: true }
     │
-    ├── SSE: status(planning) → "Planning page layout..."
+    ├── Load page treeData + styleguide + AI profile (parallel)
+    ├── Resolve designGuidance from businessType (zero cost)
+    ├── Skip session + RAG (not needed for auto-polish)
     │
-    ├── SSE: plan → [{ type: "HeaderNav", skeletonId: "skel_123" }, ...]
-    │   └── Frontend renders SectionSkeleton components
+    ▼
+createMakeupStream(enrichedPrompt, { existingTreeData, intent: 'modify' })
     │
-    ├── SSE: status(generating) → "Polishing 7 sections..."
+    ├── Phase 1: Extract plan from existing treeData (zero AI cost)
+    │   └── Emit SSE: plan → [{ type, skeletonId }] for skeleton rendering
     │
-    ├── SSE: component_stream(0) → HeaderNav ready
-    │   └── Replace skeleton "skel_123" with real HeaderNav
+    ├── Phase 2: polishSectionsStream() — SINGLE streaming request
+    │   ├── SSE: status(generating) → "Polishing N sections..."
+    │   ├── buildBatchSectionPrompt(ALL components) → single system prompt
+    │   ├── model.stream() → streams JSON array of ALL sections
+    │   ├── parseStreamingComponents() → detects each complete component
+    │   ├── SSE: component_stream(0) → HeaderNav ready
+    │   │   └── Replace skeleton "skel_123" with real component
+    │   ├── SSE: component_stream(1) → HeroSection ready
+    │   │   └── Replace skeleton "skel_456" with real component
+    │   ├── ... (sections appear as streaming parser completes them)
+    │   └── Fallback: extractJSON() on full buffer if stream parser misses any
     │
-    ├── SSE: component_stream(1) → HeroSection ready
-    │   └── Replace skeleton "skel_456" with real HeroSection
-    │
-    ├── ... (sections stream in as they complete, parallel)
-    │
-    ├── SSE: component_stream(6) → FooterSection ready
-    │
-    ├── applyComponentDefaults() fills any missing visual props
+    ├── applyComponentDefaults() — fills animation, gradients, images
+    │   └── CSS var gradients (var(--primary) → var(--tertiary))
+    │   └── Auto-applied animation defaults (fade-up, stagger, etc.)
     │
     ├── SSE: done → { action: "full_page", components: [...] }
-    │   └── Auto-save treeData to DB
-    │   └── Set generationStatus = null
-    │   └── Re-enable editing
+    │   └── Skeleton IDs replaced on Puck canvas = "complete"
+    │   └── No DB generationStatus write needed
     │
-    └── Progress banner: "✓ Your page is ready!"
+    └── Builder re-enables editing
 ```
 
 ---
@@ -532,20 +554,19 @@ interface SectionPromptContext {
 ```
 
 **Makeup Enhancement Rules** (khi `isMakeup = true`):
-1. **Animation** — fade-up cho hero/CTA, stagger cho grids
-2. **Gradients** — gradientFrom/gradientTo với exact color tokens
-3. **Images** — Fill ALL image props từ stock library
-4. **Text Polish** — Compelling, business-specific content
-5. **Visual Variety** — variant props (carousel, gradient, elevated)
-6. **Hover Effects** — "lift" trên FeaturesGrid và ProductCards
-7. **Background Alternation** — Even: light/gradient, Odd: muted/dark
+1. **Content Quality** (MOST IMPORTANT) — Specific, compelling content tailored to business type. No generic clichés.
+2. **Images** — Fill ALL image props using EXACT paths from stock library. Each section uses a DIFFERENT image.
+3. **Visual styling is AUTO-APPLIED** — Do NOT set animation, cardStyle, hoverEffect, variant, columns, gradientFrom/gradientTo, or padding props. These are injected by defaults-engine.
 
-**REQUIRED_PROPS map** — 19 component types có props bắt buộc:
+**CONTENT_PROPS map** — 19 component types có content fields cần fill:
 ```typescript
-REQUIRED_PROPS = {
-  HeroSection: ['animation', 'bgImage', 'badge'],
-  FeaturesGrid: ['columns', 'hoverEffect', 'animation'],
-  // ... 17 more types
+CONTENT_PROPS = {
+  HeroSection: 'heading, subtext, ctaText, badge text, trustBadges (3-4 items)',
+  FeaturesGrid: 'heading, subtext, 4-6 features with title + description + icon name',
+  TestimonialSection: 'heading, 3-4 testimonials with specific quote + author + role',
+  CTASection: 'heading, subtext, ctaText',
+  PricingTable: 'heading, 3 tiers with name + price + realistic feature list',
+  // ... more types
 }
 ```
 
@@ -556,23 +577,24 @@ REQUIRED_PROPS = {
 
 ### 9.4. Design Style System
 
-**8 coordinated visual styles** applied automatically to all components:
+**8 coordinated visual styles** applied automatically to all components (defined in `src/puck/lib/design-styles.ts`):
 
-| Style | Characteristics | Use Case |
-|-------|----------------|----------|
-| **Elevated** | Soft shadows, depth | Modern SaaS |
-| **Minimal** | Clean, whitespace-heavy | Portfolio, apps |
-| **Glassmorphism** | Frosted glass effect | Creative, tech |
-| **Brutalism** | Bold, raw, typography-heavy | Bold brands |
-| **Neo-brutalism** | Rounded brutalism | Playful brands |
-| **Soft UI** | Rounded, gentle shadows | User-friendly apps |
-| **Aurora** | Gradient spectrum | Creative, fashion |
-| **Bento** | Grid-based layout | Content-heavy sites |
+| Style | `designStyle` value | Characteristics |
+|-------|---------------------|----------------|
+| **Elevated (Default)** | `"elevated"` | Soft shadows, rounded corners, subtle depth |
+| **Minimal** | `"minimal"` | No shadows, subtle borders, airy whitespace |
+| **Glassmorphism** | `"glassmorphism"` | Blur, translucent layers, gradient mesh |
+| **Brutalism** | `"brutalism"` | Thick borders, sharp corners, bold type, offset shadows |
+| **Neo-Brutalism** | `"neobrutalism"` | Playful brutalism with color, thick borders |
+| **Soft UI** | `"soft-ui"` | Gentle depth, neumorphism-inspired, warm |
+| **Aurora** | `"aurora"` | Gradient mesh, flowing color, organic shapes |
+| **Bento Grid** | `"bento"` | Apple-style grid, tight spacing, clean, modern |
 
 **Implementation:**
-- `getDesignTokens(style)` returns coordinated typography, colors, spacing, buttons
+- `getDesignTokens(style)` returns coordinated: section backgrounds, card styles, typography, buttons, hover effects, decorative elements
 - Applied via `designStyle` prop on all section components
-- Injected by defaults-engine from design guidance
+- Injected by defaults-engine from `designGuidance.reasoning.stylePriority` via `mapStylePriorityToDesignStyle()`
+- `buildUnifiedDesignTokensBlock()` instructs AI: `set designStyle prop on EVERY section component`
 
 ### 9.5. `optimizePrompt()` — Zero-cost Prompt Enrichment
 
@@ -809,8 +831,8 @@ generateFromPromptStream(
 
 | Function | File | Purpose |
 |----------|------|---------|
-| `polishSection()` | `section-polisher.ts` | ★ Polish single section (1 LLM call) |
-| `polishSections()` | `section-polisher.ts` | ★ Polish N sections parallel (reusable) |
+| `polishSectionsStream()` | `section-polisher.ts` | ★ Polish ALL sections in single streaming request |
+| `parseStreamingComponents()` | `section-polisher.ts` | ★ Streaming JSON parser for progressive rendering |
 | `applyComponentDefaults()` | `defaults-engine.ts` | ★ Post-AI visual polish (zero cost) |
 | `createMakeupStream()` | `streaming.ts` | SSE stream with plan → polish → emit |
 | `createAIStream()` | `streaming.ts` | Single-call full AI pipeline |
@@ -823,6 +845,9 @@ generateFromPromptStream(
 | `validateTemplateResponse()` | `template-schema.ts` | Validate component plan |
 | `validateSingleComponent()` | `template-schema.ts` | Validate single section output |
 | `resolveDesignGuidance()` | `design-knowledge.ts` | Business type → color palette |
+| `extractColorKeywords()` | `color-matcher.ts` | Bilingual color name → hex extraction |
+| `matchPalettesByColors()` | `color-matcher.ts` | HSL distance palette matching |
+| `resolveWizardRecommendations()` | `color-matcher.ts` | Combined color+style+business recommendations |
 | `createModelBundle()` | `provider.ts` | Main model + JSON call options |
 | `createFastModelBundle()` | `provider.ts` | Fast/lightweight model bundle |
 | `buildTreeSummary()` | `system-prompt.ts` | Puck Data → text summary for AI context |
@@ -832,15 +857,17 @@ generateFromPromptStream(
 ## 17. Areas for Improvement
 
 ### ✅ Completed Recent Improvements
-- **CSS Variable Gradients**: Replaced AI-injected hex values with CSS vars
-- **Dynamic Landing Patterns**: 10 business-specific patterns instead of hardcoded order
-- **Animation Defaults**: All content sections now have auto-applied animations
-- **Token Optimization**: Achieved ~27-30% token savings through deduplication
-- **Design Style System**: 8 coordinated visual styles with getDesignTokens()
+- **CSS Variable Gradients**: HeroSection uses `var(--primary) → var(--tertiary)` by default, user hex overrides via inspector
+- **Dynamic Landing Patterns**: 10 business-specific patterns instead of hardcoded order in template-prompt.ts
+- **Animation Defaults**: All 26+ content sections have auto-applied animations via defaults-engine
+- **Token Optimization**: ~27-30% savings through deduplication (shared CONTENT_PROPS, compact stock images)
+- **Design Style System**: 8 coordinated visual styles (elevated, minimal, glassmorphism, brutalism, neobrutalism, soft-ui, aurora, bento)
+- **Streaming Batch Polish**: Single-request `polishSectionsStream()` replaces parallel N-call approach
+- **Dynamic Style Recommender**: `color-matcher.ts` for bilingual keywords → palette matching
+- **Auto-Polish via Skeleton IDs**: No DB status writes needed, canvas detects completion from ID replacement
 
 ### Performance
 - **Caching**: Section prompt results could be cached for similar business types
-- **Streaming per-section**: Phase 2 uses `invoke()` — could stream each section
 - **Prompt size**: System prompt is ~8K tokens — could compress catalog further
 
 ### Quality
@@ -854,7 +881,6 @@ generateFromPromptStream(
 - **Cost tracking**: Token counting per provider for cost monitoring
 
 ### New Features
-- **Dynamic Style Recommender**: Color-matcher for bilingual keywords → palette matching
 - **Style transfer**: Apply one site's style to another
 - **Responsive variants**: Generate different layouts for mobile/desktop
 - **SEO optimization pass**: Post-generation SEO audit + auto-fix

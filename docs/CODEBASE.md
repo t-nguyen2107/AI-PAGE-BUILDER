@@ -76,7 +76,7 @@ Styleguide JSON → CSS Variables → Tailwind Classes → Components
 | `prompts/` | AI prompt builders | `system-prompt.ts`, `template-prompt.ts` |
 | `knowledge/` | Design knowledge base | `design-knowledge.ts`, `color-matcher.ts` |
 | `streaming.ts` | SSE orchestration | Stream creation & management |
-| `section-polisher.ts` | Reusable polish functions | `polishSection()`, `polishSections()` |
+| `section-polisher.ts` | Streaming batch polish | `polishSectionsStream()`, `parseStreamingComponents()` |
 | `defaults-engine.ts` | Post-processing visual defaults | Zero-cost visual enhancement |
 | `puck-adapter.ts` | Legacy format conversion | DOMNode → Puck converter |
 | `embeddings.ts` | Embedding service | Provider-agnostic embedding |
@@ -206,17 +206,17 @@ Styleguide JSON → CSS Variables → Tailwind Classes → Components
 ```
 User Prompt → Plan (Phase 1) → Polish (Phase 2) → Defaults → Canvas
      ↓           ↓               ↓            ↓          ↓
-  Input    Fast Model       Main Model   Zero Cost  Puck
-  Analyze   (1-2s)          (N calls)   Post-Proc  Render
+  Input    Fast Model       Single Stream  Zero Cost  Puck
+  Analyze   (1-2s)          (1 LLM call)  Post-Proc  Render
 ```
 
 **Steps:**
 1. **Plan Phase**: Fast model outputs skeleton components (`{type, basic props}`)
 2. **Redirect**: User immediately redirected to builder with skeleton data
 3. **Auto-Polish**: Builder detects pending status and triggers Phase 2
-4. **Polish Phase**: Main model enhances each component with full props
-5. **Defaults Engine**: Applies visual enhancements (animations, gradients, images)
-6. **Canvas Update**: Components appear progressively via SSE streaming
+4. **Polish Phase**: Single streaming request polishes ALL sections via `polishSectionsStream()`
+5. **Defaults Engine**: Applies visual enhancements (animations, CSS var gradients, images)
+6. **Canvas Update**: Components appear progressively via streaming JSON parser + SSE events
 
 ### Theme Flow
 ```
@@ -300,22 +300,20 @@ export function ComponentRender(props: ComponentProps) {
 ```
 
 ### Design Styles System
-8 coordinated visual styles available across all components:
-- **elevated**: Shadows, borders, depth
-- **minimal**: Clean, spacious, modern
-- **glassmorphism**: Frosted glass effect
-- **dark**: Dark theme with accent colors
-- **neumorphic**: Soft 3D effect
-- **gradient**: Strong gradient backgrounds
-- **bold**: High contrast, vibrant colors
-- **playful**: Rounded corners, animations
+8 coordinated visual styles available across all components (defined in `src/puck/lib/design-styles.ts`):
+- **elevated**: Soft shadows, rounded corners, subtle depth (default)
+- **minimal**: No shadows, subtle borders, airy whitespace
+- **glassmorphism**: Blur, translucent layers, gradient mesh
+- **brutalism**: Thick borders, sharp corners, bold type, offset shadows
+- **neobrutalism**: Playful brutalism with color, thick borders
+- **soft-ui**: Gentle depth, neumorphism-inspired, warm
+- **aurora**: Gradient mesh, flowing color, organic shapes
+- **bento**: Apple-style grid, tight spacing, clean, modern
 
 Style selection affects:
-- Color palette (primary, secondary, accents)
-- Typography (font families, sizes, weights)
-- Component variants (button styles, card styles)
-- Spacing system
-- Animation presets
+- Section backgrounds, card styles, typography, buttons, hover effects
+- Applied via `designStyle` prop on all section components
+- Injected by defaults-engine from `mapStylePriorityToDesignStyle()`
 
 ## 6. AI Knowledge System
 
@@ -327,10 +325,10 @@ Style selection affects:
 - **11 Business Types**: Industry-specific content guidelines
 
 ### Dynamic Matching (`color-matcher.ts`)
+- Bilingual color name → hex map (English + Vietnamese)
 - HSL distance calculation for color matching
-- Business type detection from user keywords
-- Palette selection based on extracted intent
-- Fuzzy matching for typos and synonyms
+- Style keyword matching against DESIGN_STYLES
+- `resolveWizardRecommendations()` combines color + style + business signals
 
 ### Vector Memory System
 - **pgvector**: PostgreSQL extension for similarity search

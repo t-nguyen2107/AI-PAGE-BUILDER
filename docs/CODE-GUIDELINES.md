@@ -284,7 +284,7 @@ git commit -m "$(cat <<'EOF'
 feat: implement auto-polish system for AI-generated pages
 
 - Add useAutoPolish hook to detect pending generation status
-- Implement polishSections() for parallel component generation
+- Implement polishSectionsStream() for streaming batch component generation
 - Add progress tracking and cancellation support
 - Stream polished sections directly to Puck canvas
 
