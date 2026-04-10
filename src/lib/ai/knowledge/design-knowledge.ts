@@ -1782,6 +1782,44 @@ export const UX_DESIGN_RULES = `
 - ❌ Generic stock phrases ("craftsmanship", "world-class", "innovative solutions")
 `;
 
+// ─── Composition Rules (Design Principles) ──────────────────────────────────────
+
+export const COMPOSITION_RULES = `
+## Composition Rules (DESIGN PRINCIPLES)
+
+### Layout Rhythm
+- Never place 3+ sections with the same structural layout consecutively (split→split→split is boring)
+- Alternate between centered, split, and grid layouts to create visual rhythm
+- The eye needs a "rest point" every 2-3 sections. Use a full-width image, stats bar, or logo grid as a palette cleanser
+
+### Asymmetry Over Symmetry
+- For split layouts (FeatureShowcase, HeroSection split): prefer 60/40 text-to-image ratio over 50/50
+- Use odd numbers (3 or 5 cards) instead of even (4 or 6) for grid layouts. Asymmetric feels more modern
+- Offset headings slightly left of center when paired with centered content to create dynamic tension
+
+### Visual Weight Distribution
+- Place the heaviest element (hero, pricing) at top or center of the page
+- Balance a large image on one side with grouped text elements on the other
+- CTA sections should feel "lighter" than sections above them. Less text, more whitespace
+
+### Text Density
+- Maximum 3 sentences per paragraph in any section
+- If a section needs more than 6 lines of body text, split it into 2 sections
+- Alternate text-heavy sections (FAQ, blog) with visual sections (gallery, stats, logos)
+- Feature descriptions: 1-2 sentences max per feature card
+
+### Color and Contrast Flow
+- Hero establishes the color direction. Sections below should echo but not repeat
+- Every 3rd section should have a contrasting background to prevent "flat page" syndrome
+- CTA sections should be the most visually distinct (gradient or dark background)
+- Stats/logos work best on muted backgrounds. They are supporting content, not stars
+
+### Spacing and Proportion
+- Section padding: Hero (128px) > Content sections (96px) > CTA (64-80px). Creates visual hierarchy
+- Between a heavy section and a light section, add extra whitespace or a Spacer
+- Cards within grids: equal height, consistent padding, uniform border-radius
+`;
+
 // ─── Helper: Resolve design guidance for a business type ─────────────────────
 
 export interface DesignGuidance {

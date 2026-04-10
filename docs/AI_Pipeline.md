@@ -538,7 +538,7 @@ createMakeupStream(enrichedPrompt, { existingTreeData, intent: 'modify' })
 **Optimizations:**
 - **Shared constants**: Deduplicated CONTENT_PROPS, CLICHE_WARNING, CONCRETE_RULES
 - **Compact stock images**: Using buildBatchStockImageHint() instead of buildStockImageHint()
-- **Token savings**: ~27-30% reduction per request
+- **Polish mode optimization**: Skips `buildUnifiedDesignTokensBlock()` + uses `buildPolishRules()` instead of full system rules when `isMakeup=true` — 57% input token reduction
 
 **Input:**
 ```typescript
@@ -611,21 +611,19 @@ CONTENT_PROPS = {
 
 ### 9.6. Token Optimization
 
-**Prompt optimizations achieved ~27-30% token savings:**
+**Polish mode token savings: ~57% input reduction (1,080 tokens saved per request)**
 
-**Before:**
-- CONTENT_PROPS declared twice in section-prompt.ts
-- buildStockImageHint() called separately for each image
-- System prompt listed all auto-applied defaults per component
+Polish mode skips visual styling instructions since defaults-engine handles all of that at zero cost:
+- `buildPolishRules()` replaces `buildSystemLevelDesignRules()` in makeup mode (~79t vs ~821t, 90% less)
+- `buildUnifiedDesignTokensBlock()` skipped entirely in makeup mode (~338t saved)
+- Animation specs, color tokens, typography, COMPOSITION_RULES — all handled by defaults-engine
+- Full AI mode (modify/delete) still uses complete `buildSystemLevelDesignRules()` + design tokens
 
-**After:**
-- CONTENT_PROPS: Single module-level constant
-- buildBatchStockImageHint(): Compact hint for all images
-- System prompt: Simplified with specific defaults listed per component
-
-**Token savings per request:**
-- Before: ~3,700-4,000 tokens
-- After: ~2,600-3,000 tokens
+**Token cost per polish request:**
+- Before: ~1,881 input tokens
+- After: ~801 input tokens (43% of original)
+- Output: ~1,620 tokens (unchanged)
+- Total: ~2,421 tokens (was ~3,501, 31% reduction)
 
 ---
 

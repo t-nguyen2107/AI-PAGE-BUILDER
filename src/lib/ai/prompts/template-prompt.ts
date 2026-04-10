@@ -78,6 +78,8 @@ Return JSON with this exact skeleton structure:
    - Do NOT remove HeaderNav or FooterSection.
 3. Provide a "heading" or "purpose" in props so Phase 2 understands what this section is for.
 4. Use the USER'S LANGUAGE for visible text.
+5. COMPOSITION: Vary section structures. Mix centered heroes with grid features, split showcases with full-width CTAs. Avoid 3+ consecutive sections with the same layout pattern (all centered, all split, or all grid).
+6. TEXT BALANCE: Do not place more than 2 text-heavy sections (FAQ, TextBlock, BlogSection) next to each other. Insert a visual section (Gallery, StatsSection, LogoGrid) between them.
 ${extraRules.join('\n')}
 
 ${designTokensBlock}

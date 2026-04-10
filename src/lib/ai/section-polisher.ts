@@ -158,6 +158,21 @@ export async function polishSectionsStream(
   let scanFrom = 0;
   let streamFailed = false;
 
+  // Temporary unhandledRejection guard — Google GenAI SDK can emit late
+  // internal promise rejections after the for-await catch block runs.
+  const googleRejectionHandler = (reason: unknown) => {
+    if (reason instanceof Error && (
+      reason.message?.includes('GoogleGenerativeAI') ||
+      reason.message?.includes('Failed to parse stream')
+    )) {
+      // Already logged in the catch block below — suppress duplicate crash
+      return;
+    }
+    // Re-throw any non-Google rejections so they're not silently swallowed
+    throw reason;
+  };
+  process.on('unhandledRejection', googleRejectionHandler);
+
   try {
     const stream = await model.stream(messages, { ...streamCallOpts, signal: combinedSignal });
 
@@ -215,6 +230,9 @@ export async function polishSectionsStream(
     const msg = streamError instanceof Error ? streamError.message : 'Unknown stream error';
     console.error(`[section-polisher] Stream error (${alreadyParsed}/${total} parsed):`, msg);
     streamFailed = true;
+  } finally {
+    // Always remove the temporary rejection guard
+    process.off('unhandledRejection', googleRejectionHandler);
   }
 
   // Final fallback: if streaming parser didn't capture everything, try full JSON parse

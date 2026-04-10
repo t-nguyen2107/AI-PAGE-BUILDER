@@ -10,6 +10,7 @@
 import type { ComponentData } from '@puckeditor/core';
 import type { DesignGuidance, ColorPalette } from './knowledge/design-knowledge';
 import { mapStylePriorityToDesignStyle } from './prompts/prompt-utils';
+import { normalizeComponentType } from './prompts/component-catalog';
 import { picsumUrl } from '../../features/ai/stock-images';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,78 +34,51 @@ const COMPONENT_DEFAULTS: Record<string, Props> = {
     padding: '128px',
     align: 'center',
     layout: 'centered',
-    animation: 'fade-up',
   },
   FeaturesGrid: {
     cardStyle: 'elevated',
     hoverEffect: 'lift',
     columns: 3,
-    animation: 'stagger',
   },
   TestimonialSection: {
     variant: 'grid',
-    animation: 'stagger-fade',
   },
   CTASection: {
     variant: 'gradient',
-    animation: 'fade-up',
   },
   PricingTable: {
     highlightedBadge: 'Most Popular',
-    animation: 'fade-up',
   },
-  FAQSection: {
-    animation: 'fade-up',
-  },
+  FAQSection: {},
   StatsSection: {
     animated: true,
     columns: 4,
     cardStyle: 'gradient',
-    animation: 'fade-up',
   },
   ContactForm: {
     showPhone: true,
     showCompany: true,
-    animation: 'fade-up',
   },
   Gallery: {
     columns: 3,
-    animation: 'stagger-fade',
   },
   ProductCards: {
     hoverEffect: 'lift',
     columns: 3,
-    animation: 'stagger',
   },
-  TeamSection: {
-    animation: 'stagger',
-  },
+  TeamSection: {},
   BlogSection: {
     columns: 3,
-    animation: 'stagger',
   },
-  FeatureShowcase: {
-    animation: 'fade-up',
-  },
-  LogoGrid: {
-    animation: 'stagger-fade',
-  },
-  NewsletterSignup: {
-    animation: 'fade-up',
-  },
-  SocialProof: {
-    animation: 'stagger-fade',
-  },
+  FeatureShowcase: {},
+  LogoGrid: {},
+  NewsletterSignup: {},
+  SocialProof: {},
   Banner: {
     variant: 'gradient',
-    animation: 'fade-up',
   },
-  ComparisonTable: {
-    animation: 'fade-up',
-  },
-  CountdownTimer: {
-    animation: 'fade-up',
-  },
+  ComparisonTable: {},
+  CountdownTimer: {},
   AnnouncementBar: {
     variant: 'gradient',
   },
@@ -155,6 +129,62 @@ const HERO_BACKGROUNDS: Record<string, string> = {
   'AI/chatbot':                picsumUrl('technology-robot', 1200, 800),
   'food/delivery':             picsumUrl('food-burger', 1200, 800),
   'music/podcast':             picsumUrl('people-concert', 1200, 800),
+  // ─── Generic keyword fallbacks (first-word match) ────────────────
+  'insurance':                 picsumUrl('hero-office-modern', 1200, 800),
+  'farm':                      picsumUrl('realestate-luxury-home', 1200, 800),
+  'agriculture':               picsumUrl('realestate-luxury-home', 1200, 800),
+  'automotive':                picsumUrl('hero-tech-dark', 1200, 800),
+  'consulting':                picsumUrl('hero-team-meeting', 1200, 800),
+  'manufacturing':             picsumUrl('hero-office-modern', 1200, 800),
+  'logistics':                 picsumUrl('hero-tech-dark', 1200, 800),
+  'pharmaceutical':            picsumUrl('medical-doctor', 1200, 800),
+  'energy':                    picsumUrl('hero-tech-dark', 1200, 800),
+  'mining':                    picsumUrl('hero-office-modern', 1200, 800),
+  'telecommunications':        picsumUrl('hero-tech-dark', 1200, 800),
+  'government':                picsumUrl('hero-office-modern', 1200, 800),
+  'automobile':                picsumUrl('hero-tech-dark', 1200, 800),
+  'pet':                       picsumUrl('lifestyle-spa', 1200, 800),
+  'veterinary':                picsumUrl('lifestyle-spa', 1200, 800),
+  'cleaning':                  picsumUrl('hero-office-modern', 1200, 800),
+  'plumbing':                  picsumUrl('hero-office-modern', 1200, 800),
+  'landscaping':               picsumUrl('realestate-luxury-home', 1200, 800),
+  'pest':                      picsumUrl('realestate-luxury-home', 1200, 800),
+  'moving':                    picsumUrl('hero-team-meeting', 1200, 800),
+  'roofing':                   picsumUrl('hero-office-modern', 1200, 800),
+  'painting':                  picsumUrl('hero-office-modern', 1200, 800),
+  'electrical':                picsumUrl('hero-tech-dark', 1200, 800),
+  'hvac':                      picsumUrl('hero-tech-dark', 1200, 800),
+  'security':                  picsumUrl('hero-tech-dark', 1200, 800),
+  'marketing':                 picsumUrl('hero-team-meeting', 1200, 800),
+  'accounting':                picsumUrl('hero-office-modern', 1200, 800),
+  'legal':                     picsumUrl('hero-office-modern', 1200, 800),
+  'dental':                    picsumUrl('medical-doctor', 1200, 800),
+  'therapy':                   picsumUrl('lifestyle-spa', 1200, 800),
+  'photography':               picsumUrl('hero-gradient-purple', 1200, 800),
+  'design':                    picsumUrl('hero-gradient-purple', 1200, 800),
+  'interior':                  picsumUrl('realestate-luxury-home', 1200, 800),
+  'tattoo':                    picsumUrl('hero-gradient-purple', 1200, 800),
+  'barber':                    picsumUrl('lifestyle-spa', 1200, 800),
+  'salon':                     picsumUrl('lifestyle-spa', 1200, 800),
+  'car':                       picsumUrl('hero-tech-dark', 1200, 800),
+  'dealer':                    picsumUrl('hero-tech-dark', 1200, 800),
+  'mortgage':                  picsumUrl('hero-office-modern', 1200, 800),
+  'financial':                 picsumUrl('hero-office-modern', 1200, 800),
+  'church':                    picsumUrl('people-friends', 1200, 800),
+  'school':                    picsumUrl('education-campus', 1200, 800),
+  'charity':                   picsumUrl('people-friends', 1200, 800),
+  'wedding':                   picsumUrl('people-friends', 1200, 800),
+  'gaming':                    picsumUrl('hero-tech-dark', 1200, 800),
+  'sports':                    picsumUrl('fitness-gym', 1200, 800),
+  'yoga':                      picsumUrl('lifestyle-spa', 1200, 800),
+  'meditation':                picsumUrl('lifestyle-spa', 1200, 800),
+  'wine':                      picsumUrl('food-meal-table', 1200, 800),
+  'brewery':                   picsumUrl('drink-coffee-shop', 1200, 800),
+  'grocery':                   picsumUrl('food-meal-table', 1200, 800),
+  'storage':                   picsumUrl('hero-office-modern', 1200, 800),
+  'transport':                 picsumUrl('hero-tech-dark', 1200, 800),
+  'recruiting':                picsumUrl('hero-team-meeting', 1200, 800),
+  'hr':                        picsumUrl('hero-team-meeting', 1200, 800),
 };
 
 // ─── Background Alternation Pattern ───────────────────────────────────────────
@@ -172,10 +202,10 @@ const SKIP_BG_TYPES = new Set([
 const BG_CYCLE = [
   undefined,       // 0: transparent (hero usually has its own bg)
   undefined,       // 1: transparent
-  'muted',         // 2: subtle contrast
+  'var(--muted)',  // 2: subtle contrast (CSS variable for valid inline style)
   undefined,       // 3: transparent
   undefined,       // 4: transparent
-  'muted',         // 5: subtle contrast
+  'var(--muted)',  // 5: subtle contrast
 ] as const;
 
 // ─── Core Engine ──────────────────────────────────────────────────────────────
@@ -226,8 +256,9 @@ export function applyComponentDefaults(
 
   // Phase 1: Per-component defaults + gradient injection + image fill
   let result = components.map((comp) => {
+    const type = normalizeComponentType(comp.type);
     const props = { ...comp.props } as Props;
-    const defaults = COMPONENT_DEFAULTS[comp.type];
+    const defaults = COMPONENT_DEFAULTS[type];
 
     // 1a. Merge per-type defaults (never overwrite)
     if (defaults) {
@@ -245,11 +276,11 @@ export function applyComponentDefaults(
 
     // 1c. Inject gradients from palette
     if (palette) {
-      injectGradients(comp.type, props, palette, ctx.businessType);
+      injectGradients(type, props, palette, ctx.businessType);
     }
 
     // 1c. Fill missing hero background
-    if (comp.type === 'HeroSection' && !props.backgroundUrl && ctx.businessType) {
+    if (type === 'HeroSection' && !props.backgroundUrl && ctx.businessType) {
       const bg = HERO_BACKGROUNDS[ctx.businessType]
         ?? Object.entries(HERO_BACKGROUNDS).find(([key]) => ctx.businessType!.toLowerCase().includes(key.split('/')[0]))?.[1];
       if (bg) {
@@ -259,37 +290,37 @@ export function applyComponentDefaults(
     }
 
     // 1d. Fill missing testimonial avatars
-    if (comp.type === 'TestimonialSection' && Array.isArray(props.testimonials)) {
+    if (type === 'TestimonialSection' && Array.isArray(props.testimonials)) {
       fillTestimonialAvatars(props.testimonials as Array<Record<string, unknown>>);
     }
 
     // 1e. Fill missing team member avatars
-    if (comp.type === 'TeamSection' && Array.isArray(props.members)) {
+    if (type === 'TeamSection' && Array.isArray(props.members)) {
       fillTeamAvatars(props.members as Array<Record<string, unknown>>);
     }
 
     // 1f. Fill missing gallery images
-    if (comp.type === 'Gallery' && (!Array.isArray(props.images) || (props.images as unknown[]).length === 0)) {
+    if (type === 'Gallery' && (!Array.isArray(props.images) || (props.images as unknown[]).length === 0)) {
       fillGalleryImages(props, ctx.businessType);
     }
 
     // 1g. Fill missing product card images
-    if (comp.type === 'ProductCards' && Array.isArray(props.products)) {
+    if (type === 'ProductCards' && Array.isArray(props.products)) {
       fillProductImages(props.products as Array<Record<string, unknown>>, ctx.businessType);
     }
 
     // 1h. Fill missing blog post images
-    if (comp.type === 'BlogSection' && Array.isArray(props.posts)) {
+    if (type === 'BlogSection' && Array.isArray(props.posts)) {
       fillBlogImages(props.posts as Array<Record<string, unknown>>, ctx.businessType);
     }
 
     // 1i. Fill missing FeatureShowcase image
-    if (comp.type === 'FeatureShowcase' && !props.imageUrl) {
+    if (type === 'FeatureShowcase' && !props.imageUrl) {
       props.imageUrl = getStockImage(ctx.businessType, 'showcase');
     }
 
     // 1j. HeroSection: map buttonText → ctaText, ensure ctaHref
-    if (comp.type === 'HeroSection') {
+    if (type === 'HeroSection') {
       if (props.buttonText && !props.ctaText) {
         props.ctaText = props.buttonText;
         delete props.buttonText;
@@ -302,18 +333,27 @@ export function applyComponentDefaults(
     // 1k. Clean up non-rendering props left by AI plan phase
     if (props.purpose) delete props.purpose;
 
+    // 1k2. CTASection: fill background image when variant needs visual punch
+    if (type === 'CTASection' && !props.backgroundUrl && props.variant === 'default' && ctx.businessType) {
+      const bg = HERO_BACKGROUNDS[ctx.businessType]
+        ?? Object.entries(HERO_BACKGROUNDS).find(([key]) => ctx.businessType!.toLowerCase().includes(key.split('/')[0]))?.[1];
+      if (bg) {
+        props.backgroundUrl = bg;
+      }
+    }
+
     // 1l. Fill missing HeaderNav content (logo, links, CTA)
-    if (comp.type === 'HeaderNav' && (!Array.isArray(props.links) || props.links.length === 0)) {
+    if (type === 'HeaderNav' && (!Array.isArray(props.links) || props.links.length === 0)) {
       fillHeaderNavContent(props, ctx.businessType, ctx.businessName);
     }
 
     // 1m. Fill missing FooterSection content (logo, linkGroups, copyright)
-    if (comp.type === 'FooterSection' && (!Array.isArray(props.linkGroups) || props.linkGroups.length === 0)) {
+    if (type === 'FooterSection' && (!Array.isArray(props.linkGroups) || props.linkGroups.length === 0)) {
       fillFooterContent(props, ctx.businessType, ctx.businessName);
     }
 
     // 1n. Fix TestimonialSection field names (AI often outputs text/name/avatar instead of quote/author/avatarUrl)
-    if (comp.type === 'TestimonialSection' && Array.isArray(props.testimonials)) {
+    if (type === 'TestimonialSection' && Array.isArray(props.testimonials)) {
       for (const t of props.testimonials as Array<Record<string, unknown>>) {
         if (t.text && !t.quote) { t.quote = t.text; delete t.text; }
         if (t.name && !t.author) { t.author = t.name; delete t.name; }
@@ -323,25 +363,237 @@ export function applyComponentDefaults(
     }
 
     // 1o. Fill missing LogoGrid logos with text-based defaults
-    if (comp.type === 'LogoGrid' && (!Array.isArray(props.logos) || (props.logos as unknown[]).length === 0)) {
+    if (type === 'LogoGrid' && (!Array.isArray(props.logos) || (props.logos as unknown[]).length === 0)) {
       props.logos = fillLogoGridDefaults(ctx.businessName);
     }
 
     // 1o. Fill missing TestimonialSection testimonials
-    if (comp.type === 'TestimonialSection' && (!Array.isArray(props.testimonials) || props.testimonials.length === 0)) {
+    if (type === 'TestimonialSection' && (!Array.isArray(props.testimonials) || props.testimonials.length === 0)) {
       fillTestimonialContent(props);
     }
 
     // 1p. Fill missing ContactForm fields
-    if (comp.type === 'ContactForm' && !props.description) {
+    if (type === 'ContactForm' && !props.description) {
       props.description = 'We\'d love to hear from you. Reach out with any questions.';
     }
 
-    return { type: comp.type, props } as unknown as ComponentData;
+    // 1q. FeaturesGrid: auto-fix columns when count doesn't divide evenly
+    //     4 items with 3 cols = ugly 3+1 layout → use 4 or 2 cols instead
+    if (type === 'FeaturesGrid' && Array.isArray(props.features)) {
+      const count = (props.features as unknown[]).length;
+      if (count > 0 && typeof props.columns === 'number' && count % props.columns !== 0) {
+        // Prefer 4 cols for 4 items, 2 cols for 2 items, else match count
+        if (count === 4) props.columns = 4;
+        else if (count === 2) props.columns = 2;
+        else if (count <= 4) props.columns = count;
+      }
+      // Fill missing feature icons with default check icon
+      for (const f of props.features as Array<Record<string, unknown>>) {
+        if (!f.icon && !f.imageUrl) {
+          f.icon = 'check_circle';
+        }
+      }
+    }
+
+    return { type, props } as unknown as ComponentData;
   });
 
   // Phase 2: Alternate backgrounds across content sections
   result = alternateBackgrounds(result);
+
+  // Phase 3: Enforce structural rhythm (avoid consecutive same-layout sections)
+  result = enforceStructuralRhythm(result);
+
+  // Phase 4: Prevent text-fatigue (break up consecutive text-heavy sections)
+  result = preventTextFatigue(result);
+
+  return result;
+}
+
+// ─── Phase 3: Structural Rhythm ──────────────────────────────────────────────
+
+type LayoutFamily = 'centered' | 'split' | 'grid' | 'full-width' | 'structural';
+
+const LAYOUT_FAMILY_DEFAULTS: Record<string, LayoutFamily> = {
+  HeroSection: 'centered',
+  FeaturesGrid: 'grid',
+  PricingTable: 'grid',
+  TestimonialSection: 'grid',
+  CTASection: 'centered',
+  FAQSection: 'centered',
+  StatsSection: 'grid',
+  TeamSection: 'grid',
+  BlogSection: 'grid',
+  LogoGrid: 'grid',
+  ContactForm: 'centered',
+  FeatureShowcase: 'split',
+  Gallery: 'grid',
+  NewsletterSignup: 'centered',
+  ComparisonTable: 'grid',
+  ProductCards: 'grid',
+  SocialProof: 'grid',
+  CountdownTimer: 'centered',
+  Banner: 'full-width',
+  AnnouncementBar: 'structural',
+  HeaderNav: 'structural',
+  FooterSection: 'structural',
+  TextBlock: 'centered',
+  ImageBlock: 'full-width',
+  Spacer: 'structural',
+};
+
+/** Resolve the actual layout family from component type + props. */
+function resolveLayoutFamily(type: string, props: Props): LayoutFamily {
+  if (SKIP_BG_TYPES.has(type)) return 'structural';
+
+  switch (type) {
+    case 'HeroSection':
+      if (props.backgroundUrl || props.videoUrl) return 'full-width';
+      if (props.layout === 'split-left' || props.layout === 'split-right') return 'split';
+      return 'centered';
+    case 'CTASection':
+      if (props.layout === 'split') return 'split';
+      if (props.backgroundUrl) return 'full-width';
+      return 'centered';
+    default:
+      return LAYOUT_FAMILY_DEFAULTS[type] ?? 'centered';
+  }
+}
+
+/** Mutations to break same-layout monotony. */
+const LAYOUT_MUTATIONS: Record<string, Array<(props: Props) => void>> = {
+  HeroSection: [
+    (p) => { if (!p.layout || p.layout === 'centered') p.layout = 'split-left'; },
+    (p) => { if (!p.layout || p.layout === 'centered') p.layout = 'split-right'; },
+  ],
+  CTASection: [
+    (p) => { if (!p.layout || p.layout === 'centered') p.layout = 'split'; },
+    (p) => { if (p.layout === 'centered') { p.variant = 'dark'; } },
+  ],
+  FeaturesGrid: [
+    (p) => { if (p.columns === 3) p.columns = 4; else if (p.columns === 4) p.columns = 3; },
+    (p) => { p.cardStyle = p.cardStyle === 'elevated' ? 'flat' : 'elevated'; },
+  ],
+  FeatureShowcase: [
+    (p) => { p.imagePosition = p.imagePosition === 'left' ? 'right' : 'left'; },
+  ],
+  StatsSection: [
+    (p) => { p.cardStyle = p.cardStyle === 'gradient' ? 'bordered' : 'gradient'; },
+    (p) => { if (p.columns === 4) p.columns = 3; else if (p.columns === 3) p.columns = 4; },
+  ],
+  PricingTable: [
+    (_p) => { /* pricing layout is fixed, use bg contrast instead */ },
+  ],
+  TestimonialSection: [
+    (_p) => { /* testimonial grid is fixed, rely on bg contrast */ },
+  ],
+  BlogSection: [
+    (p) => { if (p.columns === 3) p.columns = 2; else if (p.columns === 2) p.columns = 3; },
+  ],
+};
+
+/**
+ * Detect consecutive sections with the same layout family and mutate
+ * the middle one to create visual rhythm. Zero LLM cost.
+ */
+function enforceStructuralRhythm(components: ComponentData[]): ComponentData[] {
+  // Build layout family map
+  const families = components.map((comp) => {
+    const props = comp.props as Props;
+    return resolveLayoutFamily(comp.type, props);
+  });
+
+  // Find runs of same-family content sections (length >= 2)
+  const result = components.map((comp) => ({ ...comp, props: { ...(comp.props as Props) } })) as unknown as ComponentData[];
+
+  for (let i = 0; i < result.length; i++) {
+    if (families[i] === 'structural') continue;
+
+    // Look ahead: is this the start of a 3+ run of same layout?
+    if (i + 2 < result.length
+      && families[i] !== 'structural'
+      && families[i] === families[i + 1]
+      && families[i + 1] === families[i + 2]) {
+      // Mutate the middle section (i+1)
+      const midComp = result[i + 1];
+      const midType = midComp.type;
+      const midProps = midComp.props as Props;
+      const mutations = LAYOUT_MUTATIONS[midType];
+
+      if (mutations && mutations.length > 0) {
+        // Pick a mutation that actually changes something
+        const mutationIndex = (i + 1) % mutations.length;
+        mutations[mutationIndex](midProps);
+        // Skip past this run
+        i += 2;
+      }
+    }
+
+    // Also check for 2 consecutive same-family (mutate the second if it has mutations)
+    if (i + 1 < result.length
+      && families[i] !== 'structural'
+      && families[i] === families[i + 1]) {
+      const secComp = result[i + 1];
+      const secType = secComp.type;
+      const secProps = secComp.props as Props;
+      const mutations = LAYOUT_MUTATIONS[secType];
+
+      if (mutations && mutations.length > 0) {
+        const mutationIndex = i % mutations.length;
+        mutations[mutationIndex](secProps);
+        i += 1;
+      }
+    }
+  }
+
+  return result;
+}
+
+// ─── Phase 4: Text-Fatigue Prevention ────────────────────────────────────────
+
+const TEXT_HEAVY_TYPES = new Set([
+  'FAQSection', 'TextBlock', 'RichTextBlock', 'BlogSection', 'ComparisonTable',
+]);
+
+/**
+ * Detect consecutive text-heavy sections and make them more visually varied.
+ * Does NOT insert new sections (preserves AI's structural intent).
+ */
+function preventTextFatigue(components: ComponentData[]): ComponentData[] {
+  const result = components.map((comp) => ({ ...comp, props: { ...(comp.props as Props) } })) as unknown as ComponentData[];
+
+  let consecutiveText = 0;
+
+  for (let i = 0; i < result.length; i++) {
+    const comp = result[i];
+    const props = comp.props as Props;
+
+    if (SKIP_BG_TYPES.has(comp.type)) continue;
+
+    if (TEXT_HEAVY_TYPES.has(comp.type)) {
+      consecutiveText++;
+
+      // After 2 consecutive text-heavy sections, apply visual breaks
+      if (consecutiveText >= 2) {
+        // Strategy 1: Force visual card style on blog sections
+        if (comp.type === 'BlogSection' && props.columns !== 2) {
+          props.columns = 2;
+        }
+
+        // Strategy 2: Give text sections contrasting backgrounds
+        if (!props.bgColor) {
+          props.bgColor = consecutiveText % 2 === 0 ? 'var(--muted)' : undefined;
+        }
+
+        // Strategy 3: Limit FAQ items to prevent text walls
+        if (comp.type === 'FAQSection' && Array.isArray(props.items) && props.items.length > 5) {
+          props.items = (props.items as unknown[]).slice(0, 5);
+        }
+      }
+    } else {
+      consecutiveText = 0;
+    }
+  }
 
   return result;
 }

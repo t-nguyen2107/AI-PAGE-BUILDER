@@ -3,11 +3,9 @@ import { aiResponseJsonSchema } from './schemas/ai-response.schema';
 import { AIAction } from '@/types/enums';
 import type { AIGenerationResponse } from '@/types/ai';
 import type { ComponentData } from '@puckeditor/core';
+import { VALID_COMPONENT_TYPES, normalizeComponentType } from './prompts/component-catalog';
 
 const VALID_ACTIONS = new Set<string>(Object.values(AIAction));
-
-/** Known Puck component type names */
-import { VALID_COMPONENT_TYPES } from './prompts/component-catalog';
 
 /**
  * Wrap a chat model with structured output enforcement.
@@ -83,7 +81,7 @@ export function validateOutput(raw: unknown): {
       };
     }
     const c = comp as Record<string, unknown>;
-    const type = typeof c.type === 'string' ? c.type : 'TextBlock';
+    let type = typeof c.type === 'string' ? c.type : 'TextBlock';
     const props = (c.props as Record<string, unknown>) ?? {};
 
     // Ensure id exists
@@ -98,8 +96,11 @@ export function validateOutput(raw: unknown): {
       }
     }
 
-    // Warn about unknown types but don't reject
-    if (!VALID_COMPONENT_TYPES.has(type)) {
+    // Normalize component type (fixes AI mistakes like "ContentSection" → "TextBlock")
+    const normalizedType = normalizeComponentType(type);
+    if (normalizedType !== type && VALID_COMPONENT_TYPES.has(normalizedType)) {
+      type = normalizedType;
+    } else if (!VALID_COMPONENT_TYPES.has(type)) {
       console.warn(`[output] Unknown component type: "${type}"`);
     }
 

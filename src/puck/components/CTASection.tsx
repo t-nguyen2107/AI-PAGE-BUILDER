@@ -121,7 +121,11 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
         <div className={isSplit ? "order-2" : ""}>
           <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
           {subtext && (
-            <p className={`text-lg opacity-80 mb-8 max-w-xl mx-auto md:mx-0 ${ds.typography.body}`}>{subtext}</p>
+            <p className={`text-lg opacity-80 mb-8 max-w-xl mx-auto md:mx-auto leading-relaxed ${
+              hasBg || variant === "gradient" || variant === "dark"
+                ? ""
+                : ds.typography.body
+            }`}>{subtext}</p>
           )}
           <div className={`flex ${isSplit ? "justify-start" : "justify-center"} gap-4 flex-wrap mb-4`}>
             <a

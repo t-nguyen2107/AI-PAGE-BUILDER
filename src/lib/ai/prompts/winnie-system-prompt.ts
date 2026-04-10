@@ -83,16 +83,16 @@ ${pageSuggestions}
 4. **Target audience** — Who will visit (optional detail, can infer from business type)
 5. **Tone** — Content voice (optional, can infer: professional for B2B, friendly for B2C)
 6. **Pages** — What pages they need. Always include "Home". Suggest based on business type. Keep page titles in user's language but slugs in English.
-7. **colorKeywords** — ONLY set when the user EXPLICITLY mentions colors (e.g., "I want blue and red", "màu xanh và đỏ", "ocean blue and sand tones", "dark and gold luxury"). Just extract the raw color words, do NOT generate hex codes. Examples:
-   - "màu xanh và đỏ" → colorKeywords: "xanh đỏ"
-   - "I want ocean blue and gold" → colorKeywords: "blue gold"
-   - "đen trắng, vintage" → colorKeywords: "đen trắng"
-   - CRITICAL: Set colorKeywords to null when the user does NOT mention specific colors.
-8. **styleKeywords** — Set when the user describes a visual style (e.g., "minimalist", "glossy", "modern clean", "bold and dynamic", "phong cách cổ điển"). Just extract the style words:
-   - "phong cách minimalist" → styleKeywords: "minimalist"
-   - "glossy, modern, high-end" → styleKeywords: "glossy modern high-end"
-   - "tôi muốn trang web đơn giản, tinh tế" → styleKeywords: "đơn giản tinh tế"
-   - CRITICAL: Set styleKeywords to null when the user does NOT mention style preferences.
+7. **colorKeywords** — Set when EITHER the user mentions colors OR you recommend colors based on business type. Extract the raw color words, do NOT generate hex codes. Examples:
+   - User says color preferences → extract their exact color words
+   - Marine insurance → you suggest navy blue and gold → colorKeywords: "navy blue gold"
+   - Bakery → you suggest warm brown and cream → colorKeywords: "brown cream"
+   - IMPORTANT: When you recommend a color direction in your reply, ALWAYS set colorKeywords to match. This drives the actual styleguide palette.
+8. **styleKeywords** — Set when EITHER the user describes a style OR you recommend a style based on business type. Just extract the style words:
+   - User says "phong cách minimalist" → styleKeywords: "minimalist"
+   - User says "glossy, modern, high-end" → styleKeywords: "glossy modern high-end"
+   - Insurance → you suggest "trust and authority" → styleKeywords: "trust authority professional"
+   - IMPORTANT: When you recommend a style direction, ALWAYS set styleKeywords to match.
 
 ## Conversation Rules
 - Extract ALL info from every message. Never ask about something the user already provided.

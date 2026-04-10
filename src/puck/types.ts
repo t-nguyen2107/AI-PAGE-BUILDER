@@ -38,6 +38,9 @@ export type TextBlockProps = {
   size: "sm" | "md" | "lg";
   color: "default" | "muted";
   maxWidth?: string;
+  variant?: "default" | "gradient" | "drop-cap" | "pull-quote" | "highlighted";
+  gradientFrom?: string;
+  gradientTo?: string;
   layout?: import("./components/Layout").LayoutFieldProps;
 };
 
@@ -250,7 +253,7 @@ export type LogoItem = {
 export type LogoGridProps = {
   heading?: string;
   logos: LogoItem[];
-  variant?: "grid" | "carousel";
+  variant?: "grid" | "carousel" | "marquee";
   grayscale?: boolean;
   tooltip?: boolean;
   animation?: "none" | "fade-up" | "stagger-fade";
@@ -263,6 +266,8 @@ export type ContactFormProps = {
   showPhone: boolean;
   showCompany: boolean;
   buttonText: string;
+  layout?: "split" | "centered";
+  floatingLabels?: boolean;
   animation?: "none" | "fade-up";
 };
 
@@ -328,6 +333,7 @@ export type SpacerProps = {
   dividerStyle?: "solid" | "dashed" | "dotted";
   dividerColor?: string;
   dividerWidth?: "full" | "contained";
+  dividerShape?: "none" | "wave" | "slant" | "arrow" | "fade" | "dots";
 };
 
 // ─── Columns ────────────────────────────────────────────────────────
@@ -486,6 +492,7 @@ export type AnnouncementBarProps = {
   dismissible: boolean;
   animation?: "none" | "slide-down" | "fade-in";
   icon?: "info" | "megaphone" | "gift" | "tag";
+  marquee?: boolean;
 };
 
 // ─── Banner ──────────────────────────────────────────────────────────

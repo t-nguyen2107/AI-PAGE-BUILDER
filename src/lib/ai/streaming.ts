@@ -631,13 +631,20 @@ export function createMakeupStream(input: string, options: MakeupStreamOptions =
             if (emittedSections.has(index)) return;
             emittedSections.add(index);
             const skelId = skeletonIds[index];
-            const component: ComponentData = {
+            const rawComp: ComponentData = {
               type: result.type,
               props: { id: skelId, ...result.props },
             };
+            // Apply defaults per-component so progressive render has images/avatars
+            const [polished] = applyComponentDefaults([rawComp], {
+              businessType: options.businessType,
+              businessName: options.businessName,
+              designGuidance: options.designGuidance,
+              styleguideColors: options.styleguideData?.colors,
+            });
             send({
               type: 'component_stream',
-              component,
+              component: polished,
               componentIndex: index,
               componentTotal: total,
               replacesSkelId: skelId,

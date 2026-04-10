@@ -40,6 +40,8 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
 };
 
+const bounceIcons = new Set(["megaphone", "gift"]);
+
 export function AnnouncementBar(props: AnnouncementBarProps & ComponentMeta) {
   const {
     message,
@@ -50,6 +52,7 @@ export function AnnouncementBar(props: AnnouncementBarProps & ComponentMeta) {
     dismissible = false,
     animation = "fade-in",
     icon,
+    marquee = false,
     className,
     ...metaRest
   } = props;
@@ -70,50 +73,133 @@ export function AnnouncementBar(props: AnnouncementBarProps & ComponentMeta) {
         ? "animate-[fadeIn_0.4s_ease-out_both]"
         : "";
 
+  const iconAnimated = icon && bounceIcons.has(icon);
+
+  const ctaLink = ctaText && ctaHref ? (
+    <a
+      href={ctaHref}
+      className="announcement-cta text-sm font-semibold relative inline-block group"
+    >
+      {ctaText}
+    </a>
+  ) : null;
+
+  const iconElement = icon && iconMap[icon] ? (
+    <span className={`shrink-0 ${iconAnimated ? "animate-bounce" : ""}`}>
+      {iconMap[icon]}
+    </span>
+  ) : null;
+
+  const messageContent = (
+    <>
+      {iconElement}
+      <p className="text-sm font-medium whitespace-nowrap">{message}</p>
+      {ctaLink}
+    </>
+  );
+
   return (
     <>
-      {(animation === "slide-down" || animation === "fade-in") && (
-        <style>{`
-          @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-100%); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-        `}</style>
-      )}
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-100%); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes marquee {
+          from { transform: translateX(0%); }
+          to { transform: translateX(-50%); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        .announcement-marquee-track {
+          display: flex;
+          animation: marquee 25s linear infinite;
+        }
+        .announcement-bar:hover .announcement-marquee-track {
+          animation-play-state: paused;
+        }
+        .announcement-bar:hover .announcement-shimmer {
+          animation-play-state: paused;
+        }
+        .announcement-shimmer {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          overflow: hidden;
+        }
+        .announcement-shimmer::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255,255,255,0.15) 50%,
+            transparent 100%
+          );
+          animation: shimmer 3s ease-in-out infinite;
+        }
+        .announcement-cta::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: currentColor;
+          transition: width 0.25s ease;
+        }
+        .announcement-cta:hover::after {
+          width: 100%;
+        }
+      `}</style>
       <div
-        className={`w-full py-2 px-4 ${bgClass} ${animClass} ${className ?? ""}`}
+        className={`announcement-bar w-full py-2 px-4 overflow-hidden relative ${bgClass} ${animClass} ${className ?? ""}`}
         style={{ ...customBgStyle, ...extractStyleProps(metaRest) }}
       >
-        <div className="flex items-center justify-center gap-4 max-w-7xl mx-auto relative">
-          {icon && iconMap[icon] && (
-            <span className="shrink-0">{iconMap[icon]}</span>
-          )}
-          <p className="text-sm font-medium">{message}</p>
-          {ctaText && ctaHref && (
-            <a
-              href={ctaHref}
-              className="text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition"
-            >
-              {ctaText}
-            </a>
-          )}
-          {dismissible && (
-            <button
-              onClick={() => setDismissed(true)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition"
-              aria-label="Dismiss"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          )}
-        </div>
+        {marquee && <div className="announcement-shimmer" />}
+
+        {marquee ? (
+          <div className="flex items-center overflow-hidden" style={{ maskImage: "linear-gradient(90deg, transparent, black 8%, black 92%, transparent)" }}>
+            <div className="announcement-marquee-track">
+              <div className="flex items-center gap-4 shrink-0 pr-4">
+                {messageContent}
+              </div>
+              <div className="flex items-center gap-4 shrink-0 pr-4" aria-hidden="true">
+                {messageContent}
+              </div>
+              <div className="flex items-center gap-4 shrink-0 pr-4" aria-hidden="true">
+                {messageContent}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-4 max-w-7xl mx-auto relative">
+            {messageContent}
+          </div>
+        )}
+
+        {dismissible && (
+          <button
+            onClick={() => setDismissed(true)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 hover:bg-white/20 hover:scale-110"
+            aria-label="Dismiss"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
       </div>
     </>
   );

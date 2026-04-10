@@ -12,7 +12,7 @@
  */
 
 /** Valid Puck component type names */
-import { VALID_COMPONENT_TYPES } from './component-catalog';
+import { VALID_COMPONENT_TYPES, normalizeComponentType } from './component-catalog';
 
 /** Validated component from AI response */
 export interface PuckComponentRaw {
@@ -65,19 +65,10 @@ export function validateTemplateResponse(raw: unknown): { data: PuckComponentPla
       return { data: null, error: `components[${i}].type is required` };
     }
 
-    let componentType: string = c.type;
+    let componentType: string = normalizeComponentType(c.type);
 
     if (!VALID_COMPONENT_TYPES.has(componentType)) {
-      // Try fuzzy match (case-insensitive, strip spaces/special chars)
-      const normalized = componentType.replace(/[\s_-]/g, '').toLowerCase();
-      const match = [...VALID_COMPONENT_TYPES].find(
-        t => t.replace(/[\s_-]/g, '').toLowerCase() === normalized,
-      );
-      if (match) {
-        componentType = match; // Auto-correct to valid name
-      } else {
-        return { data: null, error: `Unknown component type "${componentType}" at index ${i}. Valid types: ${[...VALID_COMPONENT_TYPES].join(', ')}` };
-      }
+      return { data: null, error: `Unknown component type "${c.type}" at index ${i}. Valid types: ${[...VALID_COMPONENT_TYPES].join(', ')}` };
     }
 
     // props is optional but must be an object if present
@@ -219,9 +210,13 @@ export function validateSingleComponent(raw: unknown): { data: PuckComponentRaw 
     return { data: null, error: 'Component must have a non-empty "type" field' };
   }
 
-  if (!VALID_COMPONENT_TYPES.has(obj.type)) {
+  const normalizedType = normalizeComponentType(obj.type as string);
+  if (!VALID_COMPONENT_TYPES.has(normalizedType)) {
     console.warn(`[template-schema] Unknown component type "${obj.type}" in single validation`);
   }
+
+  // Use normalized type if valid, otherwise keep original
+  const finalType: string = VALID_COMPONENT_TYPES.has(normalizedType) ? normalizedType : (obj.type as string);
 
   const props = obj.props !== undefined ? obj.props : {};
   if (typeof props !== 'object' || props === null) {
@@ -230,7 +225,7 @@ export function validateSingleComponent(raw: unknown): { data: PuckComponentRaw 
 
   return {
     data: {
-      type: obj.type,
+      type: finalType,
       props: props as Record<string, unknown>,
     },
     error: null,

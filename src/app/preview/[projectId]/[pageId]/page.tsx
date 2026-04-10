@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PreviewPageContent } from "./PreviewPageContent";
 import { convertTreeDataToPuck } from "@/puck/migration";
 import type { StyleguideColors } from "@/puck/inspector/StyleguideContext";
+import { normalizePuckData } from "@/lib/ai/normalize-puck-data";
 
 // ISR: revalidate every 60 seconds
 export const revalidate = 60;
@@ -89,12 +90,15 @@ export default async function PreviewPage(props: PreviewPageProps) {
 
   if (!puckData) notFound();
 
+  // Normalize: fix invalid types, wrong prop names, bad nested shapes
+  const finalData = normalizePuckData(puckData!);
+
   // Fetch styleguide colors for CSS variable injection
   const styleguideColors = await getStyleguideColors(projectId);
 
   return (
     <PreviewPageContent
-      data={puckData}
+      data={finalData}
       projectId={projectId}
       pageId={pageId}
       styleguideColors={styleguideColors}

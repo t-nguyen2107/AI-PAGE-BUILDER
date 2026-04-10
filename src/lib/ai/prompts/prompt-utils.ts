@@ -5,6 +5,7 @@
  */
 
 import type { DesignGuidance } from '../knowledge/design-knowledge';
+import { COMPOSITION_RULES } from '../knowledge/design-knowledge';
 import type { DesignStyle } from '../../../puck/lib/design-styles';
 
 // ─── Style Priority → DesignStyle mapping ──────────────────────────────
@@ -98,9 +99,27 @@ export function deriveGradientPair(colors: ColorPalette): { from: string; to: st
 // ---------------------------------------------------------------------------
 
 /**
- * System-level design rules injected at the system prompt level.
- * These apply to ALL sections and should NOT be repeated per-section.
- * Token Rules and UX Design Rules are now at system prompt level via this function.
+ * Lightweight content-quality rules for polish/makeup mode.
+ * Visual styling (animation, gradients, card styles, backgrounds) is handled
+ * by defaults-engine post-processing — zero cost, deterministic.
+ *
+ * Use this instead of buildSystemLevelDesignRules() in polish prompts.
+ * ~60 tokens vs ~390 tokens (85% reduction).
+ */
+export function buildPolishRules(): string {
+  return `### Content Rules
+- Specific compelling headings (NO "Welcome", "About Us"). Concrete descriptions 2-3 sentences max.
+- Action verb CTAs ("Get Started", "Book a Demo").
+- NO generic clichés ("world-class", "innovative solutions"), NO placeholder text.
+- Minimum 4.5:1 text contrast. Descriptive alt text on all images.`;
+}
+
+/**
+ * System-level design rules for FULL AI mode (modify, delete, unknown intent).
+ * These apply when the AI makes design/layout decisions, not in polish mode.
+ *
+ * Do NOT use this in polish/makeup prompts — visual styling is auto-applied
+ * by defaults-engine (animation, gradients, card styles, backgrounds).
  */
 export function buildSystemLevelDesignRules(): string {
   return `### Token Rules
@@ -118,7 +137,9 @@ export function buildSystemLevelDesignRules(): string {
 - Animation: Duration 150-300ms transitions, 500-700ms reveals. Use transform (translateY, scale) for hover, NEVER animate width/height. Stagger delay 80-120ms between elements.
 - Touch targets: Minimum 44×44px. Card padding 24-32px, border-radius 12-16px.
 - Content: Specific compelling headings (NO "Welcome", "About Us"). Concrete descriptions 2-3 sentences max. Action verb CTAs ("Get Started", "Book a Demo").
-- Anti-Patterns: NO placeholder text, NO generic clichés ("world-class", "innovative solutions"), NO emoji as icons in professional contexts.`;
+- Anti-Patterns: NO placeholder text, NO generic clichés ("world-class", "innovative solutions"), NO emoji as icons in professional contexts.
+
+${COMPOSITION_RULES}`;
 }
 
 /**

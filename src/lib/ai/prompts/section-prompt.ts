@@ -3,7 +3,7 @@ import { COMPONENT_CATALOG, type ComponentInfo } from './component-catalog';
 import type { DesignGuidance } from '../knowledge/design-knowledge';
 import { STOCK_IMAGES, BUSINESS_STOCK_MAP, stockPath } from '@/features/ai/stock-images';
 import type { StockCategory } from '@/features/ai/stock-images';
-import { buildUnifiedDesignTokensBlock, buildSystemLevelDesignRules, type MinimalStyleguideTokens } from './prompt-utils';
+import { buildUnifiedDesignTokensBlock, buildSystemLevelDesignRules, buildPolishRules, type MinimalStyleguideTokens } from './prompt-utils';
 
 export interface SectionPromptContext {
   userPrompt: string;
@@ -129,8 +129,8 @@ export function buildSectionPrompt(
 ): ChatPromptTemplate {
   const { position, businessType, designGuidance, styleguideData, designContext, isMakeup } = context;
 
-  // Utilize the unified prompt utils for robust design/styleguide injection
-  const designTokensBlock = buildUnifiedDesignTokensBlock(designGuidance, styleguideData);
+  // Design tokens only needed in full AI mode — polish mode skips them (defaults-engine handles visual styling)
+  const designTokensBlock = !isMakeup ? buildUnifiedDesignTokensBlock(designGuidance, styleguideData) : '';
 
   const stockImageHint = buildBatchStockImageHint(businessType, [sectionType]);
 
@@ -161,7 +161,7 @@ ${catalogEntry.recommendedDefaults ? `Recommended Defaults: ${catalogEntry.recom
 
 ${designTokensBlock}
 
-${buildSystemLevelDesignRules()}
+${isMakeup ? buildPolishRules() : buildSystemLevelDesignRules()}
 
 ${designContext ? `## Design Intelligence\n${designContext}\n` : ''}
 ## Response Format
@@ -212,7 +212,8 @@ export function buildBatchSectionPrompt(
   context: BatchSectionPromptContext,
 ): ChatPromptTemplate {
   const { businessType, businessName, designGuidance, styleguideData, designContext, isMakeup } = context;
-  const designTokensBlock = buildUnifiedDesignTokensBlock(designGuidance, styleguideData);
+  // Design tokens only needed in full AI mode — polish mode skips them (defaults-engine handles visual styling)
+  const designTokensBlock = !isMakeup ? buildUnifiedDesignTokensBlock(designGuidance, styleguideData) : '';
   const sectionTypes = sections.map(s => s.type);
   const stockImageHint = buildBatchStockImageHint(businessType, sectionTypes);
   const total = sections.length;
@@ -260,7 +261,7 @@ ${contentPropsList}
 
 ${designTokensBlock}
 
-${buildSystemLevelDesignRules()}
+${isMakeup ? buildPolishRules() : buildSystemLevelDesignRules()}
 
 ${designContext ? `## Design Intelligence\n${designContext}\n` : ''}
 ## Stock Image Library (use EXACT paths — do NOT invent filenames)

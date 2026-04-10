@@ -13,13 +13,17 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
     variant = "grid",
     lightbox = false,
     hoverEffect = "none",
-    animation = "fade-up",
+    animation = "stagger-fade",
     className,
     ...metaRest
   } = props;
 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const anim = useScrollAnimation(animation);
+
+  // Stagger delay for grid/masonry children
+  const staggerDelay = (i: number) =>
+    animation === "stagger-fade" ? { transitionDelay: `${i * 80}ms` } : {};
 
   // ─── Hover wrapper classes ──────────────────────────────────────
   function getImageWrapperClass(): string {
@@ -133,7 +137,7 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
     variant === "masonry" ? (
       <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
         {images.map((img, i) => (
-          <div key={i} className="break-inside-avoid">
+          <div key={i} className="break-inside-avoid transition-all duration-500" style={staggerDelay(i)}>
             <ImageCard img={img} index={i} />
           </div>
         ))}
@@ -161,7 +165,7 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
         } ${columns >= 4 ? "xl:grid-cols-4" : ""}`}
       >
         {images.map((img, i) => (
-          <figure key={i}>
+          <figure key={i} className="transition-all duration-500" style={staggerDelay(i)}>
             <ImageCard img={img} index={i} />
           </figure>
         ))}

@@ -230,3 +230,132 @@ export const COMPONENT_CATALOG: Record<string, ComponentInfo> = {
 
 /** Set of all valid Puck component type names — derived from catalog keys. */
 export const VALID_COMPONENT_TYPES: ReadonlySet<string> = new Set(Object.keys(COMPONENT_CATALOG));
+
+/**
+ * AI often generates slight variations of component type names.
+ * This map normalizes common mistakes to the correct types.
+ */
+export const COMPONENT_TYPE_ALIASES: Record<string, string> = {
+  // Pricing variants
+  PricingSection: "PricingTable",
+  Pricing: "PricingTable",
+  PricingCard: "PricingTable",
+  PriceTable: "PricingTable",
+  PricingPlan: "PricingTable",
+  // Feature variants
+  FeatureSection: "FeaturesGrid",
+  FeatureGrid: "FeaturesGrid",
+  FeaturesSection: "FeaturesGrid",
+  FeatureCards: "FeaturesGrid",
+  FeatureShowcaseSection: "FeatureShowcase",
+  // Testimonial variants
+  TestimonialsSection: "TestimonialSection",
+  Testimonials: "TestimonialSection",
+  ReviewSection: "TestimonialSection",
+  ReviewsSection: "TestimonialSection",
+  // CTA variants
+  CTA: "CTASection",
+  CtaSection: "CTASection",
+  CallToAction: "CTASection",
+  CallToActionSection: "CTASection",
+  // Hero variants
+  Hero: "HeroSection",
+  HeroBanner: "HeroSection",
+  HeroSection: "HeroSection",
+  // FAQ variants
+  FAQ: "FAQSection",
+  FaqSection: "FAQSection",
+  QAndA: "FAQSection",
+  // Stats variants
+  StatsSection: "StatsSection",
+  StatisticsSection: "StatsSection",
+  CounterSection: "StatsSection",
+  NumbersSection: "StatsSection",
+  // Team variants
+  TeamSection: "TeamSection",
+  TeamGrid: "TeamSection",
+  TeamMembers: "TeamSection",
+  OurTeam: "TeamSection",
+  // Blog variants
+  Blog: "BlogSection",
+  BlogGrid: "BlogSection",
+  PostsSection: "BlogSection",
+  // Contact variants
+  ContactSection: "ContactForm",
+  Contact: "ContactForm",
+  ContactUs: "ContactForm",
+  // Gallery variants
+  GallerySection: "Gallery",
+  ImageGallery: "Gallery",
+  PhotoGallery: "Gallery",
+  // Newsletter variants
+  NewsletterSection: "NewsletterSignup",
+  Newsletter: "NewsletterSignup",
+  EmailSignup: "NewsletterSignup",
+  SubscribeSection: "NewsletterSignup",
+  // Logo variants
+  LogoSection: "LogoGrid",
+  PartnersSection: "LogoGrid",
+  ClientLogos: "LogoGrid",
+  // Social proof variants
+  SocialProofSection: "SocialProof",
+  TrustSection: "SocialProof",
+  // Comparison variants
+  ComparisonSection: "ComparisonTable",
+  CompareSection: "ComparisonTable",
+  // Product variants
+  ProductSection: "ProductCards",
+  ProductsSection: "ProductCards",
+  ProductGrid: "ProductCards",
+  ShopSection: "ProductCards",
+  // Countdown variants
+  CountdownSection: "CountdownTimer",
+  TimerSection: "CountdownTimer",
+  // Announcement variants
+  AnnouncementSection: "AnnouncementBar",
+  TopBar: "AnnouncementBar",
+  // Banner variants
+  BannerSection: "Banner",
+  PromoBanner: "Banner",
+  // Generic section fallbacks
+  ContentSection: "TextBlock",
+  TextSection: "TextBlock",
+  ContentBlock: "TextBlock",
+  RichText: "RichTextBlock",
+  RichTextSection: "RichTextBlock",
+  // Navigation variants
+  NavigationSection: "HeaderNav",
+  Navbar: "HeaderNav",
+  Header: "HeaderNav",
+  // Footer variants
+  Footer: "FooterSection",
+  FooterSection: "FooterSection",
+};
+
+/** Normalize a component type name — check aliases, then exact match, then fuzzy match. */
+export function normalizeComponentType(rawType: string): string {
+  // 1. Exact match — already valid
+  if (VALID_COMPONENT_TYPES.has(rawType)) return rawType;
+
+  // 2. Alias map lookup
+  const alias = COMPONENT_TYPE_ALIASES[rawType];
+  if (alias && VALID_COMPONENT_TYPES.has(alias)) return alias;
+
+  // 3. Case-insensitive alias lookup
+  const lowerKey = rawType.toLowerCase().replace(/[\s_-]/g, "");
+  for (const [key, value] of Object.entries(COMPONENT_TYPE_ALIASES)) {
+    if (key.toLowerCase().replace(/[\s_-]/g, "") === lowerKey) return value;
+  }
+
+  // 4. Suffix strip: "XxxSection" → try without "Section"
+  if (rawType.endsWith("Section") && rawType !== "SectionBlock") {
+    const stripped = rawType.slice(0, -7);
+    if (VALID_COMPONENT_TYPES.has(stripped)) return stripped;
+    // Also try alias of stripped
+    const strippedAlias = COMPONENT_TYPE_ALIASES[stripped];
+    if (strippedAlias && VALID_COMPONENT_TYPES.has(strippedAlias)) return strippedAlias;
+  }
+
+  // 5. No match found — return as-is (will be caught by validation warning)
+  return rawType;
+}

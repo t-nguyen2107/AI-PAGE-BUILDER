@@ -112,7 +112,7 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
     quickView = false,
     saleBadge = false,
     hoverEffect = "none",
-    animation = "fade-up",
+    animation = "stagger-fade",
     designStyle,
     className,
     ...metaRest
@@ -120,6 +120,10 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
 
   const ds = getDesignTokens(designStyle);
   const anim = useScrollAnimation(animation);
+
+  // Stagger delay for product cards
+  const staggerDelay = (i: number) =>
+    animation === "stagger-fade" ? { transitionDelay: `${i * 80}ms` } : {};
 
   const [quickViewIndex, setQuickViewIndex] = useState<number | null>(null);
 
@@ -157,9 +161,10 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
           {products.map((product, i) => (
             <div
               key={i}
-              className={`group ${ds.card.base} overflow-hidden ${ds.card.hover} ${hoverClass} ${
+              className={`group ${ds.card.base} overflow-hidden ${ds.card.hover} transition-all duration-500 ${hoverClass} ${
                 product.inStock === false ? "opacity-60" : ""
               }`}
+              style={staggerDelay(i)}
             >
               {product.imageUrl && (
                 <div className="relative overflow-hidden">

@@ -100,7 +100,7 @@ const STYLES: Record<DesignStyle, DesignStyleTokens> = {
       decorative: "absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl",
     },
     card: {
-      base: "rounded-2xl bg-card border border-border/50 shadow-sm",
+      base: "rounded-2xl bg-card border border-border/70 shadow-sm",
       hover: "hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300",
     },
     typography: {
@@ -116,8 +116,8 @@ const STYLES: Record<DesignStyle, DesignStyleTokens> = {
     accent: {
       icon: "w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center",
       badge: "px-4 py-1.5 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/20",
-      avatar: "rounded-full ring-2 ring-primary/20",
-      cardAccent: "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 to-primary/20",
+      avatar: "rounded-full ring-2 ring-primary/30",
+      cardAccent: "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/70 to-primary/30",
     },
     transitionDuration: "duration-300",
     containerWidth: "max-w-6xl",
@@ -130,8 +130,8 @@ const STYLES: Record<DesignStyle, DesignStyleTokens> = {
       decorative: "", // no decorative elements
     },
     card: {
-      base: "bg-transparent border-b border-border/30",
-      hover: "hover:border-primary/40 transition-all duration-200",
+      base: "bg-transparent border border-border/60",
+      hover: "hover:border-primary/50 transition-all duration-200",
     },
     typography: {
       h1: "text-4xl md:text-5xl lg:text-7xl font-light tracking-wide leading-[1.15]",
@@ -140,14 +140,14 @@ const STYLES: Record<DesignStyle, DesignStyleTokens> = {
       body: "text-muted-foreground leading-relaxed",
     },
     button: {
-      primary: "rounded-sm px-8 py-4 font-medium border border-foreground/20 hover:bg-foreground hover:text-background transition-all duration-200",
-      secondary: "rounded-sm px-8 py-4 font-medium border border-border hover:border-foreground/40 transition-all duration-200",
+      primary: "rounded-sm px-8 py-4 font-medium border-2 border-foreground/40 hover:bg-foreground hover:text-background transition-all duration-200",
+      secondary: "rounded-sm px-8 py-4 font-medium border-2 border-border hover:border-foreground/50 transition-all duration-200",
     },
     accent: {
-      icon: "w-12 h-12 rounded-none flex items-center justify-center border border-border/50",
-      badge: "px-4 py-1.5 rounded-none text-sm font-medium border border-foreground/20",
-      avatar: "rounded-full ring-1 ring-border/50",
-      cardAccent: "", // no accent bar
+      icon: "w-12 h-12 rounded-none flex items-center justify-center border border-border/70",
+      badge: "px-4 py-1.5 rounded-none text-sm font-medium border-2 border-foreground/40",
+      avatar: "rounded-full ring-2 ring-border/70",
+      cardAccent: "absolute top-0 left-0 right-0 h-px bg-border",
     },
     transitionDuration: "duration-200",
     containerWidth: "max-w-5xl",
@@ -310,7 +310,7 @@ const STYLES: Record<DesignStyle, DesignStyleTokens> = {
       decorative: "", // clean, no decorative elements
     },
     card: {
-      base: "rounded-3xl bg-card border border-border/40 overflow-hidden",
+      base: "rounded-3xl bg-card border border-border/60 overflow-hidden",
       hover: "hover:scale-[1.02] hover:shadow-md transition-all duration-200",
     },
     typography: {

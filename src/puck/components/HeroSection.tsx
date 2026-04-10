@@ -104,7 +104,9 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
           </>
         )}
       </h1>
-      <p className={`text-lg md:text-xl opacity-75 mb-10 max-w-2xl mx-auto ${ds.typography.body}`}>
+      <p className={`text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed ${
+        hasBg || hasBgOverride ? "text-white" : ds.typography.body
+      }`}>
         {subtext}
       </p>
       <div className={`flex gap-4 flex-wrap ${isCenter ? "justify-center" : "justify-start"}`}>
@@ -135,7 +137,9 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
         )}
       </div>
       {trustBadges && trustBadges.length > 0 && (
-        <div className={`flex flex-wrap items-center gap-5 mt-10 text-sm ${hasBg ? "opacity-70" : "text-muted-foreground"} ${isCenter ? "justify-center" : "justify-start"}`}>
+        <div className={`flex flex-wrap items-center gap-5 mt-10 text-sm ${
+          hasBg || hasBgOverride ? "text-white" : ds.typography.body
+        } ${isCenter ? "justify-center" : "justify-start"}`}>
           {trustBadges.map((b, i) => (
             <span key={i} className="flex items-center gap-2">
               <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">

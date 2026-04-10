@@ -6,6 +6,7 @@ import "@puckeditor/core/puck.css";
 import { config } from "./puck.config";
 import { apiClient } from "@/lib/api-client";
 import type { Data } from "@puckeditor/core";
+import { normalizePuckData } from "@/lib/ai/normalize-puck-data";
 import { useToastStore } from "@/store/toast-store";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { PreviewPanel } from "./PreviewPanel";
@@ -130,10 +131,11 @@ export function PuckEditor({ projectId, pageId }: PuckEditorProps) {
           };
         }
 
-        setData(puckData);
+        const normalized = normalizePuckData(puckData);
+        setData(normalized);
 
         // Detect skeleton state: if any component has a "skel_" prefixed ID OR is a SectionSkeleton type, page needs auto-polish
-        const hasSkeletons = (puckData.content ?? []).some(
+        const hasSkeletons = (normalized.content ?? []).some(
           (c) => c.type === 'SectionSkeleton'
             || (typeof (c.props as Record<string, unknown>)?.id === 'string'
               && ((c.props as Record<string, unknown>).id as string).startsWith('skel_')),
