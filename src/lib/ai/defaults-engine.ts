@@ -29,89 +29,61 @@ type Props = Record<string, unknown>;
 
 const COMPONENT_DEFAULTS: Record<string, Props> = {
   HeroSection: {
-    animation: 'fade-up',
     backgroundOverlay: true,
     padding: '128px',
     align: 'center',
     layout: 'centered',
   },
   FeaturesGrid: {
-    animation: 'stagger',
     cardStyle: 'elevated',
     hoverEffect: 'lift',
     columns: 3,
   },
   TestimonialSection: {
-    animation: 'stagger-fade',
     variant: 'grid',
   },
   CTASection: {
-    animation: 'fade-up',
     variant: 'gradient',
   },
   PricingTable: {
-    animation: 'stagger',
     highlightedBadge: 'Most Popular',
   },
-  FAQSection: {
-    animation: 'fade-up',
-  },
+  FAQSection: {},
   StatsSection: {
-    animation: 'fade-up',
     animated: true,
     columns: 4,
     cardStyle: 'gradient',
   },
   ContactForm: {
-    animation: 'fade-up',
     showPhone: true,
     showCompany: true,
   },
   Gallery: {
-    animation: 'stagger',
     columns: 3,
   },
   ProductCards: {
-    animation: 'stagger',
     hoverEffect: 'lift',
     columns: 3,
   },
-  TeamSection: {
-    animation: 'stagger',
-  },
+  TeamSection: {},
   BlogSection: {
-    animation: 'stagger',
     columns: 3,
   },
-  FeatureShowcase: {
-    animation: 'fade-up',
-  },
-  LogoGrid: {
-    animation: 'fade-up',
-  },
-  NewsletterSignup: {
-    animation: 'fade-up',
-  },
-  SocialProof: {
-    animation: 'fade-up',
-  },
+  FeatureShowcase: {},
+  LogoGrid: {},
+  NewsletterSignup: {},
+  SocialProof: {},
   Banner: {
-    animation: 'fade-up',
     variant: 'gradient',
   },
-  ComparisonTable: {
-    animation: 'fade-up',
-  },
-  CountdownTimer: {
-    animation: 'fade-up',
-  },
+  ComparisonTable: {},
+  CountdownTimer: {},
   AnnouncementBar: {
     variant: 'gradient',
-    animation: 'fade-down',
   },
   // Structural components
-  HeaderNav: { sticky: true, animation: 'fade-down' },
-  FooterSection: { animation: 'fade-up' },
+  HeaderNav: { sticky: true },
+  FooterSection: {},
   Spacer: {},
   TextBlock: {},
   ImageBlock: {},
@@ -319,7 +291,13 @@ export function applyComponentDefaults(
         if (t.text && !t.quote) { t.quote = t.text; delete t.text; }
         if (t.name && !t.author) { t.author = t.name; delete t.name; }
         if (t.avatar && !t.avatarUrl) { t.avatarUrl = t.avatar; delete t.avatar; }
+        if (t.image && !t.avatarUrl) { t.avatarUrl = t.image; delete t.image; }
       }
+    }
+
+    // 1o. Fill missing LogoGrid logos with text-based defaults
+    if (comp.type === 'LogoGrid' && (!Array.isArray(props.logos) || (props.logos as unknown[]).length === 0)) {
+      props.logos = fillLogoGridDefaults(ctx.businessName);
     }
 
     // 1o. Fill missing TestimonialSection testimonials
@@ -369,18 +347,16 @@ function getBusinessBadge(businessType?: string): string {
   return match?.[1] ?? 'New';
 }
 
-function injectGradients(type: string, props: Props, palette: ColorPalette, businessType?: string): void {
+function injectGradients(type: string, props: Props, _palette: ColorPalette, businessType?: string): void {
   if (type === 'HeroSection') {
-    if (!props.gradientFrom) props.gradientFrom = palette.primary;
-    if (!props.gradientTo) props.gradientTo = palette.accent;
+    // HeroSection now uses CSS variables (var(--primary), var(--accent)) as gradient default.
+    // Only inject gradientFrom/gradientTo if the AI explicitly set them (user override case).
     // Ensure hero has a compelling badge
     if (!props.badge) {
       props.badge = getBusinessBadge(businessType);
     }
-  } else if (type === 'CTASection') {
-    if (!props.gradientFrom) props.gradientFrom = palette.primary;
-    if (!props.gradientTo) props.gradientTo = palette.accent;
   }
+  // CTASection uses bg-primary Tailwind class (resolves to CSS vars) — no hex injection needed.
 }
 
 // ─── Background Alternation ──────────────────────────────────────────────────
@@ -554,4 +530,10 @@ function fillTestimonialContent(props: Props): void {
 function inferBusinessName(businessType?: string): string {
   if (!businessType) return 'Our Business';
   return businessType.split(/[\s/]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+/** Default text-based logos when AI provides none */
+function fillLogoGridDefaults(businessName?: string): Array<{ name: string; imageUrl: string }> {
+  const brands = ['Acme Corp', 'Globex', 'Initech', 'Umbrella', 'Stark Industries', 'Wayne Enterprises'];
+  return brands.map(name => ({ name, imageUrl: '' }));
 }

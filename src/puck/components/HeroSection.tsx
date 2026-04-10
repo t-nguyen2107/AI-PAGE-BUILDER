@@ -5,20 +5,10 @@ import { extractStyleProps } from "../lib/style-override";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
 import { getDesignTokens } from "../lib/design-styles";
 
-// ─── Gradient presets ────────────────────────────────────────────────
-
-const GRADIENT_PRESETS: Record<string, { from: string; to: string }> = {
-  teal:     { from: "#22746e", to: "#1a5c56" },
-  navy:     { from: "#081b22", to: "#0d2f3a" },
-  gold:     { from: "#e39c37", to: "#c47f1a" },
-  sunset:   { from: "#f97316", to: "#ec4899" },
-  ocean:    { from: "#0ea5e9", to: "#6366f1" },
-  forest:   { from: "#059669", to: "#065f46" },
-  aurora:   { from: "#7c3aed", to: "#06b6d4" },
-  midnight: { from: "#1e1b4b", to: "#312e81" },
-  berry:    { from: "#be185d", to: "#7c3aed" },
-  ember:    { from: "#dc2626", to: "#f97316" },
-};
+// ─── Gradient resolution ─────────────────────────────────────────────
+// Default gradient uses CSS variables (from styleguide), so the AI pipeline
+// doesn't need to inject per-component hex values. User can override via
+// gradientFrom/gradientTo props in the inspector.
 
 // ─── Render component ─────────────────────────────────────────────────
 
@@ -37,7 +27,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
     backgroundOverlay,
     videoUrl,
     imageUrl,
-    animation,
+    animation = "fade-up",
     trustBadges,
     gradientFrom,
     gradientTo,
@@ -52,19 +42,21 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   const paddingValue = props.padding || "128px";
   const isCenter = align === "center";
   const isSplit = layout === "split-left" || layout === "split-right";
-  const anim = useScrollAnimation(animation ?? "none");
+  const anim = useScrollAnimation(animation);
 
-  // Resolve gradient preset → explicit colors (explicit props take precedence)
-  const preset = gradientPreset ? GRADIENT_PRESETS[gradientPreset] : undefined;
-  const resolvedFrom = gradientFrom ?? preset?.from;
-  const resolvedTo = gradientTo ?? preset?.to;
+  // Resolve gradient: user hex override → CSS var default
+  const hasGradientOverride = !!(gradientFrom || gradientTo);
+  const resolvedFrom = gradientFrom;
+  const resolvedTo = gradientTo;
 
-  // Determine overlay style
-  const overlayStyle = resolvedFrom
-    ? `linear-gradient(135deg, ${resolvedFrom}cc, ${(resolvedTo ?? resolvedFrom)}cc)`
-    : backgroundOverlay
-      ? "rgba(0,0,0,0.5)"
-      : undefined;
+  // CSS var-based default gradient (no hex needed)
+  // Note: --tertiary is the accent/gold color, --accent is a shadcn alias for gray
+  const cssVarGradient = "linear-gradient(135deg, var(--primary, #22746e), var(--tertiary, #e39c37))";
+
+  // Determine overlay style (cc = 80% opacity for both contexts)
+  const overlayStyle = hasGradientOverride
+    ? `linear-gradient(135deg, ${resolvedFrom ?? "var(--primary)"}cc, ${resolvedTo ?? "var(--tertiary)"}cc)`
+    : cssVarGradient;
 
   // Extract style overrides but exclude padding — hero manages its own padding
   const metaStyles = extractStyleProps(metaRest);
@@ -73,10 +65,10 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   const sectionStyle: React.CSSProperties = {
     ...(backgroundUrl && !videoUrl
       ? {
-          backgroundImage: backgroundOverlay && !resolvedFrom
+          backgroundImage: backgroundOverlay && !hasGradientOverride
             ? `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${backgroundUrl})`
-            : resolvedFrom
-              ? `linear-gradient(135deg, ${resolvedFrom}cc, ${(resolvedTo ?? resolvedFrom)}cc), url(${backgroundUrl})`
+            : hasGradientOverride
+              ? `linear-gradient(135deg, ${resolvedFrom}cc, ${resolvedTo}cc), url(${backgroundUrl})`
               : `url(${backgroundUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -87,7 +79,7 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
   };
 
   const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;
-  const hasBg = !!(backgroundUrl || videoUrl || resolvedFrom);
+  const hasBg = !!(backgroundUrl || videoUrl || hasGradientOverride);
   const textClass = hasBg && !hasBgOverride ? "text-white" : !hasBgOverride ? "bg-background text-foreground" : "";
 
   // ─── Content block (shared between centered and split) ────────────
@@ -174,46 +166,47 @@ export function HeroSection(props: HeroSectionProps & ComponentMeta) {
         </div>
       )}
 
-      {/* Gradient overlay with mesh effect */}
-      {!videoUrl && !backgroundUrl && resolvedFrom && (
+      {/* Gradient overlay with mesh effect — CSS var default or hex override */}
+      {!videoUrl && !backgroundUrl && (
         <>
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(135deg, ${resolvedFrom}dd, ${(resolvedTo ?? resolvedFrom)}dd)`,
+              background: hasGradientOverride
+                ? `linear-gradient(135deg, ${resolvedFrom ?? "var(--primary)"}cc, ${resolvedTo ?? "var(--tertiary)"}cc)`
+                : cssVarGradient,
             }}
           />
           {/* Decorative mesh gradient blobs */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
             <div
               className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
-              style={{ background: `radial-gradient(circle, ${resolvedTo ?? resolvedFrom}80, transparent 70%)` }}
+              style={{ background: hasGradientOverride
+                ? `radial-gradient(circle, ${resolvedTo ?? resolvedFrom ?? "var(--tertiary)"}80, transparent 70%)`
+                : "radial-gradient(circle, var(--tertiary), transparent 70%)" }}
             />
             <div
               className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
-              style={{ background: `radial-gradient(circle, ${resolvedFrom}80, transparent 70%)` }}
+              style={{ background: hasGradientOverride
+                ? `radial-gradient(circle, ${resolvedFrom ?? resolvedTo ?? "var(--primary)"}80, transparent 70%)`
+                : "radial-gradient(circle, var(--primary), transparent 70%)" }}
             />
             <div
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
-              style={{ background: `radial-gradient(circle, #ffffff40, transparent 70%)` }}
+              style={{ background: "radial-gradient(circle, #ffffff40, transparent 70%)" }}
             />
           </div>
         </>
       )}
 
       {/* Background image with decorative elements */}
-      {!videoUrl && backgroundUrl && resolvedFrom && (
+      {!videoUrl && backgroundUrl && hasGradientOverride && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <div
             className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
-            style={{ background: `radial-gradient(circle, ${resolvedTo ?? resolvedFrom}60, transparent 70%)` }}
+            style={{ background: `radial-gradient(circle, ${resolvedTo ?? resolvedFrom ?? "var(--tertiary)"}60, transparent 70%)` }}
           />
         </div>
-      )}
-
-      {/* Decorative element for non-background heroes */}
-      {!videoUrl && !backgroundUrl && !resolvedFrom && ds.section.decorative && (
-        <div className={ds.section.decorative} aria-hidden="true" />
       )}
 
       {/* Animated content wrapper */}

@@ -105,7 +105,7 @@ export function deriveGradientPair(colors: ColorPalette): { from: string; to: st
 export function buildSystemLevelDesignRules(): string {
   return `### Token Rules
 - Apply color values EXACTLY as specified — do NOT invent your own palette.
-- Use gradient tokens for HeroSection gradientFrom/gradientTo props.
+- HeroSection gradient uses CSS variables automatically — do NOT set gradientFrom/gradientTo unless user specifies custom colors.
 - Use surface color for card backgrounds, shadow token for elevated cards.
 - Use primary color for CTA buttons and highlighted elements.
 - Use accent color for badges, tags, and secondary highlights.
@@ -159,7 +159,7 @@ export function buildUnifiedDesignTokensBlock(
   text: ${colors.text ?? '(not set)'} → Body text, headings
   textMuted: ${colors.textMuted ?? '(not set)'} → Subtle text, captions
   border: ${colors.border ?? '(not set)'} → Dividers, card borders
-  gradient: ${gradient.from} → ${gradient.to} → (use in HeroSection gradientFrom/gradientTo)
+  gradient: ${gradient.from} → ${gradient.to} → (reference only — HeroSection uses CSS vars by default)
   shadow: ${shadow} (tinted box-shadow for cards)`);
   }
 

@@ -185,8 +185,8 @@ function buildStyleguideSection(
     parts.push('');
     parts.push('### Color Application Rules (MANDATORY — VIOLATION = INVALID OUTPUT)');
     parts.push('- You MUST use the exact hex values listed above for ALL color props. NEVER invent, guess, or approximate colors.');
-    parts.push('- HeroSection: gradientFrom MUST be the primary token value, gradientTo MUST be the secondary or accent token value');
-    parts.push('- CTASection: use variant="gradient", gradientFrom=primary hex, gradientTo=accent hex');
+    parts.push('- HeroSection: gradient uses CSS variables automatically — only set gradientFrom/gradientTo for custom user-specified colors');
+    parts.push('- CTASection: use variant="gradient" (gradients use CSS vars, no hex needed)');
     parts.push('- PricingTable: highlighted card uses primary for border/accent. highlightedBadge uses accent token');
     parts.push('- StatsSection: accent color for stat values. Background: muted or dark variant');
     parts.push('- TestimonialSection: muted background with foreground text');
@@ -342,7 +342,7 @@ function buildPatternLayout(
 const SECTION_INSTRUCTIONS: Record<string, string> = {
   AnnouncementBar: 'Attention-grabbing message with optional CTA. Keep under 60 chars. Use variant "gradient".',
   HeaderNav: 'Logo + 4-5 nav links matching page sections + CTA button. Set sticky: true. Link labels should match section headings.',
-  HeroSection: 'DRAMATIC heading, compelling subtext, TWO CTA buttons (primary + secondary), gradient/image background. Set animation "fade-up". Use gradientFrom/gradientTo with palette colors.',
+  HeroSection: 'DRAMATIC heading, compelling subtext, TWO CTA buttons (primary + secondary), gradient/image background. Set animation "fade-up". Gradients use CSS vars automatically.',
   FeaturesGrid: '3-6 feature cards with specific descriptions tied to business type. Use cardStyle "elevated", hoverEffect "lift", animation "stagger".',
   StatsSection: '4 impressive but believable stats with count-up animation (animated: true). Choose numbers relevant to the industry.',
   LogoGrid: '5-6 partner/client logos with "Trusted by" heading. Use for social proof.',
@@ -614,14 +614,14 @@ When generating pages, follow these enhanced design rules:
 - Use accent color for secondary actions and highlights (badges, tags)
 - Alternate section backgrounds: white → muted (gray-50 equivalent) → dark → gradient
 - Dark sections MUST use light text. Light sections MUST use dark text
-- For HeroSection: prefer gradientFrom/gradientTo with the provided palette colors
+- For HeroSection: gradient backgrounds use CSS variables automatically — no need to set gradientFrom/gradientTo
 
 ### Component Prop Utilization (CRITICAL)
 - ALWAYS set \`animation\` prop on content sections (prefer "fade-up" or "stagger" for first visible, "stagger-fade" for grids)
 - Use \`variant\` props for visual variety: TestimonialSection → try "carousel", CTASection → use "gradient" or "dark"
 - Use \`hoverEffect\` on FeaturesGrid ("lift") and ProductCards ("lift" or "zoom")
 - Use \`cardStyle\` on FeaturesGrid — alternate between "icon", "elevated", "image" for different feels
-- Use \`gradientFrom\`/\`gradientTo\` on HeroSection for rich backgrounds (not flat solid colors)
+- HeroSection gradients use CSS variables (var(--primary) → var(--tertiary)) — only set gradientFrom/gradientTo when user specifies custom colors
 - Use \`trustBadges\` on HeroSection when business type benefits from credibility signals
 - Use ComponentMeta props (bgColor, textColor, padding) for per-section visual variety
 - PricingTable: ALWAYS include highlightedBadge (e.g., "Most Popular"), set animation to "stagger", include pricingToggle with yearlyPlans
