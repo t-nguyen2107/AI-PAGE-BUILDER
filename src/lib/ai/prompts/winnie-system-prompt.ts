@@ -83,17 +83,16 @@ ${pageSuggestions}
 4. **Target audience** — Who will visit (optional detail, can infer from business type)
 5. **Tone** — Content voice (optional, can infer: professional for B2B, friendly for B2C)
 6. **Pages** — What pages they need. Always include "Home". Suggest based on business type. Keep page titles in user's language but slugs in English.
-7. **paletteColors** — ONLY set this when the user EXPLICITLY describes specific colors they want (e.g. "I want colors like the Italian flag", "use ocean blue and sand tones", "màu đỏ vàng xanh", "dark and gold luxury"). You are a designer — derive all 8 tokens from 2-3 user-mentioned colors. Rules:
-   - primary: the dominant user color
-   - secondary: a lighter/complementary variant of primary
-   - accent: the second user color (contrasting)
-   - background: very light tint of primary or neutral white (#F8FAFC)
-   - surface: always "#FFFFFF"
-   - text: very dark version of primary (high contrast)
-   - textMuted: neutral grey ("#64748B" or tinted)
-   - border: very light tint of primary
-   - All hex values must be valid (#RRGGBB). Ensure text on background has 4.5:1+ contrast.
-   - CRITICAL: Set paletteColors to null when the user does NOT explicitly mention specific colors. Do NOT infer colors from business type alone — only from explicit color descriptions.
+7. **colorKeywords** — ONLY set when the user EXPLICITLY mentions colors (e.g., "I want blue and red", "màu xanh và đỏ", "ocean blue and sand tones", "dark and gold luxury"). Just extract the raw color words, do NOT generate hex codes. Examples:
+   - "màu xanh và đỏ" → colorKeywords: "xanh đỏ"
+   - "I want ocean blue and gold" → colorKeywords: "blue gold"
+   - "đen trắng, vintage" → colorKeywords: "đen trắng"
+   - CRITICAL: Set colorKeywords to null when the user does NOT mention specific colors.
+8. **styleKeywords** — Set when the user describes a visual style (e.g., "minimalist", "glossy", "modern clean", "bold and dynamic", "phong cách cổ điển"). Just extract the style words:
+   - "phong cách minimalist" → styleKeywords: "minimalist"
+   - "glossy, modern, high-end" → styleKeywords: "glossy modern high-end"
+   - "tôi muốn trang web đơn giản, tinh tế" → styleKeywords: "đơn giản tinh tế"
+   - CRITICAL: Set styleKeywords to null when the user does NOT mention style preferences.
 
 ## Conversation Rules
 - Extract ALL info from every message. Never ask about something the user already provided.
@@ -109,7 +108,7 @@ Set isComplete=true ONLY when the user explicitly confirms they are done — for
 
 ## Response Format
 You MUST respond in valid JSON:
-{{"reply": "Your conversational response (2-4 sentences)","collectedInfo": {{"name": null or string,"idea": null or string,"style": null or string,"targetAudience": null or string,"tone": null or string,"language": null or "en" or "vi" or other code,"pages": null or [{{"title": "Home", "slug": "home", "description": "..."}}],"paletteColors": null or {{"primary": "#hex", "secondary": "#hex", "accent": "#hex", "background": "#hex", "surface": "#FFFFFF", "text": "#hex", "textMuted": "#hex", "border": "#hex"}}}},"isComplete": boolean
+{{"reply": "Your conversational response (2-4 sentences)","collectedInfo": {{"name": null or string,"idea": null or string,"style": null or string,"targetAudience": null or string,"tone": null or string,"language": null or "en" or "vi" or other code,"pages": null or [{{"title": "Home", "slug": "home", "description": "..."}}],"colorKeywords": null or "raw color words from user","styleKeywords": null or "raw style words from user"}},"isComplete": boolean
 }}
 
 Include ALL collected fields in every response. Set unknown fields to null.${previouslyCollected}`;

@@ -230,6 +230,13 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
                   if (incoming.paletteColors === null && prev?.paletteColors) {
                     merged.paletteColors = prev.paletteColors;
                   }
+                  // Preserve colorKeywords/styleKeywords if Winnie didn't set them
+                  if (incoming.colorKeywords === null && prev?.colorKeywords) {
+                    merged.colorKeywords = prev.colorKeywords;
+                  }
+                  if (incoming.styleKeywords === null && prev?.styleKeywords) {
+                    merged.styleKeywords = prev.styleKeywords;
+                  }
                   return merged;
                 });
                 if (info.isComplete) {
@@ -281,6 +288,8 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
       language: collectedInfo.language ?? "en",
       pages: collectedInfo.pages ?? [{ title: "Home", slug: "home", description: "Homepage" }],
       paletteColors: collectedInfo.paletteColors ?? undefined,
+      colorKeywords: collectedInfo.colorKeywords ?? undefined,
+      styleKeywords: collectedInfo.styleKeywords ?? undefined,
     };
     onComplete(fullInfo);
   };
@@ -534,6 +543,8 @@ export function WinnieChat({ onComplete, onSkip }: WinnieChatProps) {
             businessIdea={collectedInfo?.idea ?? ""}
             onSelect={handlePaletteSelect}
             disabled={isStreaming}
+            colorKeywords={collectedInfo?.colorKeywords}
+            styleKeywords={collectedInfo?.styleKeywords}
           />
         </div>
       )}

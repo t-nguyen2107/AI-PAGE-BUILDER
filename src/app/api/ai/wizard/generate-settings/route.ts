@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createFastModelBundle } from "@/lib/ai/provider";
 import { generateStyleguideFromBusinessType } from "@/lib/ai/knowledge/auto-styleguide";
 import { detectBusinessType } from "@/lib/ai/knowledge/business-detect";
+import { resolveWizardRecommendations } from "@/lib/ai/knowledge/color-matcher";
 
 import type { WizardProjectInfo, GenerateSettingsResponse } from "@/types/wizard";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     let styleguide: GenerateSettingsResponse["styleguide"];
     if (projectInfo.paletteColors) {
-      // User selected a palette — use those colors directly
+      // Tier 1: User selected a palette — use those colors directly
       const colors = projectInfo.paletteColors;
       const fallback = buildFallbackStyleguide();
       const autoTypography = autoResult?.styleguide?.typography ?? fallback.typography;
@@ -85,6 +86,26 @@ export async function POST(request: NextRequest) {
       const sg = { colors, typography: autoTypography, spacing: autoSpacing, cssVariables: {} as Record<string, string> };
       sg.cssVariables = generateCssVariables(sg);
       styleguide = sg;
+    } else if (projectInfo.colorKeywords || projectInfo.styleKeywords) {
+      // Tier 2: Keywords from Winnie — resolve matching palette via color-matcher
+      const recs = resolveWizardRecommendations({
+        businessIdea: projectInfo.idea,
+        colorText: projectInfo.colorKeywords,
+        styleText: projectInfo.styleKeywords,
+        topN: 1,
+      });
+      const topRec = recs[0];
+      if (topRec) {
+        const colors = topRec.colors;
+        const fallback = buildFallbackStyleguide();
+        const autoTypography = autoResult?.styleguide?.typography ?? fallback.typography;
+        const autoSpacing = autoResult?.styleguide?.spacing ?? fallback.spacing;
+        const sg = { colors, typography: autoTypography, spacing: autoSpacing, cssVariables: {} as Record<string, string> };
+        sg.cssVariables = generateCssVariables(sg);
+        styleguide = sg;
+      } else {
+        styleguide = autoResult?.styleguide ?? buildFallbackStyleguide();
+      }
     } else if (autoResult?.styleguide) {
       styleguide = {
         colors: autoResult.styleguide.colors,

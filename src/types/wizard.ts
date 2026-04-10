@@ -19,6 +19,10 @@ export interface WizardProjectInfo {
     textMuted: string;
     border: string;
   };
+  /** Raw color text extracted by Winnie (e.g., "green + red") — used by color-matcher */
+  colorKeywords?: string;
+  /** Raw style text extracted by Winnie (e.g., "minimalist + glossy") — used by color-matcher */
+  styleKeywords?: string;
 }
 
 export interface WizardSitemapPage {
