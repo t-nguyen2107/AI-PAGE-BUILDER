@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FooterSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 const SOCIAL_ICONS: Record<string, string> = {
   twitter: "M22.46 6c-.85.38-1.78.64-2.73.76a4.78 4.78 0 0 0 2.1-2.64c-.95.56-2 .96-3.12 1.19a4.77 4.77 0 0 0-8.13 4.35A13.54 13.54 0 0 1 1.64 4.15a4.77 4.77 0 0 0 1.47 6.37A4.75 4.75 0 0 1 .96 9.85v.06a4.77 4.77 0 0 0 3.83 4.68 4.76 4.76 0 0 1-2.15.08 4.78 4.78 0 0 0 4.46 3.31A9.56 9.56 0 0 1 0 20.14a13.5 13.5 0 0 0 7.32 2.15c8.78 0 13.59-7.28 13.59-13.59 0-.21 0-.42-.02-.62A9.7 9.7 0 0 0 24 4.56a9.52 9.52 0 0 1-2.74.75 4.78 4.78 0 0 0 2.1-2.64 9.58 9.58 0 0 1-3.03 1.16A4.76 4.76 0 0 0 16.62 3c-2.63 0-4.77 2.13-4.77 4.77 0 .37.04.74.13 1.09C8.03 8.62 4.77 6.72 2.6 3.95a4.77 4.77 0 0 0 1.47 6.37A4.73 4.73 0 0 1 1.84 9.8v.06a4.77 4.77 0 0 0 3.83 4.68 4.76 4.76 0 0 1-2.13.08 4.78 4.78 0 0 0 4.45 3.3A9.54 9.54 0 0 1 .96 19.5a13.48 13.48 0 0 0 7.32 2.15",
@@ -30,12 +31,14 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
     backToTop = false,
     newsletterIntegration = false,
     showCopyright = true,
+    animation = "none",
     designStyle,
     className,
     ...metaRest
   } = props;
 
   const ds = getDesignTokens(designStyle);
+  const anim = useScrollAnimation(animation);
 
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -59,7 +62,10 @@ export function FooterSection(props: FooterSectionProps & ComponentMeta) {
       className={`w-full bg-muted/50 border-t border-border/50 text-foreground ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className={`${ds.containerWidth} mx-auto px-6 py-16`}>
+      <div
+        ref={anim.ref}
+        className={`${ds.containerWidth} mx-auto px-6 py-16 transition-all duration-700 ease-out ${anim.className}`}
+      >
         <div
           className={`grid gap-10 grid-cols-1 sm:grid-cols-2 ${
             colCount >= 3 ? "lg:grid-cols-3" : ""

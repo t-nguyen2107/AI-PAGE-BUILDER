@@ -105,7 +105,7 @@ export function TeamSection(props: TeamSectionProps & ComponentMeta) {
     members = [],
     hoverEffect,
     socialLinks: showSocial,
-    animation,
+    animation = "stagger-fade",
     designStyle,
     className,
     ...metaRest
@@ -177,8 +177,8 @@ export function TeamSection(props: TeamSectionProps & ComponentMeta) {
             {members.map((member, i) => {
               if (isFlip) {
                 return (
-                  <div key={i} data-team-card={i} className="perspective-[1000px] group">
-                    <div className="relative w-full transition-transform duration-500 transform-3d group-hover:transform-[rotateY(180deg)]">
+                  <div key={i} data-team-card={i} className="perspective-[1000px] group" tabIndex={0} aria-label={`${member.name}, ${member.role}`}>
+                    <div className="relative w-full transition-transform duration-500 transform-3d group-hover:transform-[rotateY(180deg)] group-focus-within:transform-[rotateY(180deg)]">
                       {/* Front */}
                       <div className="backface-hidden text-center">
                         <Avatar member={member} avatarClass={ds.accent.avatar} />

@@ -184,6 +184,7 @@ export type FAQSectionProps = {
   accordion?: boolean;
   columns?: 1 | 2;
   searchable?: boolean;
+  animation?: "none" | "fade-up";
 };
 
 // ─── Stats ──────────────────────────────────────────────────────────
@@ -262,6 +263,7 @@ export type ContactFormProps = {
   showPhone: boolean;
   showCompany: boolean;
   buttonText: string;
+  animation?: "none" | "fade-up";
 };
 
 // ─── Header ─────────────────────────────────────────────────────────
@@ -280,6 +282,7 @@ export type HeaderNavProps = {
   mobileMenu?: boolean;
   transparent?: boolean;
   showSearch?: boolean;
+  animation?: "none" | "fade-down";
 };
 
 // ─── Footer ─────────────────────────────────────────────────────────
@@ -300,6 +303,7 @@ export type FooterSectionProps = {
   backToTop?: boolean;
   newsletterIntegration?: boolean;
   showCopyright?: boolean;
+  animation?: "none" | "fade-up";
 };
 
 // ─── RichText Block ────────────────────────────────────────────────
@@ -372,6 +376,7 @@ export type GalleryProps = {
   variant?: "grid" | "carousel" | "masonry";
   lightbox?: boolean;
   hoverEffect?: "none" | "zoom" | "overlay";
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── Social Proof ────────────────────────────────────────────────────
@@ -434,6 +439,7 @@ export type ProductCardsProps = {
   quickView?: boolean;
   saleBadge?: boolean;
   hoverEffect?: "none" | "lift" | "zoom";
+  animation?: "none" | "fade-up" | "stagger-fade";
 };
 
 // ─── Feature Showcase ────────────────────────────────────────────────

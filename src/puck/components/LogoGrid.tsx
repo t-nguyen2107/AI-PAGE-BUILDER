@@ -1,31 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { LogoGridProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) { setVisible(true); return; }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
-      },
-      { threshold: 0.15 },
-    );
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    "stagger-fade": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-  };
-  return { ref, className: animClasses[animation] ?? "", visible };
-}
+import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export function LogoGrid(props: LogoGridProps & ComponentMeta) {
   const {
@@ -34,12 +13,34 @@ export function LogoGrid(props: LogoGridProps & ComponentMeta) {
     variant = "grid",
     grayscale = true,
     tooltip = false,
-    animation = "none",
+    animation = "fade-up",
+    designStyle,
     className,
     ...metaRest
   } = props;
 
+  const ds = getDesignTokens(designStyle);
   const { ref: animRef, className: animClass, visible } = useScrollAnimation(animation);
+
+  // Carousel scroll state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScrollState);
+    updateScrollState();
+    return () => el.removeEventListener("scroll", updateScrollState);
+  }, []);
 
   const staggerDelay = (i: number) =>
     animation === "stagger-fade" && visible ? { transitionDelay: `${i * 80}ms` } : {};
@@ -48,12 +49,17 @@ export function LogoGrid(props: LogoGridProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-16 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto">
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+      <div className={`${ds.containerWidth} mx-auto relative`}>
         {heading && (
-          <h2 className="text-xl md:text-2xl font-semibold text-center text-muted-foreground mb-10">
+          <h2 className={`${ds.typography.h2} text-center text-muted-foreground mb-10`}>
             {heading}
           </h2>
         )}
@@ -63,34 +69,65 @@ export function LogoGrid(props: LogoGridProps & ComponentMeta) {
           className={`transition-all duration-700 ease-out ${animClass}`}
         >
           {isCarousel ? (
-            /* Carousel: CSS scroll-snap */
-            <div
-              className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-8 pb-4 -mx-6 px-6 scroll-smooth"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
-              {logos.map((logo, i) => (
-                <div
-                  key={i}
-                  className="snap-center shrink-0 w-[60%] md:w-[30%] lg:w-[18%] flex items-center justify-center"
-                  style={staggerDelay(i)}
+            /* Carousel: CSS scroll-snap with nav arrows */
+            <div className="relative group">
+              {canScrollLeft && (
+                <button
+                  onClick={() => scrollRef.current?.scrollBy({ left: -scrollRef.current.clientWidth * 0.8, behavior: "smooth" })}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/50 transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                  aria-label="Previous"
                 >
-                  <div className="relative group">
-                    <img
-                      src={logo.imageUrl}
-                      alt={logo.name}
-                      className={`h-10 max-h-12 object-contain transition-all duration-300 ${
-                        grayscale ? "grayscale opacity-50 hover:grayscale-0 hover:opacity-100" : "opacity-80 hover:opacity-100"
-                      }`}
-                    />
-                    {tooltip && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        {logo.name}
-                      </div>
-                    )}
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              {canScrollRight && (
+                <button
+                  onClick={() => scrollRef.current?.scrollBy({ left: scrollRef.current!.clientWidth * 0.8, behavior: "smooth" })}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/50 transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                  aria-label="Next"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+              <div
+                ref={scrollRef}
+                className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-8 pb-4 -mx-6 px-6 scroll-smooth"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
+                {logos.map((logo, i) => (
+                  <div
+                    key={i}
+                    className="snap-center shrink-0 w-[60%] md:w-[30%] lg:w-[18%] flex items-center justify-center"
+                    style={staggerDelay(i)}
+                  >
+                    <div className="relative group/logo">
+                      {logo.imageUrl ? (
+                        <img
+                          src={logo.imageUrl}
+                          alt={logo.name}
+                          className={`h-10 max-h-12 object-contain transition-all duration-300 ${
+                            grayscale ? "grayscale opacity-50 hover:grayscale-0 hover:opacity-100" : "opacity-80 hover:opacity-100"
+                          }`}
+                        />
+                      ) : (
+                        <span className={`text-lg font-bold tracking-tight ${
+                          grayscale ? "opacity-40 hover:opacity-70" : "opacity-60 hover:opacity-90"
+                        } transition-all duration-300`}>{logo.name}</span>
+                      )}
+                      {tooltip && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none">
+                          {logo.name}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : (
             /* Grid: flex-wrap layout */
@@ -101,13 +138,19 @@ export function LogoGrid(props: LogoGridProps & ComponentMeta) {
                   className="relative group"
                   style={staggerDelay(i)}
                 >
-                  <img
-                    src={logo.imageUrl}
-                    alt={logo.name}
-                    className={`h-10 max-h-12 object-contain transition-all duration-300 ${
-                      grayscale ? "grayscale opacity-50 hover:grayscale-0 hover:opacity-100" : "opacity-80 hover:opacity-100"
-                    }`}
-                  />
+                  {logo.imageUrl ? (
+                    <img
+                      src={logo.imageUrl}
+                      alt={logo.name}
+                      className={`h-10 max-h-12 object-contain transition-all duration-300 ${
+                        grayscale ? "grayscale opacity-50 hover:grayscale-0 hover:opacity-100" : "opacity-80 hover:opacity-100"
+                      }`}
+                    />
+                  ) : (
+                    <span className={`text-lg font-bold tracking-tight ${
+                      grayscale ? "opacity-40 hover:opacity-70" : "opacity-60 hover:opacity-90"
+                    } transition-all duration-300`}>{logo.name}</span>
+                  )}
                   {tooltip && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                       {logo.name}

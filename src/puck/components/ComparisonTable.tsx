@@ -1,34 +1,15 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
 import type { ComparisonTableProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 function formatCellValue(value: string): { text: string; className: string } {
   const lower = value.toLowerCase().trim();
   if (lower === "yes" || lower === "true" || lower === "1" || lower === "✓" || lower === "check") return { text: "\u2713", className: "text-primary font-semibold" };
   if (lower === "" || lower === "no" || lower === "false" || lower === "0" || lower === "—" || lower === "-") return { text: "\u2014", className: "text-muted-foreground/40" };
   return { text: value, className: "" };
-}
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) { setVisible(true); return; }
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
-    }, { threshold: 0.15 });
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-  };
-  return { ref, className: animClasses[animation] ?? "", visible };
 }
 
 export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
@@ -39,7 +20,7 @@ export function ComparisonTable(props: ComparisonTableProps & ComponentMeta) {
     highlightedPlan,
     highlightedColor,
     tooltipDetails = false,
-    animation = "none",
+    animation = "fade-up",
     designStyle,
     className,
     ...metaRest

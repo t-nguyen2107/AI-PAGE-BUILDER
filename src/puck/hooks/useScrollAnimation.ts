@@ -23,6 +23,8 @@ export interface ScrollAnimationResult {
  * - "slide-right" — slide in from right
  * - "zoom" — scale up from 95% to 100%
  * - "stagger-fade" — same as fade-up (for staggered children)
+ * - "fade-down" — fade in + slide down from top
+ * - "stagger-slide" — slide in from left (for staggered children)
  *
  * @param animation - Animation type string. "none" disables animation.
  * @returns ref to attach to the container, className to spread, visible state
@@ -61,6 +63,8 @@ export function useScrollAnimation(animation: string): ScrollAnimationResult {
     zoom: visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
     "stagger-fade": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
     stagger: visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+    "fade-down": visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-6",
+    "stagger-slide": visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4",
   };
 
   return {

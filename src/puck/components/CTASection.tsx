@@ -20,7 +20,7 @@ export function CTASection(props: CTASectionProps & ComponentMeta) {
     ctaSecondaryHref,
     variant = "default",
     trustText,
-    animation = "none",
+    animation = "fade-up",
     designStyle,
     className,
     ...metaRest

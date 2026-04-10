@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ProductCardsProps, ProductCard, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -111,12 +112,14 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
     quickView = false,
     saleBadge = false,
     hoverEffect = "none",
+    animation = "fade-up",
     designStyle,
     className,
     ...metaRest
   } = props;
 
   const ds = getDesignTokens(designStyle);
+  const anim = useScrollAnimation(animation);
 
   const [quickViewIndex, setQuickViewIndex] = useState<number | null>(null);
 
@@ -139,7 +142,10 @@ export function ProductCards(props: ProductCardsProps & ComponentMeta) {
         </div>
       )}
 
-      <div className={`${ds.containerWidth} mx-auto relative`}>
+      <div
+        ref={anim.ref}
+        className={`${ds.containerWidth} mx-auto relative transition-all duration-700 ease-out ${anim.className}`}
+      >
         {heading && (
           <h2 className={`${ds.typography.h2} text-center mb-12`}>
             {heading}

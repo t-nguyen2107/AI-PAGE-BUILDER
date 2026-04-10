@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { GalleryProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export function Gallery(props: GalleryProps & ComponentMeta) {
   const {
@@ -12,11 +13,13 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
     variant = "grid",
     lightbox = false,
     hoverEffect = "none",
+    animation = "fade-up",
     className,
     ...metaRest
   } = props;
 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const anim = useScrollAnimation(animation);
 
   // ─── Hover wrapper classes ──────────────────────────────────────
   function getImageWrapperClass(): string {
@@ -177,7 +180,10 @@ export function Gallery(props: GalleryProps & ComponentMeta) {
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl" />
       </div>
 
-      <div className="max-w-6xl mx-auto relative">
+      <div
+        ref={anim.ref}
+        className={`max-w-6xl mx-auto relative transition-all duration-700 ease-out ${anim.className}`}
+      >
         {heading && (
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-center mb-12">
             {heading}

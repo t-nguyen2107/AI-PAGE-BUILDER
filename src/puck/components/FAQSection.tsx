@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { FAQSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export function FAQSection(props: FAQSectionProps & ComponentMeta) {
   const {
@@ -12,11 +14,15 @@ export function FAQSection(props: FAQSectionProps & ComponentMeta) {
     accordion = true,
     columns = 1,
     searchable = false,
+    animation = "fade-up",
+    designStyle,
     className,
     ...metaRest
   } = props;
 
+  const ds = getDesignTokens(designStyle);
   const [searchQuery, setSearchQuery] = useState("");
+  const anim = useScrollAnimation(animation);
 
   // Filter items based on search query
   const filteredItems =
@@ -30,15 +36,22 @@ export function FAQSection(props: FAQSectionProps & ComponentMeta) {
 
   return (
     <section
-      className={`w-full py-24 px-6 bg-background text-foreground relative overflow-hidden ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative overflow-hidden ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl pointer-events-none" />
-      <div className={columns === 2 ? "max-w-5xl mx-auto" : "max-w-3xl mx-auto"}>
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+      <div
+        ref={anim.ref}
+        className={`transition-all duration-700 ease-out ${anim.className} ${ds.containerWidth === "max-w-7xl" || ds.containerWidth === "max-w-6xl" ? (columns === 2 ? "max-w-5xl" : "max-w-3xl") : ds.containerWidth} mx-auto relative`}
+      >
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{heading}</h2>
+          <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
           {subtext && (
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p className={`text-lg max-w-2xl mx-auto ${ds.typography.body}`}>
               {subtext}
             </p>
           )}

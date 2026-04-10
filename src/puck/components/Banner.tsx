@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { BannerProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 function calcCountdown(dateStr: string) {
   const target = new Date(dateStr);
@@ -67,11 +68,13 @@ export function Banner(props: BannerProps & ComponentMeta) {
     countdown = false,
     countdownDate,
     animatedGradient = false,
-    animation = "none",
+    animation = "fade-up",
+    designStyle,
     className,
     ...metaRest
   } = props;
 
+  const ds = getDesignTokens(designStyle);
   const isCenter = align === "center";
 
   // Build animation keyframes style tag
@@ -141,9 +144,15 @@ export function Banner(props: BannerProps & ComponentMeta) {
         `}</style>
       )}
       <section
-        className={`w-full py-12 px-6 ${variantClasses[variant] || variantClasses.gradient} ${animClass} ${className ?? ""}`}
+        className={`w-full ${ds.section.base} ${variantClasses[variant] || variantClasses.gradient} ${animClass} ${className ?? ""}`}
         style={mergedStyle}
       >
+        {ds.section.decorative && variant !== "image" && variant !== "video" && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+            <div className={ds.section.decorative} />
+          </div>
+        )}
+
         {/* Video background */}
         {variant === "video" && videoUrl && (
           <div className="absolute inset-0 overflow-hidden">
@@ -155,10 +164,10 @@ export function Banner(props: BannerProps & ComponentMeta) {
         )}
 
         {/* Content */}
-        <div className={`max-w-3xl mx-auto relative z-10 ${isCenter ? "text-center" : "text-left"}`}>
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">{heading}</h2>
+        <div className={`${ds.containerWidth === "max-w-7xl" || ds.containerWidth === "max-w-6xl" ? "max-w-3xl" : ds.containerWidth} mx-auto relative z-10 ${isCenter ? "text-center" : "text-left"}`}>
+          <h2 className={`${ds.typography.h2} mb-3`}>{heading}</h2>
           {subtext && (
-            <p className="text-base md:text-lg opacity-80 mb-4 max-w-xl mx-auto">
+            <p className={`text-base md:text-lg opacity-80 mb-4 max-w-xl mx-auto ${ds.typography.body}`}>
               {subtext}
             </p>
           )}
@@ -170,7 +179,7 @@ export function Banner(props: BannerProps & ComponentMeta) {
           <div className={`flex ${isCenter ? "justify-center" : "justify-start"} mt-6`}>
             <a
               href={ctaHref}
-              className="inline-block rounded-lg px-6 py-2.5 font-semibold transition hover:opacity-90 bg-surface-lowest text-on-surface"
+              className={`inline-block ${ds.button.primary} bg-white/90 text-gray-900 hover:bg-white`}
             >
               {ctaText}
             </a>

@@ -1,44 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { FeaturesGridProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
 import type { DesignStyleTokens } from "../lib/design-styles";
-
-// ─── Scroll animation hook ─────────────────────────────────────────
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-
-  const animClasses: Record<string, string> = {
-    "stagger-fade": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-    "stagger-slide": visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4",
-  };
-
-  return { ref, className: animClasses[animation] ?? "", visible };
-}
+import { resolveIconPath } from "../lib/icon-map";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 // ─── Hover effect classes ──────────────────────────────────────────
 
@@ -98,13 +66,20 @@ function FeatureCard({
   // Icon / flat / elevated / glass cards
   return (
     <div className={`${ds.card.base} ${variantExtra} ${ds.card.hover} ${hover}`}>
-      {feature.icon && (
-        <div className={`${ds.accent.icon} mb-5`}>
-          <span className="material-symbols-outlined text-2xl text-primary">
-            {feature.icon}
-          </span>
-        </div>
-      )}
+      {feature.icon && (() => {
+        const iconPath = resolveIconPath(feature.icon);
+        return (
+          <div className={`${ds.accent.icon} mb-5`}>
+            {iconPath ? (
+              <img src={iconPath} alt="" className="w-6 h-6 text-primary [&>svg]:inherit" />
+            ) : (
+              <span className="material-symbols-outlined text-2xl text-primary">
+                {feature.icon}
+              </span>
+            )}
+          </div>
+        );
+      })()}
       {!feature.icon && feature.imageUrl && (
         <img
           src={feature.imageUrl}
@@ -131,7 +106,7 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
     features = [],
     variant = "grid",
     cardStyle = "icon",
-    animation = "none",
+    animation = "stagger-fade",
     hoverEffect = "none",
     designStyle,
     className,
@@ -140,6 +115,26 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
 
   const ds = getDesignTokens(designStyle);
   const anim = useScrollAnimation(animation);
+
+  // Carousel scroll state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScrollState);
+    updateScrollState();
+    return () => el.removeEventListener("scroll", updateScrollState);
+  }, []);
 
   const hasBgOverride = "bgColor" in metaRest && metaRest.bgColor;
 
@@ -164,28 +159,50 @@ export function FeaturesGrid(props: FeaturesGridProps & ComponentMeta) {
         </div>
 
         {variant === "carousel" ? (
-          <div
-            ref={anim.ref}
-            className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className={`snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%] transition-all duration-500 ${anim.className}`}
-                style={{ transitionDelay: anim.visible ? `${i * 100}ms` : "0ms" }}
+          <div className="relative group">
+            {canScrollLeft && (
+              <button
+                onClick={() => scrollRef.current?.scrollBy({ left: -scrollRef.current.clientWidth * 0.8, behavior: "smooth" })}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/50 transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                aria-label="Previous"
               >
-                <FeatureCard
-                  feature={feature}
-                  cardStyle={cardStyle}
-                  hoverEffect={hoverEffect}
-                  ds={ds}
-                />
-              </div>
-            )
-          )
-        }
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            {canScrollRight && (
+              <button
+                onClick={() => scrollRef.current?.scrollBy({ left: scrollRef.current!.clientWidth * 0.8, behavior: "smooth" })}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/50 transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                aria-label="Next"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+            <div
+              ref={scrollRef}
+              className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
+              {features.map((feature, i) => (
+                <div
+                  key={i}
+                  className={`snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%] transition-all duration-500 ${anim.className}`}
+                  style={{ transitionDelay: anim.visible ? `${i * 100}ms` : "0ms" }}
+                >
+                  <FeatureCard
+                    feature={feature}
+                    cardStyle={cardStyle}
+                    hoverEffect={hoverEffect}
+                    ds={ds}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div

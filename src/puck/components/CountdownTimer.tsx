@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { CountdownTimerProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { getDesignTokens } from "../lib/design-styles";
 
 function calcRemaining(endDate: string) {
   const target = new Date(endDate);
@@ -29,12 +30,14 @@ export function CountdownTimer(props: CountdownTimerProps & ComponentMeta) {
     showHours = true,
     style = "default",
     showLabels = true,
-    animation = "none",
+    animation = "fade-up",
     endMessage,
+    designStyle,
     className,
     ...metaRest
   } = props;
 
+  const ds = getDesignTokens(designStyle);
   const [remaining, setRemaining] = useState(() => calcRemaining(endDate));
 
   useEffect(() => {
@@ -62,97 +65,86 @@ export function CountdownTimer(props: CountdownTimerProps & ComponentMeta) {
     { value: pad(remaining.seconds), raw: remaining.seconds, label: "Seconds" },
   ];
 
-  // Animation wrapper classes
-  const animClass =
-    animation === "fade-up"
-      ? "animate-[fadeUp_0.6s_ease-out_both]"
-      : "";
-
   // Style variants for the digit containers
   const unitClassByStyle: Record<string, string> = {
     default:
-      "flex flex-col items-center bg-background rounded-lg px-5 py-4 min-w-[80px] shadow-sm",
+      `flex flex-col items-center bg-card ${ds.card.base} px-5 py-4 min-w-[80px]`,
     flip:
-      "flex flex-col items-center bg-inverse-surface text-inverse-on-surface rounded-lg px-5 py-4 min-w-[80px] shadow-lg relative overflow-hidden",
+      "flex flex-col items-center bg-foreground text-background rounded-lg px-5 py-4 min-w-[80px] shadow-lg relative overflow-hidden",
     minimal:
       "flex flex-col items-center px-4 py-2 min-w-[60px]",
   };
 
   const digitClassByStyle: Record<string, string> = {
-    default: "text-3xl md:text-4xl font-bold text-primary tabular-nums",
+    default: `text-3xl md:text-4xl font-bold text-primary tabular-nums`,
     flip: "text-3xl md:text-4xl font-bold tabular-nums",
     minimal: "text-2xl md:text-3xl font-semibold text-foreground tabular-nums",
   };
 
   const labelClassByStyle: Record<string, string> = {
     default: "text-xs text-muted-foreground mt-1 uppercase tracking-wider",
-    flip: "text-[10px] text-on-surface-outline mt-1 uppercase tracking-wider",
+    flip: "text-[10px] text-background/60 mt-1 uppercase tracking-wider",
     minimal: "text-xs text-muted-foreground mt-0.5 uppercase tracking-wide",
   };
 
   return (
-    <>
-      {animation === "fade-up" && (
-        <style>{`
-          @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
-      )}
-      <section
-        className={`w-full py-20 px-6 bg-muted text-foreground ${animClass} ${className ?? ""}`}
-        style={extractStyleProps(metaRest)}
-      >
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
-          {subtext && (
-            <p className="text-lg opacity-70 mb-2 max-w-xl mx-auto">{subtext}</p>
-          )}
-
-          {remaining.ended && endMessage ? (
-            <div className="mt-6">
-              <p className="text-xl font-semibold text-primary">{endMessage}</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground mb-10">
-                Ends {formattedDate}
-              </p>
-
-              <div className="flex justify-center gap-4 mb-10">
-                {units.map((unit) => (
-                  <div
-                    key={unit.label}
-                    className={unitClassByStyle[style] ?? unitClassByStyle.default}
-                  >
-                    {style === "flip" && (
-                      <div className="absolute inset-x-0 top-1/2 h-px bg-outline" />
-                    )}
-                    <span className={digitClassByStyle[style] ?? digitClassByStyle.default}>
-                      {unit.value}
-                    </span>
-                    {showLabels && (
-                      <span className={labelClassByStyle[style] ?? labelClassByStyle.default}>
-                        {unit.label}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {ctaText && ctaHref && (
-                <a
-                  href={ctaHref}
-                  className="inline-block rounded-lg px-8 py-3 font-semibold transition bg-primary text-primary-foreground hover:opacity-90"
-                >
-                  {ctaText}
-                </a>
-              )}
-            </>
-          )}
+    <section
+      className={`w-full ${ds.section.base} text-foreground relative ${className ?? ""}`}
+      style={extractStyleProps(metaRest)}
+    >
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
         </div>
-      </section>
-    </>
+      )}
+      <div className={`${ds.containerWidth === "max-w-7xl" || ds.containerWidth === "max-w-6xl" ? "max-w-3xl" : ds.containerWidth} mx-auto text-center relative`}>
+        <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
+        {subtext && (
+          <p className={`text-lg opacity-70 mb-2 max-w-xl mx-auto ${ds.typography.body}`}>{subtext}</p>
+        )}
+
+        {remaining.ended && endMessage ? (
+          <div className="mt-6">
+            <p className={`text-xl font-semibold text-primary`}>{endMessage}</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground mb-10">
+              Ends {formattedDate}
+            </p>
+
+            <div className="flex justify-center gap-4 mb-10">
+              {units.map((unit) => (
+                <div
+                  key={unit.label}
+                  className={unitClassByStyle[style] ?? unitClassByStyle.default}
+                >
+                  {style === "flip" && (
+                    <div className="absolute inset-x-0 top-1/2 h-px bg-background/20" />
+                  )}
+                  <span className={digitClassByStyle[style] ?? digitClassByStyle.default}>
+                    {unit.value}
+                  </span>
+                  {showLabels && (
+                    <span className={labelClassByStyle[style] ?? labelClassByStyle.default}>
+                      {unit.label}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {ctaText && ctaHref && (
+              <a
+                href={ctaHref}
+                className={`inline-block ${ds.button.primary} bg-primary text-primary-foreground`}
+              >
+                {ctaText}
+              </a>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 }

@@ -1,38 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { BlogSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    "stagger-fade": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-  };
-  return { ref, className: animClasses[animation] ?? "", visible };
-}
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export function BlogSection(props: BlogSectionProps & ComponentMeta) {
   const {
@@ -42,7 +14,7 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
     variant = "grid",
     masonry = false,
     categoryFilter = false,
-    animation = "none",
+    animation = "stagger-fade",
     designStyle,
     className,
     ...metaRest
@@ -52,6 +24,26 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
 
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const { ref: animRef, className: animClass, visible } = useScrollAnimation(animation);
+
+  // Carousel scroll state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScrollState);
+    updateScrollState();
+    return () => el.removeEventListener("scroll", updateScrollState);
+  }, []);
 
   // Derive unique categories from posts
   const categories = useCallback(() => {
@@ -156,19 +148,44 @@ export function BlogSection(props: BlogSectionProps & ComponentMeta) {
         >
           {/* Carousel layout */}
           {isCarousel && (
-            <div
-              className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
-              {filtered.map((post, i) => (
-                <div
-                  key={i}
-                  className="snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%]"
+            <div className="relative group">
+              {canScrollLeft && (
+                <button
+                  onClick={() => scrollRef.current?.scrollBy({ left: -scrollRef.current.clientWidth * 0.8, behavior: "smooth" })}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/50 transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                  aria-label="Previous"
                 >
-                  {renderCard(post, i)}
-                </div>
-              ))}
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              {canScrollRight && (
+                <button
+                  onClick={() => scrollRef.current?.scrollBy({ left: scrollRef.current!.clientWidth * 0.8, behavior: "smooth" })}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/50 transition focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                  aria-label="Next"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+              <div
+                ref={scrollRef}
+                className="carousel-scroll flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 -mx-6 px-6 scroll-smooth"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                <style>{`.carousel-scroll::-webkit-scrollbar { display: none; }`}</style>
+                {filtered.map((post, i) => (
+                  <div
+                    key={i}
+                    className="snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%]"
+                  >
+                    {renderCard(post, i)}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

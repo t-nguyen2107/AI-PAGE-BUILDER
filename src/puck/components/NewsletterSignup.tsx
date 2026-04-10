@@ -1,47 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import type { NewsletterSignupProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
-
-// ─── Scroll animation hook ────────────────────────────────────────────
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    zoom: visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
-  };
-
-  return {
-    ref,
-    className: animClasses[animation] ?? "",
-    visible,
-  };
-}
+import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 // ─── Render component ─────────────────────────────────────────────────
 
@@ -58,15 +21,30 @@ export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
     bgVariant = "none",
     testimonialQuote,
     testimonialAuthor,
-    animation = "none",
+    animation = "fade-up",
+    designStyle,
     className,
     ...metaRest
   } = props;
 
+  const ds = getDesignTokens(designStyle);
   const anim = useScrollAnimation(animation ?? "none");
   const hasBgImage = bgVariant === "image" && !!backgroundUrl;
   const hasBgGradient = bgVariant === "gradient";
   const transitionClass = animation !== "none" ? "transition-all duration-700 ease-out" : "";
+
+  // Form submission state
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setTimeout(() => {
+      setSubmitting(false);
+      setSubmitted(true);
+    }, 1000);
+  };
 
   // Build section styles
   let sectionStyle: React.CSSProperties = { ...extractStyleProps(metaRest) };
@@ -92,9 +70,9 @@ export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
     "w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary";
   const btnClass = `inline-block rounded-lg px-8 py-3 font-semibold transition ${
     hasBgImage
-      ? "bg-surface-lowest text-on-surface hover:bg-surface-container"
+      ? "bg-white text-gray-900 hover:bg-white/90"
       : "bg-primary-foreground text-primary hover:opacity-90"
-  }`;
+  } disabled:opacity-50 disabled:cursor-not-allowed`;
 
   // Testimonial block
   const testimonialBlock = testimonialQuote && (
@@ -118,15 +96,21 @@ export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
     <p className="text-xs text-muted-foreground/60 mt-2">{privacyNote}</p>
   );
 
-  const formElement = (
-    <form className="flex flex-col sm:flex-row gap-3 w-full" onSubmit={(e) => e.preventDefault()}>
+  const formElement = submitted ? (
+    <div className="text-center py-4">
+      <p className="text-lg font-semibold">Subscribed!</p>
+      <p className="text-sm opacity-80 mt-1">Check your inbox for confirmation.</p>
+    </div>
+  ) : (
+    <form className="flex flex-col sm:flex-row gap-3 w-full" onSubmit={handleSubmit}>
       <input
         type="email"
         placeholder={placeholder || "Enter your email"}
         className={inputClass}
+        required
       />
-      <button type="submit" className={btnClass}>
-        {buttonText || "Subscribe"}
+      <button type="submit" disabled={submitting} className={btnClass}>
+        {submitting ? "Subscribing..." : buttonText || "Subscribe"}
       </button>
     </form>
   );
@@ -139,12 +123,12 @@ export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
       >
         <div
           ref={anim.ref}
-          className={`max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center ${anim.className} ${transitionClass}`}
+          className={`${ds.containerWidth} mx-auto grid md:grid-cols-2 gap-12 items-center ${anim.className} ${transitionClass}`}
         >
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+            <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
             {subtext && (
-              <p className="text-lg opacity-80 leading-relaxed">{subtext}</p>
+              <p className={`text-lg opacity-80 leading-relaxed ${ds.typography.body}`}>{subtext}</p>
             )}
             {socialProof}
             {testimonialBlock}
@@ -165,11 +149,11 @@ export function NewsletterSignup(props: NewsletterSignupProps & ComponentMeta) {
     >
       <div
         ref={anim.ref}
-        className={`max-w-3xl mx-auto text-center ${anim.className} ${transitionClass}`}
+        className={`${ds.containerWidth === "max-w-7xl" || ds.containerWidth === "max-w-6xl" ? "max-w-3xl" : ds.containerWidth} mx-auto text-center ${anim.className} ${transitionClass}`}
       >
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+        <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
         {subtext && (
-          <p className="text-lg opacity-80 mb-8 max-w-xl mx-auto">{subtext}</p>
+          <p className={`text-lg opacity-80 mb-8 max-w-xl mx-auto ${ds.typography.body}`}>{subtext}</p>
         )}
         <div className="max-w-md mx-auto">
           {formElement}

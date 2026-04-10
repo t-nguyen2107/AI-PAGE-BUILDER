@@ -5,6 +5,7 @@ import type { StatsSectionProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { resolveIconPath } from "../lib/icon-map";
 
 // ─── Animated counter hook ────────────────────────────────────────────
 
@@ -86,11 +87,20 @@ function StatCard({
       className={`text-center transition-all duration-500 ease-out ${baseCardClasses} ${cardStyleExtras[cardStyle] ?? ""}`}
       style={staggerStyle}
     >
-      {stat.icon && (
-        <span className={`material-symbols-outlined text-3xl text-primary/70 mb-3 block mx-auto ${ds.accent.icon} p-2.5 mx-auto`}>
-          {stat.icon}
-        </span>
-      )}
+      {stat.icon && (() => {
+        const iconPath = resolveIconPath(stat.icon);
+        return (
+          <div className={`mx-auto mb-3 ${ds.accent.icon} p-2.5 flex items-center justify-center`}>
+            {iconPath ? (
+              <img src={iconPath} alt="" className="w-7 h-7" />
+            ) : (
+              <span className="material-symbols-outlined text-3xl text-primary/70">
+                {stat.icon}
+              </span>
+            )}
+          </div>
+        );
+      })()}
       <p className={`text-4xl font-bold mb-2 ${cardStyle === "gradient" ? "bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60" : "text-primary"}`}>
         {prefix}
         {animated ? displayValue : stat.value}
@@ -110,7 +120,7 @@ export function StatsSection(props: StatsSectionProps & ComponentMeta) {
     columns,
     animated,
     duration,
-    animation = "none",
+    animation = "stagger",
     cardStyle = "none",
     designStyle,
     className,

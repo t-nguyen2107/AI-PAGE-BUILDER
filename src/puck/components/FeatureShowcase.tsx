@@ -1,29 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import type { FeatureShowcaseProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
-
-function useScrollAnimation(animation: string) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (animation === "none" || !ref.current) return;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) { setVisible(true); return; }
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { setVisible(true); obs.disconnect(); }
-    }, { threshold: 0.15 });
-    obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [animation]);
-  const animClasses: Record<string, string> = {
-    "fade-up": visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
-    "slide-left": visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8",
-    "slide-right": visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8",
-  };
-  return { ref, className: animClasses[animation] ?? "", visible };
-}
+import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 const ICON_MAP: Record<string, string> = {
   zap: "M13 2L3 14h9l-1 10 10-12h-9l1-10z",
@@ -58,24 +39,30 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
     imagePosition = "right",
     ctaText,
     ctaHref,
-    animation = "none",
+    animation = "fade-up",
     tabbed = false,
+    designStyle,
     className,
     ...metaRest
   } = props;
+  const ds = getDesignTokens(designStyle);
   const { ref: animRef, className: animClass } = useScrollAnimation(animation);
   const [activeTab, setActiveTab] = useState(0);
   const imageFirst = imagePosition === "left";
 
   return (
     <section
-      className={`w-full py-24 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} text-foreground relative overflow-hidden ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/3 blur-3xl pointer-events-none" />
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
       <div
         ref={animRef}
-        className={`max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 transition-all duration-700 ease-out relative ${animClass}`}
+        className={`${ds.containerWidth} mx-auto flex flex-col md:flex-row items-center gap-12 transition-all duration-700 ease-out relative ${animClass}`}
       >
         {/* Media side */}
         <div
@@ -90,13 +77,13 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
               loop
               muted
               playsInline
-              className="w-full rounded-2xl object-cover"
+              className={`w-full ${ds.card.base} object-cover`}
             />
           ) : (
             <img
               src={imageUrl}
               alt={heading}
-              className="w-full rounded-2xl object-cover"
+              className={`w-full ${ds.card.base} object-cover`}
             />
           )}
         </div>
@@ -107,9 +94,9 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
             imageFirst ? "md:order-2" : "md:order-1"
           }`}
         >
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{heading}</h2>
+          <h2 className={`${ds.typography.h2} mb-4`}>{heading}</h2>
           {subtext && (
-            <p className="text-lg text-muted-foreground leading-relaxed mb-8">{subtext}</p>
+            <p className={`text-lg leading-relaxed mb-8 ${ds.typography.body}`}>{subtext}</p>
           )}
 
           {tabbed && features.length > 0 ? (
@@ -119,7 +106,7 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
                   <button
                     key={i}
                     onClick={() => setActiveTab(i)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                       i === activeTab
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-accent"
@@ -132,10 +119,10 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
               </div>
               {features[activeTab] && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className={`${ds.typography.h3} mb-2`}>
                     {features[activeTab].title}
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <p className={`text-sm leading-relaxed ${ds.typography.body}`}>
                     {features[activeTab].description}
                   </p>
                 </div>
@@ -144,11 +131,11 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
           ) : (
             <div className="space-y-6 mb-8">
               {features.map((feature, i) => (
-                <div key={i} className="flex items-start gap-4 rounded-2xl bg-card border border-border/50 shadow-sm p-4 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/5">
+                <div key={i} className={`flex items-start gap-4 ${ds.card.base} p-4 ${ds.card.hover}`}>
                   <FeatureIcon icon={feature.icon} />
                   <div>
-                    <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed text-sm">
+                    <h3 className={`${ds.typography.h3} mb-1`}>{feature.title}</h3>
+                    <p className={`leading-relaxed text-sm ${ds.typography.body}`}>
                       {feature.description}
                     </p>
                   </div>
@@ -160,7 +147,7 @@ export function FeatureShowcase(props: FeatureShowcaseProps & ComponentMeta) {
           {ctaText && ctaHref && (
             <a
               href={ctaHref}
-              className="inline-block rounded-lg px-8 py-3 font-semibold bg-primary text-primary-foreground hover:opacity-90 transition"
+              className={`inline-block ${ds.button.primary} bg-primary text-primary-foreground`}
             >
               {ctaText}
             </a>

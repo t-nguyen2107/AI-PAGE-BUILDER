@@ -1,5 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import type { ContactFormProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { getDesignTokens } from "../lib/design-styles";
 
 export function ContactForm(props: ContactFormProps & ComponentMeta) {
   const {
@@ -8,61 +13,97 @@ export function ContactForm(props: ContactFormProps & ComponentMeta) {
     showPhone,
     showCompany,
     buttonText,
+    animation = "fade-up",
+    designStyle,
     className,
     ...metaRest
   } = props;
+
+  const ds = getDesignTokens(designStyle);
+  const anim = useScrollAnimation(animation);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setTimeout(() => {
+      setSubmitting(false);
+      setSubmitted(true);
+    }, 1000);
+  };
+
   return (
     <section
-      className={`w-full py-20 px-6 bg-background text-foreground ${className ?? ""}`}
+      className={`w-full ${ds.section.base} ${className ?? ""}`}
       style={extractStyleProps(metaRest)}
     >
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
+      {ds.section.decorative && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className={ds.section.decorative} />
+        </div>
+      )}
+      <div
+        ref={anim.ref}
+        className={`${ds.containerWidth} mx-auto grid md:grid-cols-2 gap-12 transition-all duration-700 ease-out relative ${anim.className}`}
+      >
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{heading}</h2>
+          <h2 className={ds.typography.h2}>{heading}</h2>
           {subtext && (
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className={ds.typography.body}>
               {subtext}
             </p>
           )}
         </div>
         <div>
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-            <input
-              type="text"
-              placeholder="Name"
-              className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {showPhone && (
-              <input
-                type="tel"
-                placeholder="Phone"
-                className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            )}
-            {showCompany && (
+          {submitted ? (
+            <div className="text-center py-12">
+              <p className="text-2xl font-semibold text-green-600 mb-2">Message Sent!</p>
+              <p className="text-muted-foreground">We'll get back to you soon.</p>
+            </div>
+          ) : (
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <input
                 type="text"
-                placeholder="Company"
+                placeholder="Name"
                 className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               />
-            )}
-            <textarea
-              placeholder="Message"
-              rows={5}
-              className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-            <button
-              type="submit"
-              className="bg-primary text-primary-foreground rounded-lg px-6 py-3 font-semibold hover:opacity-90 transition"
-            >
-              {buttonText || "Send Message"}
-            </button>
-          </form>
+              <input
+                type="email"
+                placeholder="Email"
+                className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                required
+              />
+              {showPhone && (
+                <input
+                  type="tel"
+                  placeholder="Phone"
+                  className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              )}
+              {showCompany && (
+                <input
+                  type="text"
+                  placeholder="Company"
+                  className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              )}
+              <textarea
+                placeholder="Message"
+                rows={5}
+                className="w-full border border-border rounded-lg px-4 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                required
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`${ds.button.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {submitting ? "Sending..." : buttonText || "Send Message"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </section>

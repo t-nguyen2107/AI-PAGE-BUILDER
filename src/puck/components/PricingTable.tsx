@@ -14,7 +14,7 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
     yearlyPlans,
     highlightedBadge = "Popular",
     currency = "$",
-    animation = "none",
+    animation = "stagger",
     designStyle,
     className,
     ...metaRest
@@ -56,18 +56,14 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
 
   // Animation classes
   const getAnimationClass = (index: number) => {
-    if (!isVisible) return "opacity-0";
+    if (animation === "none") return "";
+    if (!isVisible) return "opacity-0 translate-y-8";
     if (animation === "fade-up") return "opacity-100 translate-y-0 transition-all duration-700 ease-out";
     if (animation === "stagger") {
       const delay = index * 100;
       return `opacity-100 translate-y-0 transition-all duration-700 ease-out [transition-delay:${delay}ms]`;
     }
     return "";
-  };
-
-  const getInitialClass = () => {
-    if (animation === "none") return "";
-    return "opacity-0 translate-y-8";
   };
 
   return (
@@ -108,7 +104,7 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
             <button
               type="button"
               onClick={() => setYearly(!yearly)}
-              className="relative w-12 h-6 rounded-full bg-primary/20 transition-colors hover:bg-primary/30"
+              className="relative w-12 h-6 rounded-full bg-primary/20 transition-colors hover:bg-primary/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               role="switch"
               aria-checked={yearly}
             >
@@ -138,7 +134,7 @@ export function PricingTable(props: PricingTableProps & ComponentMeta) {
                 plan.highlighted
                   ? "ring-2 ring-primary md:scale-105 border-primary shadow-xl shadow-primary/10"
                   : ""
-              } ${ds.card.hover} ${getInitialClass()} ${getAnimationClass(i)}`}
+              } ${ds.card.hover} ${getAnimationClass(i)}`}
             >
               {/* Accent bar */}
               {ds.accent.cardAccent && (

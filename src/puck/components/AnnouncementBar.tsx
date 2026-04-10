@@ -48,7 +48,7 @@ export function AnnouncementBar(props: AnnouncementBarProps & ComponentMeta) {
     bgColor = "primary",
     customBgColor,
     dismissible = false,
-    animation = "none",
+    animation = "fade-in",
     icon,
     className,
     ...metaRest

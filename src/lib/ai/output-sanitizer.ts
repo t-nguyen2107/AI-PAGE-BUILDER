@@ -97,7 +97,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   LogoGrid: {
     heading: 'Trusted By',
-    logos: [{ name: 'Brand', imageUrl: '/logos/placeholder.svg' }],
+    logos: [{ name: 'Brand', imageUrl: '' }],
     variant: 'grid',
     grayscale: true,
     tooltip: false,
@@ -289,6 +289,40 @@ function sanitizeComponent(comp: Record<string, unknown>, index: number, usedIds
   }
   if (type === 'BlogSection' && typeof props.columns === 'string') {
     props.columns = parseInt(props.columns as string, 10) || 3;
+  }
+
+  // ─── Field name remapping (AI often uses "image" instead of component-specific names) ──
+  if (props.image && typeof props.image === 'string') {
+    if (type === 'HeroSection' && !props.backgroundUrl && !props.imageUrl) {
+      props.imageUrl = props.image;
+    } else if (type === 'CTASection' && !props.backgroundUrl && !props.imageUrl) {
+      props.imageUrl = props.image;
+    } else if (type === 'FeatureShowcase' && !props.imageUrl) {
+      props.imageUrl = props.image;
+    }
+    delete props.image;
+  }
+
+  // Remap "image" → "avatarUrl" inside testimonial/team items
+  if (type === 'TestimonialSection' && Array.isArray(props.testimonials)) {
+    for (const t of props.testimonials as Record<string, unknown>[]) {
+      if (t.image && !t.avatarUrl) { t.avatarUrl = t.image; delete t.image; }
+    }
+  }
+  if (type === 'TeamSection' && Array.isArray(props.members)) {
+    for (const m of props.members as Record<string, unknown>[]) {
+      if (m.image && !m.avatarUrl) { m.avatarUrl = m.image; delete m.image; }
+    }
+  }
+  if (type === 'BlogSection' && Array.isArray(props.posts)) {
+    for (const p of props.posts as Record<string, unknown>[]) {
+      if (p.image && !p.imageUrl) { p.imageUrl = p.image; delete p.image; }
+    }
+  }
+  if (type === 'ProductCards' && Array.isArray(props.products)) {
+    for (const p of props.products as Record<string, unknown>[]) {
+      if (p.image && !p.imageUrl) { p.imageUrl = p.image; delete p.image; }
+    }
   }
 
   // Auto-generate human-readable name if missing

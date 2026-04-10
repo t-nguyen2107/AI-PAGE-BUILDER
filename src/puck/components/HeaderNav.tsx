@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { HeaderNavProps, ComponentMeta } from "../types";
 import { extractStyleProps } from "../lib/style-override";
 import { getDesignTokens } from "../lib/design-styles";
+import { useScrollAnimation } from "../hooks/useScrollAnimation";
 
 export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
   const {
@@ -16,12 +17,14 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
     mobileMenu = true,
     transparent = false,
     showSearch = false,
+    animation = "none",
     designStyle,
     className,
     ...metaRest
   } = props;
 
   const ds = getDesignTokens(designStyle);
+  const anim = useScrollAnimation(animation);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -55,9 +58,10 @@ export function HeaderNav(props: HeaderNavProps & ComponentMeta) {
 
   return (
     <nav
+      ref={anim.ref}
       className={`flex items-center justify-between px-6 py-4 border-b border-border transition-colors duration-300 ${bgClass} ${
         sticky ? "sticky top-0 z-50" : ""
-      } ${className ?? ""}`}
+      } ${className ?? ""} ${anim.className ? `transition-all duration-700 ease-out ${anim.className}` : ""}`}
       style={extractStyleProps(metaRest)}
     >
       {/* Logo */}

@@ -35,7 +35,7 @@ function TestimonialCard({ item, cardStyle, ds }: { item: TestimonialSectionProp
     default: "",
   };
 
-  const baseClasses = `p-6 ${ds.card.base} ${ds.card.hover} h-full flex flex-col relative overflow-hidden ${cardStyleExtras[cardStyle] ?? ""}`.trim();
+  const baseClasses = `p-8 ${ds.card.base} ${ds.card.hover} h-full flex flex-col items-center text-center relative overflow-hidden ${cardStyleExtras[cardStyle] ?? ""}`.trim();
 
   return (
     <div className={baseClasses}>
@@ -44,33 +44,39 @@ function TestimonialCard({ item, cardStyle, ds }: { item: TestimonialSectionProp
         <div className={ds.accent.cardAccent} />
       )}
 
-      {item.rating && item.rating >= 1 && item.rating <= 5 && (
-        <StarRating rating={item.rating} />
-      )}
-      <span className="block text-5xl text-primary/20 font-serif leading-none mb-3 select-none">
-        &ldquo;
-      </span>
-      <p className={`italic text-lg leading-relaxed text-foreground/80 mb-6 flex-1`}>{item.quote}</p>
-      <div className="flex items-center gap-3 mt-auto">
-        {item.avatarUrl ? (
-          <img
-            src={item.avatarUrl}
-            alt={item.author}
-            className={`w-12 h-12 object-cover ${ds.accent.avatar}`}
-          />
-        ) : (
-          <div className={`w-12 h-12 bg-muted flex items-center justify-center text-sm font-semibold ${ds.accent.avatar}`}>
-            {(item.author || "")
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()}
-          </div>
-        )}
-        <div>
-          <p className="font-semibold text-sm">{item.author}</p>
-          <p className={`${ds.typography.body} text-sm`}>{item.role}</p>
+      {/* Avatar — centered with accent ring */}
+      {item.avatarUrl ? (
+        <img
+          src={item.avatarUrl}
+          alt={item.author}
+          className={`w-16 h-16 object-cover ${ds.accent.avatar} ring-2 ring-primary/30 ring-offset-2 ring-offset-background mb-4`}
+        />
+      ) : (
+        <div className={`w-16 h-16 bg-muted flex items-center justify-center text-base font-semibold ${ds.accent.avatar} ring-2 ring-primary/30 ring-offset-2 ring-offset-background mb-4`}>
+          {(item.author || "")
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()}
         </div>
+      )}
+
+      {/* Star rating */}
+      <div className="flex justify-center">
+        {item.rating && item.rating >= 1 && item.rating <= 5 && (
+          <StarRating rating={item.rating} />
+        )}
+      </div>
+
+      {/* Quote */}
+      <p className={`italic text-lg leading-relaxed text-foreground/80 mt-4 mb-6 flex-1`}>{item.quote}</p>
+
+      {/* Author info */}
+      <div className="mt-auto">
+        <p className="font-semibold text-sm">{item.author}</p>
+        {item.role && (
+          <p className={`${ds.typography.body} text-sm mt-0.5`}>{item.role}</p>
+        )}
       </div>
     </div>
   );
@@ -85,7 +91,7 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
     variant = "grid",
     autoplay = false,
     interval = 5000,
-    animation = "none",
+    animation = "stagger-fade",
     cardStyle = "default",
     designStyle,
     className,
@@ -152,7 +158,7 @@ export function TestimonialSection(props: TestimonialSectionProps & ComponentMet
               {testimonials.map((t, i) => (
                 <div
                   key={i}
-                  className="snap-center shrink-0 w-[85%] md:w-[45%] lg:w-[30%]"
+                  className="snap-center shrink-0 w-[90%] md:w-[80%] lg:w-[60%] mx-auto"
                   style={isStagger ? { transitionDelay: `${i * 100}ms` } : undefined}
                 >
                   <TestimonialCard item={t} cardStyle={cardStyle} ds={ds} />

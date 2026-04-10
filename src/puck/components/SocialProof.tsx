@@ -64,7 +64,7 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
     animated = false,
     avatarUrls,
     variant = "default",
-    animation = "none",
+    animation = "fade-up",
     designStyle,
     className,
     ...metaRest
@@ -232,13 +232,13 @@ export function SocialProof(props: SocialProofProps & ComponentMeta) {
             className={`max-w-3xl mx-auto text-center ${ds.card.base} p-8 ${ds.card.hover} ${isVisible || animation === "none" ? "opacity-100" : "opacity-0"}`}
             style={staggerDelay(4)}
           >
-            <span className="block text-5xl text-amber-400 font-serif leading-none mb-2">
+            <span className="block text-5xl text-primary font-serif leading-none mb-2">
               &ldquo;
             </span>
             <p className={`italic text-lg ${ds.typography.body}`}>
               {testimonialText}
             </p>
-            <span className="block text-5xl text-amber-400 font-serif leading-none mt-2">
+            <span className="block text-5xl text-primary font-serif leading-none mt-2">
               &rdquo;
             </span>
           </div>
